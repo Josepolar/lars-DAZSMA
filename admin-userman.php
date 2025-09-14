@@ -1,11 +1,11 @@
 <?php
+
 session_start();
-// Redirect to login if session is missing or expired
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['role_id'] != 1) {
     header('Location: admin-login.php');
     exit();
 }
-// Database connection
+require_once 'log_activity.php';
 $conn = new mysqli('localhost', 'root', '', 'lars_db');
 if ($conn->connect_error) {
     die('Connection failed: ' . $conn->connect_error);
@@ -30,6 +30,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->bind_param('ssssii', $firstname, $lastname, $email, $password, $user_id, $role_id);
             $stmt->execute();
             $stmt->close();
+            // Log the edit action
+            log_activity('Edited ' . ($type === 'user' ? 'Staff' : 'Teacher'), $user_id);
             header('Location: admin-userman.php');
             exit();
         }
@@ -45,15 +47,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $new_user_id = $stmt->insert_id;
             $stmt->close();
 
-            // Log the action
-            $admin_id = $_SESSION['user_id'];
-            $action = ($type === 'user') ? 'Added Staff' : 'Added Teacher';
-            $log_query = "INSERT INTO user_logs (user_id, action, affected_user_id, ip_address) VALUES (?, ?, ?, ?)";
-            $log_stmt = $conn->prepare($log_query);
-            $ip = $_SERVER['REMOTE_ADDR'];
-            $log_stmt->bind_param('isis', $admin_id, $action, $new_user_id, $ip);
-            $log_stmt->execute();
-            $log_stmt->close();
+            // Log the add action
+            log_activity(($type === 'user') ? 'Added Staff' : 'Added Teacher', $new_user_id);
 
             header('Location: admin-userman.php');
             exit();
@@ -79,19 +74,17 @@ if (isset($_GET['delete']) && isset($_GET['type'])) {
             }
 
             // Log the delete action before deleting user_logs and user
-            if (isset($_SESSION['user_id'])) {
-                $admin_id = $_SESSION['user_id'];
-                $action = ($type === 'user') ? 'Deleted Staff' : 'Deleted Teacher';
-                $log_query = "INSERT INTO user_logs (user_id, action, affected_user_id, ip_address) VALUES (?, ?, ?, ?)";
-                $log_stmt = $conn->prepare($log_query);
-                $ip = $_SERVER['REMOTE_ADDR'];
-                $log_stmt->bind_param('isis', $admin_id, $action, $user_id, $ip);
-                $log_stmt->execute();
-                $log_stmt->close();
-            }
+            // Log the delete action
+            log_activity(($type === 'user') ? 'Deleted Staff' : 'Deleted Teacher', $user_id);
 
-            // Then delete related records from user_logs
+            // Delete logs where user is user_id
             $stmt = $conn->prepare("DELETE FROM user_logs WHERE user_id = ?");
+            $stmt->bind_param('i', $user_id);
+            $stmt->execute();
+            $stmt->close();
+            
+            // Delete logs where user is affected_user_id
+            $stmt = $conn->prepare("DELETE FROM user_logs WHERE affected_user_id = ?");
             $stmt->bind_param('i', $user_id);
             $stmt->execute();
             $stmt->close();
@@ -491,7 +484,12 @@ while ($row = $result->fetch_assoc()) {
 
     function confirmDelete(type, index) {
         if (confirm('Are you sure you want to delete this ' + (type === 'user' ? 'staff' : 'teacher') + '?')) {
-            window.location.href = 'admin-userman.php?delete=' + index + '&type=' + type;
+            try {
+                window.location.href = 'admin-userman.php?delete=' + index + '&type=' + type;
+            } catch (error) {
+                console.error("Error navigating to delete URL:", error);
+                alert("Error trying to delete. Please try again.");
+            }
         }
     }
 

@@ -34,17 +34,28 @@ function openEditModal(studentId) {
 
 function deleteStudent(studentId) {
     if (confirm('Are you sure you want to delete this student?')) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.style.display = 'none';
+        try {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.style.display = 'none';
 
-        const idInput = document.createElement('input');
-        idInput.type = 'hidden';
-        idInput.name = 'delete_student';
-        idInput.value = studentId;
+            const idInput = document.createElement('input');
+            idInput.type = 'hidden';
+            idInput.name = 'user_id';
+            idInput.value = studentId;
 
-        form.appendChild(idInput);
-        document.body.appendChild(form);
-        form.submit();
+            const deleteInput = document.createElement('input');
+            deleteInput.type = 'hidden';
+            deleteInput.name = 'delete_student';
+            deleteInput.value = '1';
+
+            form.appendChild(idInput);
+            form.appendChild(deleteInput);
+            document.body.appendChild(form);
+            form.submit();
+        } catch (error) {
+            console.error("Error deleting student:", error);
+            alert("Error trying to delete student. Please try again.");
+        }
     }
 }

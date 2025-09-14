@@ -13,28 +13,20 @@ function deleteSubject(subjectId) {
         row.style.transition = 'opacity 0.3s ease';
         row.style.opacity = '0';
         
-        setTimeout(() => {
-            const formData = new FormData();
-            formData.append('subject_id', subjectId);
-            formData.append('delete_subject', '1');
-            
-            fetch(window.location.href, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                if (response.ok) {
-                    window.location.reload();
-                } else {
-                    throw new Error('Network response was not ok');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error deleting subject');
-                row.style.opacity = '1';
-            });
-        }, 300);
+        // Use the hidden form for more reliable submission
+        const form = document.getElementById('deleteSubjectForm');
+        const subjectIdField = document.getElementById('delete_subject_id');
+        subjectIdField.value = subjectId;
+        
+        try {
+            setTimeout(() => {
+                form.submit();
+            }, 300);
+        } catch (error) {
+            console.error("Error submitting delete form:", error);
+            row.style.opacity = '1'; // Restore the row if submission fails
+            alert("Error trying to delete subject. Please try again.");
+        }
     }
 }
 

@@ -60,7 +60,7 @@
    <section class="home" id="home-section">
     <?php
     session_start();
-    
+    require_once 'log_activity.php';
     // Database connection
     $conn = new mysqli('localhost', 'root', '', 'lars_db');
     if ($conn->connect_error) {
@@ -92,6 +92,7 @@
                 WHERE user_id = '$user_id' AND role_id = 4";
 
         if ($conn->query($sql)) {
+            log_activity('Edited Student', $user_id);
             echo "<script>alert('Student updated successfully!'); window.location.href=window.location.pathname;</script>";
             exit;
         } else {
@@ -102,12 +103,41 @@
     // Handle Delete Student
     if (isset($_POST['delete_student'])) {
         $user_id = $conn->real_escape_string($_POST['user_id']);
-        $sql = "DELETE FROM users WHERE user_id = '$user_id' AND role_id = 4";
-        if ($conn->query($sql)) {
+        
+        try {
+            // Start a transaction
+            $conn->begin_transaction();
+            
+            // Log the deletion first
+            log_activity('Deleted Student', $user_id);
+            
+            // Delete logs where the student is the user
+            $stmt = $conn->prepare("DELETE FROM user_logs WHERE user_id = ?");
+            $stmt->bind_param('i', $user_id);
+            $stmt->execute();
+            $stmt->close();
+            
+            // Delete logs where the student is the affected user
+            $stmt = $conn->prepare("DELETE FROM user_logs WHERE affected_user_id = ?");
+            $stmt->bind_param('i', $user_id);
+            $stmt->execute();
+            $stmt->close();
+            
+            // Finally delete the student
+            $stmt = $conn->prepare("DELETE FROM users WHERE user_id = ? AND role_id = 4");
+            $stmt->bind_param('i', $user_id);
+            $stmt->execute();
+            $stmt->close();
+            
+            // Commit the transaction
+            $conn->commit();
+            
             echo "<script>alert('Student deleted successfully!'); window.location.href=window.location.pathname;</script>";
             exit;
-        } else {
-            echo "<script>alert('Error deleting student: " . $conn->error . "');</script>";
+        } catch (Exception $e) {
+            // Roll back the transaction in case of error
+            $conn->rollback();
+            echo "<script>console.error('Error: " . $e->getMessage() . "'); alert('Error deleting student: " . $conn->error . "');</script>";
         }
     }
 

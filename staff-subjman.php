@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once 'log_activity.php';
 
 // Check if user is logged in and is staff
 if (!isset($_SESSION['user_id']) || $_SESSION['role_id'] != 2) {
@@ -20,6 +21,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_subject'])) {
     
     $sql = "INSERT INTO subjects (subject_name, grade_level) VALUES ('$subject_name', '$grade_level')";
     if ($conn->query($sql)) {
+        $subject_id = $conn->insert_id;
+        log_activity('Added Subject', $subject_id);
         echo "<script>alert('Subject added successfully!');</script>";
     } else {
         echo "<script>alert('Error adding subject: " . $conn->error . "');</script>";
@@ -30,23 +33,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_subject'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_subject'])) {
     $subject_id = $conn->real_escape_string($_POST['subject_id']);
     
-    // Start transaction
-    $conn->begin_transaction();
-    
-    try {
-        // First delete from teacher_subjects
-        $sql1 = "DELETE FROM teacher_subjects WHERE subject_id = '$subject_id'";
-        $conn->query($sql1);
+    // First check if subject exists
+    $subjectCheck = $conn->query("SELECT subject_id FROM subjects WHERE subject_id = '$subject_id'");
+    if ($subjectCheck->num_rows == 0) {
+        echo "<script>alert('Error: Subject does not exist!');</script>";
+    } else {
+        // Start transaction
+        $conn->begin_transaction();
         
-        // Then delete the subject
-        $sql2 = "DELETE FROM subjects WHERE subject_id = '$subject_id'";
-        $conn->query($sql2);
-        
-        $conn->commit();
-        echo "<script>alert('Subject deleted successfully!');</script>";
-    } catch (Exception $e) {
-        $conn->rollback();
-        echo "<script>alert('Error deleting subject: " . $conn->error . "');</script>";
+        try {
+            // First, delete any logs that reference this subject
+            $sql_logs = "DELETE FROM user_logs WHERE affected_user_id = '$subject_id'";
+            $conn->query($sql_logs);
+            
+            // Next delete from teacher_subjects
+            $sql1 = "DELETE FROM teacher_subjects WHERE subject_id = '$subject_id'";
+            $conn->query($sql1);
+            
+            // Then delete the subject
+            $sql2 = "DELETE FROM subjects WHERE subject_id = '$subject_id'";
+            $conn->query($sql2);
+            
+            log_activity('Deleted Subject', $subject_id);
+            $conn->commit();
+            echo "<script>alert('Subject deleted successfully!');</script>";
+        } catch (Exception $e) {
+            $conn->rollback();
+            // Log the error for debugging
+            error_log("Error deleting subject ID $subject_id: " . $e->getMessage());
+            echo "<script>alert('Error deleting subject: " . $e->getMessage() . "');</script>";
+        }
     }
 }
 
@@ -55,16 +71,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_subject'])) {
     $teacher_id = $conn->real_escape_string($_POST['teacher_id']);
     $subject_id = $conn->real_escape_string($_POST['subject_id']);
     
+    // First, verify both teacher and subject exist
+    $teacherCheck = $conn->query("SELECT user_id FROM users WHERE user_id = '$teacher_id' AND role_id = 3");
+    $subjectCheck = $conn->query("SELECT subject_id FROM subjects WHERE subject_id = '$subject_id'");
+    
+    if ($teacherCheck->num_rows == 0) {
+        echo "<script>alert('Error: Teacher does not exist!');</script>";
+    } 
+    else if ($subjectCheck->num_rows == 0) {
+        echo "<script>alert('Error: Subject does not exist!');</script>";
+    }
     // Check if assignment already exists
-    $check = $conn->query("SELECT * FROM teacher_subjects WHERE teacher_id = '$teacher_id' AND subject_id = '$subject_id'");
-    if ($check->num_rows > 0) {
-        echo "<script>alert('This teacher is already assigned to this subject!');</script>";
-    } else {
-        $sql = "INSERT INTO teacher_subjects (teacher_id, subject_id) VALUES ('$teacher_id', '$subject_id')";
-        if ($conn->query($sql)) {
-            echo "<script>alert('Subject assigned successfully!');</script>";
+    else {
+        $check = $conn->query("SELECT * FROM teacher_subjects WHERE teacher_id = '$teacher_id' AND subject_id = '$subject_id'");
+        if ($check->num_rows > 0) {
+            echo "<script>alert('This teacher is already assigned to this subject!');</script>";
         } else {
-            echo "<script>alert('Error assigning subject: " . $conn->error . "');</script>";
+            $sql = "INSERT INTO teacher_subjects (teacher_id, subject_id) VALUES ('$teacher_id', '$subject_id')";
+            if ($conn->query($sql)) {
+                log_activity('Assigned Subject to Teacher', $teacher_id);
+                echo "<script>alert('Subject assigned successfully!');</script>";
+            } else {
+                echo "<script>alert('Error assigning subject: " . $conn->error . "');</script>";
+            }
         }
     }
 }
@@ -248,7 +277,10 @@ $subjects = $conn->query($subjectQuery);
                 echo "<td>Grade " . htmlspecialchars($row['grade_level']) . "</td>";
                 echo "<td>" . ($row['teachers'] ? htmlspecialchars($row['teachers']) : 'No teacher assigned') . "</td>";
                 echo "<td class='action-btns'>
-                        <button onclick=\"deleteSubject(" . $row['subject_id'] . ")\" class='delete-btn'>Delete</button>
+                        <form method='POST' style='display:inline;'>
+                            <input type='hidden' name='subject_id' value='" . $row['subject_id'] . "'>
+                            <button type='button' onclick=\"deleteSubject(" . $row['subject_id'] . ")\" class='delete-btn'>Delete</button>
+                        </form>
                       </td>";
                 echo "</tr>";
             }
@@ -265,6 +297,12 @@ $subjects = $conn->query($subjectQuery);
         
 
     </section>
+
+    <!-- Hidden form for subject deletion -->
+    <form id="deleteSubjectForm" method="POST" style="display:none;">
+        <input type="hidden" name="subject_id" id="delete_subject_id">
+        <input type="hidden" name="delete_subject" value="1">
+    </form>
 
     <script src="staff-subjman.js"></script>
 

@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once 'log_activity.php';
 // Redirect to login if session is missing or expired
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['role_id'] != 2) {
     header('Location: staff-login.php');
@@ -115,6 +116,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
             $sql = "INSERT INTO users (first_name, last_name, username, email, password, role_id) 
                     VALUES ('$fname', '$lname', '$username', '$email', '$password', $role_id)";
             if ($conn->query($sql)) {
+                log_activity('Added Teacher', $conn->insert_id);
                 echo "<script>alert('Teacher added successfully!'); window.location.href=window.location.pathname;</script>";
                 exit;
             } else {
@@ -134,11 +136,19 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
             // First delete from teacher_subjects
             $sql_subjects = "DELETE FROM teacher_subjects WHERE teacher_id = '$user_id'";
             $conn->query($sql_subjects);
-            
+
+            // Delete logs where user is user_id
+            $sql_logs1 = "DELETE FROM user_logs WHERE user_id = '$user_id'";
+            $conn->query($sql_logs1);
+
+            // Delete logs where user is affected_user_id
+            $sql_logs2 = "DELETE FROM user_logs WHERE affected_user_id = '$user_id'";
+            $conn->query($sql_logs2);
+
             // Then delete the user
             $sql_user = "DELETE FROM users WHERE user_id = '$user_id'";
             $conn->query($sql_user);
-            
+            log_activity('Deleted User', $user_id);
             // If we get here, commit the transaction
             $conn->commit();
             echo "<script>alert('User deleted successfully!'); window.location.href=window.location.pathname;</script>";
@@ -184,6 +194,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
                     WHERE user_id = '$user_id'";
             
             if ($conn->query($sql)) {
+                log_activity('Edited User', $user_id);
                 echo "<script>alert('User updated successfully!'); window.location.href=window.location.pathname;</script>";
                 exit;
             } else {
@@ -289,6 +300,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
             $sql = "INSERT INTO users (first_name, last_name, username, email, password, role_id, grade_level) 
                     VALUES ('$fname', '$lname', '$username', '$email', '$password', $role_id, '$grade')";
             if ($conn->query($sql)) {
+                log_activity('Added Student', $conn->insert_id);
                 echo "<script>alert('Student added successfully!'); window.location.href=window.location.pathname;</script>";
                 exit;
             } else {

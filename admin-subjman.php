@@ -1,4 +1,6 @@
 <?php
+session_start();
+require_once 'log_activity.php';
 // Database connection
 $conn = new mysqli('localhost', 'root', '', 'lars_db');
 if ($conn->connect_error) {
@@ -15,6 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_subject'])) {
             WHERE subject_id = '$subject_id'";
     
     if ($conn->query($sql)) {
+        log_activity('Edited Subject', $subject_id);
         echo "<script>alert('Subject updated successfully!');</script>";
     } else {
         echo "<script>alert('Error updating subject: " . $conn->error . "');</script>";
@@ -37,8 +40,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_subject'])) {
         $sql2 = "DELETE FROM subjects WHERE subject_id = '$subject_id'";
         $conn->query($sql2);
         
-        $conn->commit();
-        echo "<script>alert('Subject deleted successfully!');</script>";
+    $conn->commit();
+    log_activity('Deleted Subject', $subject_id);
+    echo "<script>alert('Subject deleted successfully!');</script>";
     } catch (Exception $e) {
         $conn->rollback();
         echo "<script>alert('Error deleting subject: " . $conn->error . "');</script>";

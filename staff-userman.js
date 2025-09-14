@@ -95,25 +95,32 @@ async function openEditModal(userType, userId) {
 
 // Function to delete a user
 function deleteUser(userType, userId) {
-    // Create a form to submit the delete request
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.style.display = 'none';
+    if (confirm('Are you sure you want to delete this user?')) {
+        try {
+            // Create a form to submit the delete request
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.style.display = 'none';
 
-    const userIdInput = document.createElement('input');
-    userIdInput.type = 'hidden';
-    userIdInput.name = 'user_id';
-    userIdInput.value = userId;
+            const userIdInput = document.createElement('input');
+            userIdInput.type = 'hidden';
+            userIdInput.name = 'user_id';
+            userIdInput.value = userId;
 
-    const submitInput = document.createElement('input');
-    submitInput.type = 'hidden';
-    submitInput.name = 'delete_user';
-    submitInput.value = '1';
+            const submitInput = document.createElement('input');
+            submitInput.type = 'hidden';
+            submitInput.name = 'delete_user';
+            submitInput.value = '1';
 
-    form.appendChild(userIdInput);
-    form.appendChild(submitInput);
-    document.body.appendChild(form);
-    form.submit();
+            form.appendChild(userIdInput);
+            form.appendChild(submitInput);
+            document.body.appendChild(form);
+            form.submit();
+        } catch (error) {
+            console.error("Error submitting delete form:", error);
+            alert("Error trying to delete user. Please try again.");
+        }
+    }
 }
 
 // Close modals when clicking outside

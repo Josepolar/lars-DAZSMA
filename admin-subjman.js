@@ -41,12 +41,12 @@ function deleteSubject(subjectId) {
             if (response.ok) {
                 window.location.reload();
             } else {
-                throw new Error('Network response was not ok');
+                throw new Error('Network response was not ok. Status: ' + response.status);
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Error deleting subject');
+            alert('Error deleting subject: ' + error.message);
         });
     }
 }
