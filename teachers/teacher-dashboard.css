@@ -1,0 +1,427 @@
+/* Existing CSS */
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,200&display=swap');
+
+* {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --body-color: #f1f1f1;
+    --sidebar-color: #FFF;
+    --primary-color: #fff;
+    --secondary-color: #000;
+    --second-background: #181818;
+    --accent-color: #004b9c;
+    --seond-accent-color: #004b9c;
+
+    --tran-02: all 0.2s ease;
+    --tran-03: all 0.3s ease;
+    --tran-04: all 0.4s ease;
+    --tran-05: all 0.5s ease;
+}
+
+body {
+    height: 100vh;
+    justify-content: center;
+    align-items: center;
+    background: var(--body-color);
+    transition: var(--tran-05);
+}
+
+/* ===== Sidebar ===== */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 250px;
+    padding: 10px 14px;
+    background: var(--sidebar-color);
+    transition: var(--tran-05);
+    z-index: 100;
+}
+
+/* ===== Reusable CSS ===== */
+.sidebar .image {
+    min-width: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sidebar li {
+    height: 50px;
+    margin-top: 10px;
+    list-style: none;
+    display: flex;
+    align-items: center;
+}
+
+.sidebar li .icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 60px;
+    font-size: 20px;
+}
+
+/* Styles for tab links */
+.tablinks {
+    display: flex;
+    align-items: center;
+    color: var(--text-color);
+    background: transparent;
+    border: none;
+    outline: none;
+    padding: 10px 1px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background var(--tran-02), color var(--tran-02);
+    width: 250px;
+    height: 50px;
+    border-radius: 8px;
+}
+
+.tablinks:hover {
+    background: var(--accent-color);
+    color: var(--primary-color);
+}
+
+.sidebar header {
+    position: relative;
+}
+
+.sidebar .image-text img {
+    width: 40px;
+    border-radius: 6px;
+}
+
+.sidebar header .image-text {
+    display: flex;
+    align-items: center;
+}
+
+header .image-text .header-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.header-text .name {
+    font-weight: 600;
+}
+
+.header-text .profession {
+    margin-top: -2px;
+}
+
+.sidebar .menu {
+    margin-top: -15px;
+}
+
+.sidebar li a {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    border-radius: 6px;
+    padding-left: 30px;
+}
+
+.sidebar li a:hover {
+    background: var(--accent-color);
+}
+
+.sidebar .menu-bar {
+    height: calc(100% - 50px);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* ===== MAIN BODY CSS ===== */
+.home {
+    position: relative;
+    height: 100vh;
+    left: 250px;
+    width: calc(100% - 250px);
+    transition: var(--tran-05);
+    background: var(--body-color);
+}
+
+.home .text {
+    font-size: 30px;
+    font-weight: bold;
+    color: black;
+}
+
+/* Tab Content */
+.tab-content {
+    background-color: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    max-width: 93%;
+}
+
+/* Style for form labels */
+.tab-content label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+/* Style for form inputs */
+.tab-content input[type="number"],
+.tab-content input[type="text"] {
+    width: calc(100% - 16px);
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 16px;
+}
+
+/* Style for the submit button */
+.tab-content input[type="submit"] {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.tab-content input[type="submit"]:hover {
+    background-color: #2232a8;
+}
+
+.tab-content h3 {
+    font-size: 30px;
+    font-weight: bold;
+    color: black;
+}
+
+hr {
+    border: none;
+    height: 1px;
+    background-color: #ccc;
+    margin: 20px 0;
+}
+
+.bottom-content .nav-link {
+    margin-top: -100px;
+}
+
+.stats-container {
+    display: flex; /* Use flexbox for layout */
+    justify-content: space-between; /* Space out the items */
+    margin: 20px 20px; /* Margin for spacing */
+    
+    position: relative;
+    flex-wrap: wrap;
+}
+
+.stat {
+    display: flex; /* Use flexbox for the stat item */
+    color: black;
+    justify-content: space-between; /* Space content between the text and icon */
+    align-items: center; /* Center items vertically */
+    background-color: #fff; /* Background color for each stat */
+    border-radius: 8px; /* Rounded corners */
+    padding: 20px; /* Padding for inner spacing */
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); /* Shadow effect */
+    transition: background 0.5s ease; /* Smooth transition for background color */
+    flex: 1; /* Flex-grow to take equal space */
+    margin: 0 10px; /* Margin between each stat */
+    position: relative;
+    overflow: hidden;
+    width: calc(33.33% - 10px); /* Adjust the width as needed */
+}
+
+.stat-content {
+    text-align: left; /* Align text to the left */
+    z-index: 1; /* Keep the content on top of the gradient */
+    position: relative; /* Keep content positioning relative */
+}
+
+.stat::after {
+    content: ""; /* Empty content for the overlay */
+    position: absolute;
+    top: 0;
+    left: -100%; /* Start off-screen to the left */
+    height: 100%; /* Full height of the container */
+    width: 100%; /* Full width of the container */
+    background: linear-gradient(to right, var(--accent-color), transparent); /* Gradient from color to transparent */
+    transition: left 0.5s; /* Transition effect */
+    z-index: 0; /* Behind the content */
+}
+
+.stat:hover::after {
+    left: 0; /* Move the gradient in on hover */
+}
+
+.stat-content h1 {
+    font-size: 40px; /* Big font size for the count */
+    margin: 0; /* Remove default margin */
+}
+
+.stat-content h3 {
+    font-size: 18px; /* Font size for the label */
+    margin: 5px 0 0 0; /* Space above and remove bottom margin */
+}
+
+.icons {
+    font-size: 40px; /* Adjust size of the icon */
+    color: var(--primary-color); /* Optional: Change icon color */
+}
+
+/* Change text color on hover */
+.stat:hover .stat-content h3,
+.stat:hover .stat-content h1 {
+    color: white; /* Change text color to white on hover */
+}
+
+/* ---------------------- CHARTS */
+.charts-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 20px;
+    justify-content: center;
+    margin: 0 auto;
+    max-width: 1400px;
+}
+
+.chart-card {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+    padding: 20px;
+    width: calc(50% - 20px);
+    min-width: 300px;
+    height: 400px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.chart-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0px 5px 15px rgba(0,0,0,0.2);
+}
+
+.chart-card h3 {
+    color: #333;
+    margin-bottom: 15px;
+    text-align: center;
+    font-size: 1.2em;
+    font-weight: 600;
+}
+
+canvas {
+    width: 100% !important;
+    height: calc(100% - 50px) !important;
+}
+
+.table_responsive h1{
+    text-align: center;
+}
+
+table{
+    width: 100%;
+    font-size: 13px;
+    text-align: center;
+    color: #444;
+    white-space: nowrap;
+    border-collapse: collapse;
+}
+
+table>thead{
+    background-color: var(--accent-color);
+    color: #fff;
+}
+
+table>thead th{
+    padding: 15px;
+    width: auto;
+}
+
+table th {
+    width: auto; /* Keeps the column width intact */
+}
+
+table th,
+table td{
+    border: 1px solid #00000017;
+    padding: 10px 15px;
+    position: relative;
+}
+
+td-wrapper{
+    position: relative;
+}
+
+.action_btn{
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.action_btn>a{
+    text-decoration: none;
+    color: #444;
+    background: #fff;
+    border: 1px solid;
+    display: inline-block;
+    padding: 7px 20px;
+    font-weight: bold;
+    border-radius: 3px;
+    transition: 0.3s ease-in-out;
+}
+
+.action_btn>a:nth-child(1){
+    border-color: #081152;
+}
+
+.action_btn>a:nth-child(2){
+    border-color: red;
+}
+
+.action_btn>a:hover{
+    box-shadow: 0 3px 8px #0003;
+}
+
+table>tbody>tr{
+    background-color: #fff;
+    transition: 0.3s ease-in-out;
+}
+
+table>tbody>tr:hover{
+    filter: drop-shadow(0px 2px 6px #0002);
+}
+
+
+.table-container {
+    display: flex; /* Use flexbox for the stat item */
+    color: black;
+    justify-content: space-between; /* Space content between the text and icon */
+    position: relative;
+    flex-wrap: wrap;
+    align-items: center; /* Center items vertically */
+    background-color: #fff; /* Background color for each stat */
+    border-radius: 8px; /* Rounded corners */
+    padding: 10px; /* Padding for inner spacing */
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); /* Shadow effect */
+    transition: background 0.5s ease; /* Smooth transition for background color */
+    margin: 0 auto; /* Margin between each stat */
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+    width: 90%;
+    box-sizing: border-box;
+}
+
