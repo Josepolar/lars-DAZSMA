@@ -1,10 +1,20 @@
-    <!DOCTYPE html>
+    <?php
+session_start();
+
+// Redirect to login if session is missing or expired
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['role_id'] != 4) {
+    header('Location: stud-login.php');
+    exit();
+}
+?>
+<!DOCTYPE html>
     <html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Student Dashboard</title>
+        <title>Student Dashboard - LARS</title>
         <link rel="stylesheet" href="student-home.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     </head>
     <body>
         <!-- NAVBAR -->
@@ -13,9 +23,9 @@
         <img src="assets/lars.png" alt="Logo">
     </div>
         <div class="profile">
-            <img src="profile.jpg" alt="Profile Picture" class="profile-pic">
+            <img src="assets/dazsma.png" alt="Profile Picture" class="profile-pic">
             <div class="profile-info">
-                <div class="profile-name">John Doe</div>
+                <div class="profile-name" id="profileName">Loading...</div>
                 <div class="profile-status online">Online</div>
             </div>
         </div>
@@ -23,7 +33,8 @@
                     <button class="dropbtn">☰</button>
                     <div class="dropdown-content">
                         <a href="student-viewprof.php">View Profile</a>
-                        <a href="#">Settings</a>
+                        <a href="student-activities.php">Activities</a>
+                        <a href="logout.php">Logout</a>
                     </div>
                 </div>
     </nav>
@@ -36,35 +47,57 @@
 <!-- ======== PROFILE STATISTICS ======== -->
 <div class="box scrollable" id="box1">
     <div class="profile-stats">
-        <h3 class="student-name">FNAME</h3>
-        <p class="student-section">SECTION NAME</p>
+        <h3 class="student-name" id="studentName">Loading...</h3>
+        <p class="student-section" id="studentSection">Grade Loading...</p>
         
         <!-- Rewards (clickable) -->
         <div class="rewards">
-            <button id="rewardsBtn">Rewards</button>
+            <button id="rewardsBtn">Achievements</button>
         </div>
 
         <!-- Total points -->
         <div class="total-points">
             <span class="label">Total Points:</span>
-            <span class="points">1200</span>
+            <span class="points" id="totalPoints">0</span>
+        </div>
+        
+        <!-- Completion Rate -->
+        <div class="completion-rate">
+            <span class="label">Completion:</span>
+            <span class="rate" id="completionRate">0%</span>
         </div>
     </div>
 </div>
 
-<!-- ===== Modal for Rewards ===== -->
+<!-- ===== Modal for Achievements ===== -->
 <div id="rewardsModal" class="modal">
     <div class="modal-content">
         <span class="close">&times;</span>
-        <h3>My Rewards</h3>
+        <h3>My Achievements</h3>
         <hr> 
         <br>
-        <ul class="rewards-list">
-            <li>Reward 1 <span class="status claimed">Claimed</span></li>
-            <li>Reward 2 <span class="status not-claimed">Not Yet Claimed</span></li>
-            <li>Reward 3 <span class="status claimed">Claimed</span></li>
-            <li>Reward 4 <span class="status not-claimed">Not Yet Claimed</span></li>
-        </ul>
+        <div id="achievementsList">
+            <div class="achievement-item">
+                <i class="fas fa-trophy" style="color: gold;"></i>
+                <span>First Activity Completed</span>
+                <span class="status" id="firstActivityStatus">Not Yet Earned</span>
+            </div>
+            <div class="achievement-item">
+                <i class="fas fa-star" style="color: silver;"></i>
+                <span>Perfect Score Achievement</span>
+                <span class="status" id="perfectScoreStatus">Not Yet Earned</span>
+            </div>
+            <div class="achievement-item">
+                <i class="fas fa-medal" style="color: bronze;"></i>
+                <span>Active Learner (5+ Activities)</span>
+                <span class="status" id="activeLearnerStatus">Not Yet Earned</span>
+            </div>
+            <div class="achievement-item">
+                <i class="fas fa-fire" style="color: orange;"></i>
+                <span>Streak Master (3 in a row)</span>
+                <span class="status" id="streakMasterStatus">Not Yet Earned</span>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -74,50 +107,27 @@
 <!-- ======== LIST OF SUBJECTS AND THEIR ACTIVE RECITS ======== -->
 <div class="box scrollable" id="box2">
     <div class="active-recits">
-        <h3 class="active-recits">Active Recits</h3>
-        <ul class="subject-list">
-            <li>
-                <span class="subject-name">Math</span>
-                <span class="recit-count">2</span>
-                <button class="eye-btn" data-subject="Math">👁</button>
-            </li>
-            <li>
-                <span class="subject-name">Science</span>
-                <span class="recit-count">3</span>
-                <button class="eye-btn" data-subject="Science">👁</button>
-            </li>
-            <li>
-                <span class="subject-name">English</span>
-                <span class="recit-count">1</span>
-                <button class="eye-btn" data-subject="English">👁</button>
-            </li>
-            <li>
-                <span class="subject-name">English</span>
-                <span class="recit-count">1</span>
-                <button class="eye-btn" data-subject="English">👁</button>
-            </li>
-            <li>
-                <span class="subject-name">English</span>
-                <span class="recit-count">1</span>
-                <button class="eye-btn" data-subject="English">👁</button>
-            </li>
-            <li>
-                <span class="subject-name">English</span>
-                <span class="recit-count">1</span>
-                <button class="eye-btn" data-subject="English">👁</button>
-            </li>
+        <h3 class="active-recits">Active Activities</h3>
+        <div id="loadingSubjects" class="loading-indicator">
+            <i class="fas fa-spinner fa-spin"></i> Loading subjects...
+        </div>
+        <ul class="subject-list" id="subjectsList" style="display: none;">
+            <!-- Subjects will be populated dynamically -->
         </ul>
     </div>
 </div>
 
-<!-- ===== Modal for Recits ===== -->
+<!-- ===== Modal for Activities ===== -->
 <div id="recitsModal" class="recits">
     <div class="modal-content">
         <span class="close">&times;</span>
-        <h3 id="modal-subject-title">Recitations</h3>
+        <h3 id="modal-subject-title">Activities</h3>
         <hr>
-        <ul class="recits-list">
-            <!-- Recitations will be dynamically inserted here -->
+        <div id="loadingActivities" class="loading-indicator">
+            <i class="fas fa-spinner fa-spin"></i> Loading activities...
+        </div>
+        <ul class="recits-list" id="activitiesList" style="display: none;">
+            <!-- Activities will be dynamically inserted here -->
         </ul>
     </div>
 </div>
@@ -128,10 +138,16 @@
 <!-- ======== RECITATION OF THE DAY ======== -->
 <div class="box" id="box3">
     <div class="recit-day">
-        <h3 class="recit-rotd">RECITATION OF THE DAY!</h3>
-        <h3 class="recit-subject">Math</h3>
-        <p class="recit-recitation">Algebra Recitation</p>
-        <button class="take-now-btn">Take Now</button>
+        <h3 class="recit-rotd">ACTIVITY OF THE DAY!</h3>
+        <div id="loadingActivityOfDay" class="loading-indicator">
+            <i class="fas fa-spinner fa-spin"></i> Loading...
+        </div>
+        <div id="activityOfDayContent" style="display: none;">
+            <h3 class="recit-subject" id="activitySubject">No Activity</h3>
+            <p class="recit-recitation" id="activityTitle">No active activities</p>
+            <p class="activity-details" id="activityDetails">Check back later</p>
+            <button class="take-now-btn" id="takeActivityBtn" style="display: none;">Take Now</button>
+        </div>
     </div>
 </div>
 
@@ -140,61 +156,12 @@
             </div> <!-- DASHBOARD END DIV -->
 
             <div class="center-column">
-                <!-- ======== RECIT BOXES ======== -->
-<div class="detailed-recits">
-    <div class="box recit-box">
-        <h3 class="recit-subject">Math</h3>
-        <p class="recit-teacher">Teacher: Mr. Smith</p>
-        <p class="recit-name">Recitation: Algebra Basics</p>
-        <p class="recit-deadline">Deadline: Sept 20, 2025</p>
-        <p class="recit-items">Total Items: 5 items - 10 points</p>
-        <button class="take-now">Take Now</button>
+                <!-- ======== RECENT ACTIVITIES ======== -->
+<div class="detailed-recits" id="detailedActivities">
+    <div id="loadingDetailedActivities" class="loading-indicator">
+        <i class="fas fa-spinner fa-spin"></i> Loading recent activities...
     </div>
-
-    <div class="box recit-box">
-        <h3 class="recit-subject">Science</h3>
-        <p class="recit-teacher">Teacher: Ms. Johnson</p>
-        <p class="recit-name">Recitation: Photosynthesis</p>
-        <p class="recit-deadline">Deadline: Sept 21, 2025</p>
-        <p class="recit-items">Total Items: 10 items - 20 points</p>
-        <button class="take-now">Take Now</button>
-    </div>
-
-    <div class="box recit-box">
-        <h3 class="recit-subject">English</h3>
-        <p class="recit-teacher">Teacher: Mr. Brown</p>
-        <p class="recit-name">Recitation: Grammar Review</p>
-        <p class="recit-deadline">Deadline: Sept 22, 2025</p>
-        <p class="recit-items">Total Items: 8 items - 15 points</p>
-        <button class="take-now">Take Now</button>
-    </div>
-
-        <div class="box recit-box">
-        <h3 class="recit-subject">Math</h3>
-        <p class="recit-teacher">Teacher: Mr. Smith</p>
-        <p class="recit-name">Recitation: Algebra Basics</p>
-        <p class="recit-deadline">Deadline: Sept 20, 2025</p>
-        <p class="recit-items">Total Items: 5 items - 10 points</p>
-        <button class="take-now">Take Now</button>
-    </div>
-
-    <div class="box recit-box">
-        <h3 class="recit-subject">Science</h3>
-        <p class="recit-teacher">Teacher: Ms. Johnson</p>
-        <p class="recit-name">Recitation: Photosynthesis</p>
-        <p class="recit-deadline">Deadline: Sept 21, 2025</p>
-        <p class="recit-items">Total Items: 10 items - 20 points</p>
-        <button class="take-now">Take Now</button>
-    </div>
-
-    <div class="box recit-box">
-        <h3 class="recit-subject">English</h3>
-        <p class="recit-teacher">Teacher: Mr. Brown</p>
-        <p class="recit-name">Recitation: Grammar Review</p>
-        <p class="recit-deadline">Deadline: Sept 22, 2025</p>
-        <p class="recit-items">Total Items: 8 items - 15 points</p>
-        <button class="take-now">Take Now</button>
-    </div>
+    <!-- Activities will be populated dynamically -->
 </div>
 
 
@@ -205,67 +172,11 @@
     <h3>LEADERBOARDS</h3>
     <HR>
     <BR>
-    <ul class="leaderboard-list">
-        <li class="rank-1">
-            <span class="rank">#1</span>
-            <img src="profile1.jpg" alt="Student 1" class="lb-pic">
-            <span class="lb-name">Alice Johnson</span>
-            <span class="lb-points">2500 pts</span>
-        </li>
-        <li class="rank-2">
-            <span class="rank">#2</span>
-            <img src="profile2.jpg" alt="Student 2" class="lb-pic">
-            <span class="lb-name">Brian Smith</span>
-            <span class="lb-points">2200 pts</span>
-        </li>
-        <li class="rank-3">
-            <span class="rank">#3</span>
-            <img src="profile3.jpg" alt="Student 3" class="lb-pic">
-            <span class="lb-name">Charlie Davis</span>
-            <span class="lb-points">2000 pts</span>
-        </li>
-        <li>
-            <span class="rank">#4</span>
-            <img src="profile4.jpg" alt="Student 4" class="lb-pic">
-            <span class="lb-name">Diana Miller</span>
-            <span class="lb-points">1800 pts</span>
-        </li>
-        <li>
-            <span class="rank">#5</span>
-            <img src="profile5.jpg" alt="Student 5" class="lb-pic">
-            <span class="lb-name">Ethan Wilson</span>
-            <span class="lb-points">1700 pts</span>
-        </li>
-        <li>
-            <span class="rank">#6</span>
-            <img src="profile6.jpg" alt="Student 6" class="lb-pic">
-            <span class="lb-name">Fiona Clark</span>
-            <span class="lb-points">1600 pts</span>
-        </li>
-        <li>
-            <span class="rank">#7</span>
-            <img src="profile7.jpg" alt="Student 7" class="lb-pic">
-            <span class="lb-name">George Hall</span>
-            <span class="lb-points">1500 pts</span>
-        </li>
-        <li>
-            <span class="rank">#8</span>
-            <img src="profile8.jpg" alt="Student 8" class="lb-pic">
-            <span class="lb-name">Hannah Lee</span>
-            <span class="lb-points">1400 pts</span>
-        </li>
-        <li>
-            <span class="rank">#9</span>
-            <img src="profile9.jpg" alt="Student 9" class="lb-pic">
-            <span class="lb-name">Ivan Moore</span>
-            <span class="lb-points">1300 pts</span>
-        </li>
-        <li>
-            <span class="rank">#10</span>
-            <img src="profile10.jpg" alt="Student 10" class="lb-pic">
-            <span class="lb-name">Julia Scott</span>
-            <span class="lb-points">1200 pts</span>
-        </li>
+    <div id="loadingLeaderboard" class="loading-indicator">
+        <i class="fas fa-spinner fa-spin"></i> Loading leaderboard...
+    </div>
+    <ul class="leaderboard-list" id="leaderboardList" style="display: none;">
+        <!-- Leaderboard will be populated dynamically -->
     </ul>
 </div>
 
@@ -281,94 +192,38 @@
 
 
 
-<!-- ======== LIST OF SUBMITTED RECITS ======== -->
+<!-- ======== LIST OF SUBMITTED ACTIVITIES ======== -->
 <div class="box scrollable" id="box4">
     <div class="submitted-recits">
-        <h3>Submitted</h3>
+        <h3>Completed</h3>
         <div class="submitted-total-points">
             <span class="label">Points:</span>
-            <span class="points">9</span>
+            <span class="points" id="submittedPoints">0</span>
         </div>
         <hr>    
-        <ul class="submitted-list">
-            <li>
-                <span class="recit-name">Recit Name</span>
-                <span class="recit-subject">Math</span>
-            </li>
-            <li>
-                <span class="recit-name">Recit Name</span>
-                <span class="recit-subject">Science</span>
-            </li>
-            <li>
-                <span class="recit-name">Recit Name</span>
-                <span class="recit-subject">English</span>
-            </li>
-            <li>
-                <span class="recit-name">Recit Name</span>
-                <span class="recit-subject">AP</span>
-            </li>
-                        <li>
-                <span class="recit-name">Recit Name</span>
-                <span class="recit-subject">Math</span>
-            </li>
-            <li>
-                <span class="recit-name">Recit Name</span>
-                <span class="recit-subject">Science</span>
-            </li>
-            <li>
-                <span class="recit-name">Recit Name</span>
-                <span class="recit-subject">English</span>
-            </li>
-            <li>
-                <span class="recit-name">Recit Name</span>
-                <span class="recit-subject">AP</span>
-            </li>
+        <div id="loadingSubmitted" class="loading-indicator">
+            <i class="fas fa-spinner fa-spin"></i> Loading...
+        </div>
+        <ul class="submitted-list" id="submittedList" style="display: none;">
+            <!-- Submitted activities will be populated dynamically -->
         </ul>
     </div>
 </div>
 
-<!-- ======== LIST OF NOT SUBMITTED RECITS ======== -->
+<!-- ======== LIST OF PENDING ACTIVITIES ======== -->
 <div class="box scrollable" id="box5">
     <div class="not-submitted-recits">
-        <h3>Not Submitted</h3>
+        <h3>Pending</h3>
         <div class="notsubmitted-total-points">
             <span class="label">Total:</span>
-            <span class="points">9</span>
+            <span class="points" id="pendingCount">0</span>
         </div>
         <hr>
-        <ul class="notsubmitted-list">
-                       <li>
-                <span class="recit-name">Recit Name</span>
-                <span class="recit-subject">Math</span>
-            </li>
-            <li>
-                <span class="recit-name">Recit Name</span>
-                <span class="recit-subject">Science</span>
-            </li>
-            <li>
-                <span class="recit-name">Recit Name</span>
-                <span class="recit-subject">English</span>
-            </li>
-            <li>
-                <span class="recit-name">Recit Name</span>
-                <span class="recit-subject">AP</span>
-            </li>
-                        <li>
-                <span class="recit-name">Recit Name</span>
-                <span class="recit-subject">Math</span>
-            </li>
-            <li>
-                <span class="recit-name">Recit Name</span>
-                <span class="recit-subject">Science</span>
-            </li>
-            <li>
-                <span class="recit-name">Recit Name</span>
-                <span class="recit-subject">English</span>
-            </li>
-            <li>
-                <span class="recit-name">Recit Name</span>
-                <span class="recit-subject">AP</span>
-            </li>
+        <div id="loadingPending" class="loading-indicator">
+            <i class="fas fa-spinner fa-spin"></i> Loading...
+        </div>
+        <ul class="notsubmitted-list" id="pendingList" style="display: none;">
+            <!-- Pending activities will be populated dynamically -->
         </ul>
     </div>
 </div>

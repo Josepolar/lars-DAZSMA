@@ -1,4 +1,12 @@
 
+<?php
+session_start();
+// Redirect to login if session is missing or expired
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['role_id'] != 3) {
+    header('Location: teacher-login.php');
+    exit();
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,7 +15,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="teacher-acts.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <title>Teacher Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>Teacher Activities</title>
 </head>
 <body>
     <nav class="sidebar">
@@ -28,11 +37,11 @@
             <div class="menu">
                 <ul class="menu-links">
                     <li class="nav-link">
-                        <button class="tablinks" id="defaultTab"><a href="teacher-dashboard.php" class="tablinks">Dashboard</a></button>
+                        <button class="tablinks"><a href="teacher-dashboard.php" class="tablinks">Dashboard</a></button>
                     </li>
 
                     <li class="nav-link">
-                        <button class="tablinks"><a href="teacher-acts.php" class="tablinks">Activities</a></button>
+                        <button class="tablinks active"><a href="teacher-acts.php" class="tablinks">Activities</a></button>
                     </li>        
                     
                     <li class="nav-link">
@@ -43,126 +52,204 @@
             </div>
 
             <div class="bottom-content">
-            <li class="nav-link">
-                        <button class="tablinks"><a href="logout_admin.php" class="tablinks">Logout</a></button>
-                    </li>
+                <li class="nav-link">
+                    <button class="tablinks"><a href="logout.php" class="tablinks">Logout</a></button>
+                </li>
             </div>
         </div>
     </nav>
 
     <section class="home" id="home-section">
-    
+        
+        <!-- Activity Statistics -->
+        <div class="stats-container">
+            <div class="stat">
+                <div class="stat-content">
+                    <h1 id="totalActivities">0</h1>
+                    <h3>Total Activities</h3>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-tasks"></i>
+                </div>
+            </div>
 
-    <div class="stats-container">
+            <div class="stat">
+                <div class="stat-content">
+                    <h1 id="totalSubmissions">0</h1>
+                    <h3>Total Submissions</h3>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-clipboard-check"></i>
+                </div>
+            </div>
 
- <div class="stat">
-            <div class="stat-content">
-                <h1>0</h1>
-                <h3>Total Recitations</h3>
+            <div class="stat">
+                <div class="stat-content">
+                    <h1 id="avgScore">0%</h1>
+                    <h3>Average Score</h3>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
             </div>
         </div>
 
-        <div class="stat">
-            <div class="stat-content">
-                <h1>0</h1>
-                <h3>Total Activities</h3>
-            </div>
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <button class="btn btn-primary" onclick="showCreateActivityModal()">
+                <i class="fas fa-plus"></i> Create New Activity
+            </button>
+            <button class="btn btn-secondary" onclick="refreshActivities()">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
         </div>
 
-    </div>
-
-
-<div class="stats-container">
-
- <div class="stat">
-            <div class="stat-content">
-                <h1>TOP 2</h1>
-                <h3>Student Name</h3>
-            </div>
-        </div>
-
-        <div class="stat">
-            <div class="stat-content">
-                <h1>TOP 1</h1>
-                <h3>Student Name</h3>
-            </div>
-        </div>
-
-        <div class="stat">
-            <div class="stat-content">
-                <h1>TOP 3</h1>
-                <h3>Student Name</h3>
-            </div>
-        </div>
-
-    </div>
-
-
-
+        <!-- Activities Table -->
         <div class="table-container">
             <div class="table_responsive">
-                <h1>ACTIVITIES</h1>
+                <h1>MY ACTIVITIES</h1>
                 <hr>
-            
-    </div>
-
-            
-             <div class="table_responsive">
-    <table>
-    <thead>
-        <tr>
-            <th>Subject</th>
-            <th>Recitation</th>
-            <th>Total Questions</th>
-            <th>Total Points</th>
-            <th>Submissions</th>
-            <th>View</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <th>Science</th>
-            <td>Sample Recitation 1</td>
-            <td>10</td>
-            <td>100</td>
-            <td>25</td>
-            <td><button class="view-btn" onclick="window.location.href='teacher-view.php'">View</button></td>
-        </tr>
-        <tr>
-            <th>Math</th>
-            <td>Sample Recitation 2</td>
-            <td>15</td>
-            <td>150</td>
-            <td>30</td>
-            <td><button class="view-btn" onclick="window.location.href='teacher-view.php'">View</button></td>
-        </tr>
-        <tr>
-            <th>English</th>
-            <td>Sample Recitation 3</td>
-            <td>20</td>
-            <td>200</td>
-            <td>40</td>
-            <td><button class="view-btn" onclick="window.location.href='teacher-view.php'">View</button></td>
-        </tr>
-    </tbody>
-</table>
-
-</div>
-
-
-
-                <div class="table_responsive">
-                <h1></h1>
-            </div>
                 
+                <div class="table-controls">
+                    <div class="search-container">
+                        <input type="text" id="searchActivities" placeholder="Search activities..." onkeyup="filterActivities()">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <select id="filterType" onchange="filterActivities()">
+                        <option value="">All Types</option>
+                        <option value="quiz">Quiz</option>
+                        <option value="assignment">Assignment</option>
+                        <option value="recitation">Recitation</option>
+                        <option value="exam">Exam</option>
+                    </select>
+                </div>
 
-
+                <table id="activitiesTable">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Subject</th>
+                            <th>Type</th>
+                            <th>Points</th>
+                            <th>Due Date</th>
+                            <th>Submissions</th>
+                            <th>Avg Score</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="activitiesTableBody">
+                        <tr>
+                            <td colspan="9" class="loading-row">
+                                <i class="fas fa-spinner fa-spin"></i> Loading activities...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
-        
 
     </section>
 
-    <script src="teacher-dashboard.js"></script>
+    <!-- Create Activity Modal -->
+    <div id="createActivityModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-plus-circle"></i> Create New Activity</h2>
+                <span class="close" onclick="closeCreateActivityModal()">&times;</span>
+            </div>
+            <form id="createActivityForm">
+                <div class="form-section">
+                    <h3>Basic Information</h3>
+                    <div class="form-group">
+                        <label for="activityTitle">Activity Title *</label>
+                        <input type="text" id="activityTitle" name="title" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="activityDescription">Description</label>
+                        <textarea id="activityDescription" name="description" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="activitySubject">Subject *</label>
+                            <select id="activitySubject" name="subject_id" required>
+                                <option value="">Select Subject</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="activityType">Activity Type *</label>
+                            <select id="activityType" name="activity_type" required>
+                                <option value="quiz">Quiz</option>
+                                <option value="assignment">Assignment</option>
+                                <option value="recitation">Recitation</option>
+                                <option value="exam">Exam</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="totalPoints">Total Points *</label>
+                            <input type="number" id="totalPoints" name="total_points" min="1" value="100" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="timeLimit">Time Limit (minutes)</label>
+                            <input type="number" id="timeLimit" name="time_limit" min="1">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="dueDate">Due Date</label>
+                            <input type="datetime-local" id="dueDate" name="due_date">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Questions <button type="button" class="btn btn-small" onclick="addQuestion()"><i class="fas fa-plus"></i> Add Question</button></h3>
+                    <div id="questionsContainer">
+                        <!-- Questions will be added dynamically -->
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeCreateActivityModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Activity</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- View Submissions Modal -->
+    <div id="viewSubmissionsModal" class="modal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2><i class="fas fa-clipboard-list"></i> Activity Submissions</h2>
+                <span class="close" onclick="closeViewSubmissionsModal()">&times;</span>
+            </div>
+            <div id="submissionsContent">
+                <!-- Content will be loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Details Modal -->
+    <div id="activityDetailsModal" class="modal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2><i class="fas fa-info-circle"></i> Activity Details</h2>
+                <span class="close" onclick="closeActivityDetailsModal()">&times;</span>
+            </div>
+            <div id="activityDetailsContent">
+                <!-- Content will be loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <script src="teacher-acts.js"></script>
 
 </body>
 </html>

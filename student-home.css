@@ -287,12 +287,13 @@ body {
     background-color: #2078d6;
 }
 
-.total-points {
+.total-points, .completion-rate {
     font-size: 16px;
     font-weight: 500;
+    margin-bottom: 8px;
 }
 
-.total-points .label {
+.total-points .label, .completion-rate .label {
     margin-right: 100px;
     font-weight: bold;
     color: #333;
@@ -301,6 +302,84 @@ body {
 .total-points .points {
     color: #008000;
     font-weight: bold;
+}
+
+.completion-rate .rate {
+    color: #004b9c;
+    font-weight: bold;
+}
+
+/* Loading indicators */
+.loading-indicator {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-size: 14px;
+}
+
+.loading-indicator i {
+    font-size: 18px;
+    margin-bottom: 8px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Achievement styles */
+.achievement-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.achievement-item:last-child {
+    border-bottom: none;
+}
+
+.achievement-item i {
+    font-size: 18px;
+    width: 24px;
+    text-align: center;
+}
+
+.achievement-item span:nth-child(2) {
+    flex: 1;
+    font-weight: 500;
+}
+
+/* Activity status indicators */
+.activity-status {
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.activity-status.pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.activity-status.completed {
+    background: #d4edda;
+    color: #155724;
+}
+
+.deadline-overdue {
+    color: #dc3545 !important;
+    font-weight: bold;
+}
+
+.activity-details {
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
 }
 
 /* Profile Statistics Modal Styling */
