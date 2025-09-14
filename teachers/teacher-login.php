@@ -6,7 +6,7 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role_id']) && $_SESSION['rol
     exit();
 }
 
-require_once 'log_activity.php';
+require_once '../log_activity.php';
 
 $conn = new mysqli('localhost', 'root', '', 'lars_db');
 if ($conn->connect_error) {
@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <div class="password-container">
                         <input type="password" id="password" name="password" placeholder="Enter your password" required>
                         <span class="password-toggle" onclick="togglePassword()">
-                            <img src="assets/eye.png" alt="toggle password" id="toggleIcon">
+                            <img src="../assets/eye.png" alt="toggle password" id="toggleIcon">
                         </span>
                     </div>
                 </div>

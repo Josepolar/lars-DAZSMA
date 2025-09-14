@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="teacher-studs.css">
+    <link rel="stylesheet" href="studs.css">
     <title>Teachers Dashboard</title>
 </head>
 <body>
@@ -12,7 +12,7 @@
         <header>
             <div class="image-text">
                 <span class="image">
-                    <img src="assets/larslogo.png" alt="logo">
+                    <img src="../assets/larslogo.png" alt="logo">
                 </span>
 
                 <div class="text header-text">
@@ -30,11 +30,11 @@
                     </li>
 
                     <li class="nav-link">
-                        <button class="tablinks"><a href="teacher-acts.php" class="tablinks">Activities</a></button>
+                        <button class="tablinks"><a href="acts.php" class="tablinks">Activities</a></button>
                     </li>        
                     
                     <li class="nav-link">
-                        <button class="tablinks"><a href="teacher-studs.php" class="tablinks">Students</a></button>
+                        <button class="tablinks"><a href="studs.php" class="tablinks">Students</a></button>
                     </li> 
                     
                 </ul>
@@ -105,7 +105,7 @@
 
     </section>
 
-    <script src="teacher-studs.js"></script>
+    <script src="studs.js"></script>
 
 </body>
 </html>

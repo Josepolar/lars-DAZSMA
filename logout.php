@@ -24,13 +24,13 @@ session_destroy();
 
 // Redirect based on user role
 if ($role == 2) {
-    header('Location: staff/staff-login.php');
+    header('Location: staff/staff/staff-login.php');
 } elseif ($role == 3) {
-    header('Location: teachers/teacher-login.php');
+    header('Location: teachers/teachers/teacher-login.php');
 } elseif ($role == 4) {
-    header('Location: students/stud-login.php');
+    header('Location: students/students/stud-login.php');
 } elseif ($role == 1) {
-    header('Location: admin/admin-login.php');
+    header('Location: admin/admin/admin-login.php');
 } else {
     header('Location: index.php');
 }

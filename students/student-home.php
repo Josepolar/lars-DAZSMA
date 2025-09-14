@@ -3,7 +3,7 @@ session_start();
 
 // Redirect to login if session is missing or expired
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['role_id'] != 4) {
-    header('Location: stud-login.php');
+    header('Location: login.php');
     exit();
 }
 ?>
@@ -13,17 +13,17 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Student Dashboard - LARS</title>
-        <link rel="stylesheet" href="student-home.css">
+        <link rel="stylesheet" href="home.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     </head>
     <body>
         <!-- NAVBAR -->
         <nav class="navbar">
         <div class="logo">
-        <img src="assets/lars.png" alt="Logo">
+        <img src="../assets/lars.png" alt="Logo">
     </div>
         <div class="profile">
-            <img src="assets/dazsma.png" alt="Profile Picture" class="profile-pic">
+            <img src="../assets/dazsma.png" alt="Profile Picture" class="profile-pic">
             <div class="profile-info">
                 <div class="profile-name" id="profileName">Loading...</div>
                 <div class="profile-status online">Online</div>
@@ -32,9 +32,9 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
 <div class="dropdown">
                     <button class="dropbtn">☰</button>
                     <div class="dropdown-content">
-                        <a href="student-viewprof.php">View Profile</a>
-                        <a href="student-activities.php">Activities</a>
-                        <a href="logout.php">Logout</a>
+                        <a href="viewprof.php">View Profile</a>
+                        <a href="activities.php">Activities</a>
+                        <a href="../logout.php">Logout</a>
                     </div>
                 </div>
     </nav>
@@ -233,6 +233,6 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
 
         </div>
 
-        <script src="student-home.js"></script>
+        <script src="home.js"></script>
     </body>
     </html>

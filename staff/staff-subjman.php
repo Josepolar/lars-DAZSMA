@@ -4,7 +4,7 @@ require_once 'log_activity.php';
 
 // Check if user is logged in and is staff
 if (!isset($_SESSION['user_id']) || $_SESSION['role_id'] != 2) {
-    header("Location: staff-login.php");
+    header("Location: login.php");
     exit();
 }
 
@@ -112,7 +112,7 @@ $subjects = $conn->query($subjectQuery);
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="staff-subjman.css">
+    <link rel="stylesheet" href="subjman.css">
     <title>Staff Dashboard</title>
 </head>
 <body>
@@ -120,7 +120,7 @@ $subjects = $conn->query($subjectQuery);
         <header>
             <div class="image-text">
                 <span class="image">
-                    <img src="assets/larslogo.png" alt="logo">
+                    <img src="../assets/larslogo.png" alt="logo">
                 </span>
 
                 <div class="text header-text">
@@ -139,11 +139,11 @@ $subjects = $conn->query($subjectQuery);
                     </li>
 
                     <li class="nav-link">
-                        <button class="tablinks"><a href="staff-userman.php" class="tablinks">User Management</a></button>
+                        <button class="tablinks"><a href="userman.php" class="tablinks">User Management</a></button>
                     </li>        
 
                      <li class="nav-link">
-                        <button class="tablinks"><a href="staff-subjman.php" class="tablinks">Subject Management</a></button>
+                        <button class="tablinks"><a href="subjman.php" class="tablinks">Subject Management</a></button>
                     </li> 
                     
                 </ul>
@@ -151,7 +151,7 @@ $subjects = $conn->query($subjectQuery);
 
             <div class="bottom-content">
             <li class="nav-link">
-                        <button class="tablinks"><a href="logout.php" class="tablinks">Logout</a></button>
+                        <button class="tablinks"><a href="../logout.php" class="tablinks">Logout</a></button>
                     </li>
             </div>
         </div>
@@ -304,7 +304,7 @@ $subjects = $conn->query($subjectQuery);
         <input type="hidden" name="delete_subject" value="1">
     </form>
 
-    <script src="staff-subjman.js"></script>
+    <script src="subjman.js"></script>
 
 </body>
 </html>

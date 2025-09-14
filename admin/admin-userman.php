@@ -2,7 +2,7 @@
 
 session_start();
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['role_id'] != 1) {
-    header('Location: admin-login.php');
+    header('Location: login.php');
     exit();
 }
 require_once 'log_activity.php';
@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->close();
             // Log the edit action
             log_activity('Edited ' . ($type === 'user' ? 'Staff' : 'Teacher'), $user_id);
-            header('Location: admin-userman.php');
+            header('Location: userman.php');
             exit();
         }
     } else {
@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Log the add action
             log_activity(($type === 'user') ? 'Added Staff' : 'Added Teacher', $new_user_id);
 
-            header('Location: admin-userman.php');
+            header('Location: userman.php');
             exit();
         }
     }
@@ -97,7 +97,7 @@ if (isset($_GET['delete']) && isset($_GET['type'])) {
 
             // Commit the transaction
             $conn->commit();
-            header('Location: admin-userman.php');
+            header('Location: userman.php');
             exit();
         } catch (Exception $e) {
             // Rollback transaction on error
@@ -125,7 +125,7 @@ while ($row = $result->fetch_assoc()) {
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="admin-userman.css">
+    <link rel="stylesheet" href="userman.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .password-container {
@@ -168,7 +168,7 @@ while ($row = $result->fetch_assoc()) {
         <header>
             <div class="image-text">
                 <span class="image">
-                    <img src="assets/larslogo.png" alt="logo">
+                    <img src="../assets/larslogo.png" alt="logo">
                 </span>
 
                 <div class="text header-text">
@@ -187,19 +187,19 @@ while ($row = $result->fetch_assoc()) {
                     </li>
 
                     <li class="nav-link">
-                        <button class="tablinks"><a href="admin-userman.php" class="tablinks">User Management</a></button>
+                        <button class="tablinks"><a href="userman.php" class="tablinks">User Management</a></button>
                     </li>        
                     
                     <li class="nav-link">
-                        <button class="tablinks"><a href="admin-studacc.php" class="tablinks">Student Accounts</a></button>
+                        <button class="tablinks"><a href="studacc.php" class="tablinks">Student Accounts</a></button>
                     </li> 
 
                      <li class="nav-link">
-                        <button class="tablinks"><a href="admin-subjman.php" class="tablinks">Subject Management</a></button>
+                        <button class="tablinks"><a href="subjman.php" class="tablinks">Subject Management</a></button>
                     </li> 
 
                      <li class="nav-link">
-                        <button class="tablinks"><a href="admin-usrlog.php" class="tablinks">User Logs</a></button>
+                        <button class="tablinks"><a href="usrlog.php" class="tablinks">User Logs</a></button>
                     </li> 
                     
                 </ul>
@@ -207,7 +207,7 @@ while ($row = $result->fetch_assoc()) {
 
             <div class="bottom-content">
             <li class="nav-link">
-                        <button class="tablinks"><a href="logout.php" class="tablinks">Logout</a></button>
+                        <button class="tablinks"><a href="../logout.php" class="tablinks">Logout</a></button>
                     </li>
             </div>
         </div>
@@ -549,7 +549,7 @@ while ($row = $result->fetch_assoc()) {
         }
     }
     </script>
-    <script src="admin-userman.js"></script>
+    <script src="userman.js"></script>
     <script>
     function validateEmail(form) {
         const emailInput = form.querySelector('input[type="email"]');

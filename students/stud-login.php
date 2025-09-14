@@ -2,7 +2,7 @@
 session_start();
 // Redirect to dashboard if already logged in
 if (isset($_SESSION['user_id']) && isset($_SESSION['role_id']) && $_SESSION['role_id'] == 4) {
-    header('Location: student-home.php');
+    header('Location: home.php');
     exit();
 }
 $conn = new mysqli('localhost', 'root', '', 'lars_db');
@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $stmt->close();
             $conn->close();
             
-            header("Location: student-home.php");
+            header("Location: home.php");
             exit();
         } else {
             $error = 'Invalid password';
@@ -64,12 +64,12 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LARS</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="stud-login.css">
+    <link rel="stylesheet" href="login.css">
 </head>
 <body>
 <div class="login-container">
         <a href="index.php">
-            <img src="assets/lars.png" alt="LARS Logo" class="lars-img">
+            <img src="../assets/lars.png" alt="LARS Logo" class="lars-img">
         </a>
         <?php if ($error): ?>
             <div class="error-message" style="color:red; text-align:center; margin-bottom:10px;"><?php echo $error; ?></div>

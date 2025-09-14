@@ -2,7 +2,7 @@
 session_start();
 // Redirect to login if session is missing or expired
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['role_id'] != 3) {
-    header('Location: teacher-login.php');
+    header('Location: login.php');
     exit();
 }
 ?>
@@ -12,7 +12,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="teacher-dashboard.css">
+    <link rel="stylesheet" href="dashboard.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <title>Teacher Dashboard</title>
 </head>
@@ -21,7 +21,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
         <header>
             <div class="image-text">
                 <span class="image">
-                    <img src="assets/larslogo.png" alt="logo">
+                    <img src="../assets/larslogo.png" alt="logo">
                 </span>
 
                 <div class="text header-text">
@@ -39,11 +39,11 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
                     </li>
 
                     <li class="nav-link">
-                        <button class="tablinks"><a href="teacher-acts.php" class="tablinks">Activities</a></button>
+                        <button class="tablinks"><a href="acts.php" class="tablinks">Activities</a></button>
                     </li>        
                     
                     <li class="nav-link">
-                        <button class="tablinks"><a href="teacher-studs.php" class="tablinks">Students</a></button>
+                        <button class="tablinks"><a href="studs.php" class="tablinks">Students</a></button>
                     </li> 
                     
                 </ul>
@@ -97,7 +97,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
 
     </section>
 
-    <script src="teacher-dashboard.js"></script>
+    <script src="dashboard.js"></script>
 
 </body>
 </html>

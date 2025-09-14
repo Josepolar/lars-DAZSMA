@@ -3,7 +3,7 @@ session_start();
 
 // Check if user is logged in and is staff
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['role_id'] != 2) {
-    header("Location: staff-login.php");
+    header("Location: login.php");
     exit();
 }
 
@@ -33,7 +33,7 @@ if ($result && $row = $result->fetch_assoc()) {
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="staff-dashboard.css">
+  <link rel="stylesheet" href="dashboard.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <title>Staff Dashboard</title>
 </head>
@@ -42,7 +42,7 @@ if ($result && $row = $result->fetch_assoc()) {
         <header>
             <div class="image-text">
                 <span class="image">
-                    <img src="assets/larslogo.png" alt="logo">
+                    <img src="../assets/larslogo.png" alt="logo">
                 </span>
 
                 <div class="text header-text">
@@ -61,11 +61,11 @@ if ($result && $row = $result->fetch_assoc()) {
                     </li>
 
                     <li class="nav-link">
-                        <button class="tablinks"><a href="staff-userman.php" class="tablinks">User Management</a></button>
+                        <button class="tablinks"><a href="userman.php" class="tablinks">User Management</a></button>
                     </li>        
 
                      <li class="nav-link">
-                        <button class="tablinks"><a href="staff-subjman.php" class="tablinks">Subject Management</a></button>
+                        <button class="tablinks"><a href="subjman.php" class="tablinks">Subject Management</a></button>
                     </li> 
                     
                 </ul>
@@ -73,7 +73,7 @@ if ($result && $row = $result->fetch_assoc()) {
 
             <div class="bottom-content">
             <li class="nav-link">
-                        <button class="tablinks"><a href="logout.php" class="tablinks">Logout</a></button>
+                        <button class="tablinks"><a href="../logout.php" class="tablinks">Logout</a></button>
                     </li>
             </div>
         </div>
@@ -170,7 +170,7 @@ if ($result && $row = $result->fetch_assoc()) {
 
     </section>
 
-    <script src="staff-dashboard.js"></script>
+    <script src="dashboard.js"></script>
 
 </body>
 </html>

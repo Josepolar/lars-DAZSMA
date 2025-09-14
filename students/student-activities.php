@@ -3,7 +3,7 @@ session_start();
 
 // Redirect to login if session is missing or expired
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['role_id'] != 4) {
-    header('Location: stud-login.php');
+    header('Location: login.php');
     exit();
 }
 ?>
@@ -13,20 +13,20 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Activities - LARS</title>
-    <link rel="stylesheet" href="student-activities.css">
+    <link rel="stylesheet" href="activities.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <!-- NAVBAR -->
     <nav class="navbar">
         <div class="logo">
-            <img src="assets/lars.png" alt="Logo">
+            <img src="../assets/lars.png" alt="Logo">
         </div>
         <div class="nav-center">
             <h2>Student Activities</h2>
         </div>
         <div class="profile">
-            <img src="assets/dazsma.png" alt="Profile Picture" class="profile-pic">
+            <img src="../assets/dazsma.png" alt="Profile Picture" class="profile-pic">
             <div class="profile-info">
                 <div class="profile-name" id="profileName">Loading...</div>
                 <div class="profile-status online">Online</div>
@@ -35,9 +35,9 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
         <div class="dropdown">
             <button class="dropbtn">☰</button>
             <div class="dropdown-content">
-                <a href="student-home.php"><i class="fas fa-home"></i> Dashboard</a>
-                <a href="student-viewprof.php"><i class="fas fa-user"></i> View Profile</a>
-                <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                <a href="home.php"><i class="fas fa-home"></i> Dashboard</a>
+                <a href="viewprof.php"><i class="fas fa-user"></i> View Profile</a>
+                <a href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
             </div>
         </div>
     </nav>
@@ -173,6 +173,6 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
         </div>
     </div>
 
-    <script src="student-activities.js"></script>
+    <script src="activities.js"></script>
 </body>
 </html>

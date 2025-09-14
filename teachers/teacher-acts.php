@@ -3,7 +3,7 @@
 session_start();
 // Redirect to login if session is missing or expired
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['role_id'] != 3) {
-    header('Location: teacher-login.php');
+    header('Location: login.php');
     exit();
 }
 ?>
@@ -13,7 +13,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="teacher-acts.css">
+    <link rel="stylesheet" href="acts.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <title>Teacher Activities</title>
@@ -23,7 +23,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
         <header>
             <div class="image-text">
                 <span class="image">
-                    <img src="assets/larslogo.png" alt="logo">
+                    <img src="../assets/larslogo.png" alt="logo">
                 </span>
 
                 <div class="text header-text">
@@ -41,11 +41,11 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
                     </li>
 
                     <li class="nav-link">
-                        <button class="tablinks active"><a href="teacher-acts.php" class="tablinks">Activities</a></button>
+                        <button class="tablinks active"><a href="acts.php" class="tablinks">Activities</a></button>
                     </li>        
                     
                     <li class="nav-link">
-                        <button class="tablinks"><a href="teacher-studs.php" class="tablinks">Students</a></button>
+                        <button class="tablinks"><a href="studs.php" class="tablinks">Students</a></button>
                     </li> 
                     
                 </ul>
@@ -53,7 +53,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
 
             <div class="bottom-content">
                 <li class="nav-link">
-                    <button class="tablinks"><a href="logout.php" class="tablinks">Logout</a></button>
+                    <button class="tablinks"><a href="../logout.php" class="tablinks">Logout</a></button>
                 </li>
             </div>
         </div>
@@ -249,7 +249,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
         </div>
     </div>
 
-    <script src="teacher-acts.js"></script>
+    <script src="acts.js"></script>
 
 </body>
 </html>
