@@ -67,18 +67,18 @@ try {
 }
 
 function handleListActivities($pdo, $student_id) {
-    // Get student's grade level
-    $gradeStmt = $pdo->prepare("SELECT grade_level FROM users WHERE user_id = ?");
-    $gradeStmt->execute([$student_id]);
-    $grade_level = $gradeStmt->fetchColumn();
-
     $status_filter = $_GET['status'] ?? 'all';
     $subject_filter = $_GET['subject'] ?? 'all';
     $type_filter = $_GET['type'] ?? 'all';
 
-    // Build WHERE conditions
+    // Get student's grade level
+    $gradeStmt = $pdo->prepare("SELECT grade_level FROM users WHERE user_id = ?");
+    $gradeStmt->execute([$student_id]);
+    $student_grade = $gradeStmt->fetchColumn();
+
+    // Build WHERE conditions - include grade level filtering
     $where_conditions = ["a.is_active = 1", "s.grade_level = ?"];
-    $params = [$student_id, $grade_level];
+    $params = [$student_id, $student_grade];
 
     if ($status_filter !== 'all') {
         switch ($status_filter) {
@@ -148,15 +148,15 @@ function handleListActivities($pdo, $student_id) {
     $stmt->execute($params);
     $activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Get available subjects for filtering
+    // Get available subjects for filtering - only show subjects for student's grade level
     $subjectStmt = $pdo->prepare("
         SELECT DISTINCT s.subject_id, s.subject_name
         FROM subjects s
         JOIN activities a ON s.subject_id = a.subject_id
-        WHERE a.is_active = 1
+        WHERE a.is_active = 1 AND s.grade_level = ?
         ORDER BY s.subject_name
     ");
-    $subjectStmt->execute();
+    $subjectStmt->execute([$student_grade]);
     $subjects = $subjectStmt->fetchAll(PDO::FETCH_ASSOC);
 
     echo json_encode([
@@ -492,6 +492,11 @@ function handleSubjectActivities($pdo, $student_id) {
         return;
     }
 
+    // Get student's grade level
+    $gradeStmt = $pdo->prepare("SELECT grade_level FROM users WHERE user_id = ?");
+    $gradeStmt->execute([$student_id]);
+    $student_grade = $gradeStmt->fetchColumn();
+
     $stmt = $pdo->prepare("
         SELECT 
             a.activity_id,
@@ -499,16 +504,18 @@ function handleSubjectActivities($pdo, $student_id) {
             a.activity_type,
             a.total_points,
             a.due_date,
+            s.grade_level,
             COALESCE(ss.submission_status, 'not_started') as submission_status,
             ss.total_score,
             ss.percentage
         FROM activities a
+        JOIN subjects s ON a.subject_id = s.subject_id
         LEFT JOIN student_submissions ss ON a.activity_id = ss.activity_id AND ss.student_id = ?
-        WHERE a.subject_id = ? AND a.is_active = 1
+        WHERE a.subject_id = ? AND a.is_active = 1 AND s.grade_level = ?
         ORDER BY a.created_at DESC
     ");
     
-    $stmt->execute([$student_id, $subject_id]);
+    $stmt->execute([$student_id, $subject_id, $student_grade]);
     $activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     echo json_encode(['activities' => $activities]);

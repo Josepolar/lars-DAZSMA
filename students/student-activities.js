@@ -95,13 +95,28 @@ async function loadActivities() {
         showLoadingState();
         
         const params = new URLSearchParams(currentFilters);
-        const response = await fetch(`../api/student_activities.php?action=list&${params}`);
+        const url = `../api/student_activities.php?action=list&${params}`;
+        console.log('Loading activities from:', url);
+        
+        const response = await fetch(url);
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        const data = await response.json();
+        const text = await response.text();
+        console.log('Raw response:', text);
+        
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (parseError) {
+            console.error('JSON parse error:', parseError);
+            console.error('Response was:', text);
+            throw new Error('Invalid JSON response from server');
+        }
+        
+        console.log('Parsed data:', data);
         
         if (data.error) {
             throw new Error(data.error);
@@ -113,7 +128,7 @@ async function loadActivities() {
         
     } catch (error) {
         console.error('Error loading activities:', error);
-        showErrorState('Failed to load activities. Please refresh the page.');
+        showErrorState('Failed to load activities: ' + error.message + '. Please refresh the page.');
     }
 }
 

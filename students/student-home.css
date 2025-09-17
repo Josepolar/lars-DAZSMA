@@ -1,4 +1,3 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,200&display=swap');
 * {
     font-family: 'Poppins', sans-serif;
@@ -8,10 +7,21 @@
 }
 
 body {
-    background-color: #f3f3f3;
+    background: url('../assets/stud-bg.png') no-repeat center center fixed;
+    background-size: cover;
+    min-height: 100vh;
     color: white;
 }
 
+/* Optionally add a semi-transparent overlay for better contrast */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(255,255,255,0.2); /* adjust for effect */
+  z-index: 0;
+  pointer-events: none;
+}
 
 .navbar {
     display: flex;
@@ -206,8 +216,10 @@ body {
 }
 
 #box9 {
-    height: 340px;
+    height: 600px;
     width: 1040px; 
+    display: block; /* Override flex for leaderboard container */
+    padding: 0; /* Remove default padding for leaderboard */
 }
 
 /*---------------------------------------- RIGHT COLUMN*/
@@ -259,17 +271,22 @@ body {
     flex-direction: column;
     color: #000;
     width: 100%;
-    padding: 20px;
+    padding: 12px 10px 12px 10px; /* less padding for compactness */
+    box-sizing: border-box;
 }
 
 .student-name {
-    font-size: 30px;
-    font-weight: bold;  
+    font-size: 22px; /* reduced from 30px */
+    font-weight: bold;
+    word-break: break-word;
+    text-align: left;
+    margin-bottom: 2px;
 }
 
 .student-section {
-    font-size: 15px;
-    margin-bottom: 10%;
+    font-size: 14px; /* reduced from 15px */
+    margin-bottom: 10px;
+    color: #444;
 }
 
 .rewards button {
@@ -757,18 +774,26 @@ body {
 
 /* Leaderboard Container */
 .leaderboard {
-    padding: 15px;
+    padding: 20px;
     color: #000;
     display: flex;
     flex-direction: column;
     height: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
 .leaderboard h3 {
-    font-size: 30px;
-    font-weight: bold;
-    margin-bottom: 10px;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 20px;
     text-align: center;
+    color: #333;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 /* Scrollable list */
@@ -778,66 +803,244 @@ body {
     padding: 0;
     overflow-y: auto;
     flex: 1;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE/Edge */
-}
-.leaderboard-list::-webkit-scrollbar {
-    display: none; /* Chrome/Safari */
+    scrollbar-width: thin;
+    scrollbar-color: #ccc #f9f9f9;
 }
 
-/* List items */
-.leaderboard-list li {
+.leaderboard-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.leaderboard-list::-webkit-scrollbar-track {
+    background: #f9f9f9;
+    border-radius: 3px;
+}
+
+.leaderboard-list::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 3px;
+}
+
+.leaderboard-list::-webkit-scrollbar-thumb:hover {
+    background: #999;
+}
+
+/* Modern leaderboard item structure */
+.leaderboard-item {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    background: #f9f9f9;
-    margin-bottom: 8px;
-    padding: 10px 12px;
+    background: #fff;
+    margin-bottom: 12px;
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid #e1e5e9;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.leaderboard-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-color: #007bff;
+}
+
+.leaderboard-item.current-student {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-color: #667eea;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.leaderboard-item.current-student .student-name,
+.leaderboard-item.current-student .student-grade,
+.leaderboard-item.current-student .points-value,
+.leaderboard-item.current-student .points-label,
+.leaderboard-item.current-student .rank-number {
+    color: white !important;
+}
+
+/* Rank number */
+.rank-number {
+    font-weight: 700;
+    font-size: 16px;
+    margin-right: 16px;
+    min-width: 35px;
+    text-align: center;
+    color: #667eea;
+    background: #f8f9ff;
+    padding: 8px;
     border-radius: 8px;
-    font-size: 15px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-
-    /* adjust width here */
-    width: 100%;         /* makes it take 95% of the container */
-    /* or */
-    min-width: 1000px;   /* forces a wider item */
 }
 
-
-.leaderboard-list li:hover {
-    transform: translateX(5px);
-    box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+/* Student avatar */
+.student-avatar {
+    margin-right: 16px;
 }
 
-/* Rank numbers */
-.rank {
-    font-weight: bold;
-    margin-right: 10px;
-    min-width: 30px;
+.lb-pic {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #e1e5e9;
+    transition: border-color 0.3s ease;
+}
+
+.leaderboard-item:hover .lb-pic {
+    border-color: #007bff;
+}
+
+.leaderboard-item.current-student .lb-pic {
+    border-color: white;
+}
+
+/* Student details */
+.student-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.student-name {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 16px;
+    margin: 0;
+}
+
+.student-grade {
+    font-size: 13px;
+    color: #7f8c8d;
+    font-weight: 400;
+}
+
+.you-badge {
+    background: #007bff;
+    color: white;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-left: 8px;
+    font-weight: 500;
+}
+
+/* Points section */
+.student-points {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 60px;
+}
+
+.points-value {
+    font-weight: 700;
+    font-size: 20px;
+    color: #667eea;
+    line-height: 1;
+}
+
+.points-label {
+    font-size: 12px;
+    color: #7f8c8d;
+    font-weight: 500;
+    margin-top: 2px;
+}
+
+.leaderboard-item.current-student .points-value {
+    color: white !important;
+}
+
+.leaderboard-item.current-student .points-label {
+    color: rgba(255,255,255,0.8) !important;
+}
+
+/* Leaderboard summary and empty state */
+.leaderboard-summary {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #e1e5e9;
+    font-size: 13px;
+    color: #7f8c8d;
     text-align: center;
 }
 
-/* Profile picture */
-.lb-pic {
-    width: 35px;
-    height: 35px;
-    border-radius: 50%;
-    margin-right: 12px;
-    object-fit: cover;
-    border: 2px solid #ddd;
+.no-leaderboard {
+    text-align: center;
+    padding: 40px 20px;
+    color: #7f8c8d;
 }
 
-/* Name and points */
-.lb-name {
-    flex: 1;
-    font-weight: 500;
-    color: #333;
+.no-leaderboard p {
+    font-size: 16px;
+    margin: 0;
 }
 
-.lb-points {
-    font-weight: bold;
-    color: #004b9c;
-    white-space: nowrap;
+/* Top 3 special styling */
+.leaderboard-item:nth-child(1) {
+    background: linear-gradient(135deg, #f7d794 0%, #f3a683 100%);
+    border-color: #f39c12;
+    color: #2c3e50;
+}
+
+.leaderboard-item:nth-child(1) .rank-number {
+    background: #f39c12;
+    color: white;
+}
+
+.leaderboard-item:nth-child(1) .student-name,
+.leaderboard-item:nth-child(1) .student-grade {
+    color: #2c3e50 !important;
+}
+
+.leaderboard-item:nth-child(1) .points-value {
+    color: #d68910 !important;
+}
+
+.leaderboard-item:nth-child(2) {
+    background: linear-gradient(135deg, #ddd6fe 0%, #c7c5ff 100%);
+    border-color: #9333ea;
+}
+
+.leaderboard-item:nth-child(2) .rank-number {
+    background: #9333ea;
+    color: white;
+}
+
+.leaderboard-item:nth-child(3) {
+    background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%);
+    border-color: #ea580c;
+}
+
+.leaderboard-item:nth-child(3) .rank-number {
+    background: #ea580c;
+    color: white;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .leaderboard-item {
+        padding: 12px;
+    }
+    
+    .lb-pic {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .student-name {
+        font-size: 14px;
+    }
+    
+    .points-value {
+        font-size: 18px;
+    }
+    
+    .rank-number {
+        min-width: 30px;
+        font-size: 14px;
+        padding: 6px;
+    }
 }
 
 /* Highlight Top 3 */

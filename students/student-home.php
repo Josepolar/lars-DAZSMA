@@ -6,6 +6,71 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
     header('Location: stud-login.php');
     exit();
 }
+
+// Database connection
+$servername = "localhost";
+$username = "root";
+$password = "";
+$dbname = "lars_db";
+
+try {
+    $pdo = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch(PDOException $e) {
+    die("Database connection failed: " . $e->getMessage());
+}
+
+// Get current student's profile information
+$profileStmt = $pdo->prepare("SELECT user_id, first_name, last_name, grade_level FROM users WHERE user_id = ? AND role_id = 4");
+$profileStmt->execute([$_SESSION['user_id']]);
+$profile = $profileStmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$profile) {
+    header('Location: stud-login.php');
+    exit();
+}
+
+// Get class leaderboard (ALL students in same grade level with points only from their grade level activities)
+$leaderboardStmt = $pdo->prepare("
+    SELECT 
+        u.user_id,
+        CONCAT(u.first_name, ' ', u.last_name) as full_name,
+        u.first_name,
+        u.last_name,
+        COALESCE(SUM(CASE WHEN ss.submission_status IN ('submitted', 'graded') AND s.grade_level = u.grade_level THEN ss.total_score ELSE 0 END), 0) as total_points,
+        COUNT(CASE WHEN ss.submission_status IN ('submitted', 'graded') AND s.grade_level = u.grade_level THEN 1 END) as completed_activities,
+        COALESCE(AVG(CASE WHEN ss.submission_status IN ('submitted', 'graded') AND s.grade_level = u.grade_level AND ss.percentage IS NOT NULL THEN ss.percentage END), 0) as avg_percentage
+    FROM users u
+    LEFT JOIN student_submissions ss ON u.user_id = ss.student_id
+    LEFT JOIN activities a ON ss.activity_id = a.activity_id
+    LEFT JOIN subjects s ON a.subject_id = s.subject_id
+    WHERE u.role_id = 4 AND u.grade_level = ?
+    GROUP BY u.user_id, u.first_name, u.last_name
+    ORDER BY total_points DESC, avg_percentage DESC
+");
+$leaderboardStmt->execute([$profile['grade_level']]);
+$leaderboard = $leaderboardStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Get current user's detailed statistics
+$userStatsStmt = $pdo->prepare("
+    SELECT 
+        COALESCE(SUM(CASE WHEN ss.submission_status IN ('submitted', 'graded') AND s.grade_level = ? THEN ss.total_score ELSE 0 END), 0) as total_points,
+        COUNT(CASE WHEN ss.submission_status IN ('submitted', 'graded') AND s.grade_level = ? THEN 1 END) as completed_activities,
+        COUNT(CASE WHEN a.activity_id IS NOT NULL AND s.grade_level = ? THEN 1 END) as total_available_activities,
+        COALESCE(AVG(CASE WHEN ss.submission_status IN ('submitted', 'graded') AND s.grade_level = ? AND ss.percentage IS NOT NULL THEN ss.percentage END), 0) as avg_percentage
+    FROM student_submissions ss
+    JOIN activities a ON ss.activity_id = a.activity_id
+    JOIN subjects s ON a.subject_id = s.subject_id
+    WHERE ss.student_id = ?
+");
+$userStatsStmt->execute([$profile['grade_level'], $profile['grade_level'], $profile['grade_level'], $profile['grade_level'], $_SESSION['user_id']]);
+$userStats = $userStatsStmt->fetch(PDO::FETCH_ASSOC);
+
+// Calculate completion rate
+$completionRate = 0;
+if ($userStats && $userStats['total_available_activities'] > 0) {
+    $completionRate = ($userStats['completed_activities'] / $userStats['total_available_activities']) * 100;
+}
 ?>
 <!DOCTYPE html>
     <html lang="en">
@@ -25,7 +90,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
         <div class="profile">
             <img src="../assets/dazsma.png" alt="Profile Picture" class="profile-pic">
             <div class="profile-info">
-                <div class="profile-name" id="profileName">Loading...</div>
+                <div class="profile-name" id="profileName"><?php echo htmlspecialchars($profile['first_name'] . ' ' . $profile['last_name']); ?></div>
                 <div class="profile-status online">Online</div>
             </div>
         </div>
@@ -47,8 +112,8 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
 <!-- ======== PROFILE STATISTICS ======== -->
 <div class="box scrollable" id="box1">
     <div class="profile-stats">
-        <h3 class="student-name" id="studentName">Loading...</h3>
-        <p class="student-section" id="studentSection">Grade Loading...</p>
+        <h3 class="student-name" id="studentName"><?php echo htmlspecialchars($profile['first_name'] . ' ' . $profile['last_name']); ?></h3>
+        <p class="student-section" id="studentSection">Grade <?php echo htmlspecialchars($profile['grade_level']); ?></p>
         
         <!-- Rewards (clickable) -->
         <div class="rewards">
@@ -58,13 +123,13 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
         <!-- Total points -->
         <div class="total-points">
             <span class="label">Total Points:</span>
-            <span class="points" id="totalPoints">0</span>
+            <span class="points" id="totalPoints"><?php echo $userStats ? number_format($userStats['total_points'], 0) : '0'; ?></span>
         </div>
         
         <!-- Completion Rate -->
         <div class="completion-rate">
             <span class="label">Completion:</span>
-            <span class="rate" id="completionRate">0%</span>
+            <span class="rate" id="completionRate"><?php echo number_format($completionRate, 1); ?>%</span>
         </div>
     </div>
 </div>
@@ -169,15 +234,55 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
         <!-- ======== LEADERBOARDS ======== -->
                 <div class="box scrollable" id="box9">
 <div class="leaderboard">
-    <h3>LEADERBOARDS</h3>
+    <h3>LEADERBOARDS - GRADE <?php echo htmlspecialchars($profile['grade_level']); ?></h3>
     <HR>
     <BR>
-    <div id="loadingLeaderboard" class="loading-indicator">
-        <i class="fas fa-spinner fa-spin"></i> Loading leaderboard...
-    </div>
-    <ul class="leaderboard-list" id="leaderboardList" style="display: none;">
-        <!-- Leaderboard will be populated dynamically -->
-    </ul>
+    
+    <?php if (!empty($leaderboard)): ?>
+        <ul class="leaderboard-list" id="leaderboardList">
+            <?php foreach ($leaderboard as $index => $student): ?>
+                <?php 
+                $rank = $index + 1;
+                $isCurrentStudent = ($student['user_id'] == $_SESSION['user_id']);
+                $highlightClass = $isCurrentStudent ? 'current-student' : '';
+                ?>
+                <li class="leaderboard-item <?php echo $highlightClass; ?>">
+                    <div class="rank-number">#<?php echo $rank; ?></div>
+                    <div class="student-avatar">
+                        <img src="../assets/dazsma.png" alt="Avatar" class="lb-pic">
+                    </div>
+                    <div class="student-details">
+                        <div class="student-name">
+                            <?php echo htmlspecialchars($student['full_name']); ?>
+                            <?php if ($isCurrentStudent): ?>
+                                <span class="you-badge">(You)</span>
+                            <?php endif; ?>
+                        </div>
+                        <div class="student-grade">Grade <?php echo htmlspecialchars($profile['grade_level']); ?></div>
+                    </div>
+                    <div class="student-points">
+                        <div class="points-value"><?php echo number_format($student['total_points'], 0); ?></div>
+                        <div class="points-label">pts</div>
+                    </div>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+        
+        <div class="leaderboard-summary">
+            <p><strong>Total students in Grade <?php echo $profile['grade_level']; ?>: <?php echo count($leaderboard); ?></strong></p>
+            <?php 
+            $zeroPointStudents = array_filter($leaderboard, function($student) {
+                return $student['total_points'] == 0;
+            });
+            ?>
+            <p>Students with activities completed: <?php echo count($leaderboard) - count($zeroPointStudents); ?></p>
+        </div>
+        
+    <?php else: ?>
+        <div class="no-leaderboard">
+            <p>No students found in your grade level.</p>
+        </div>
+    <?php endif; ?>
 </div>
 
                 </div>
@@ -198,7 +303,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
         <h3>Completed</h3>
         <div class="submitted-total-points">
             <span class="label">Points:</span>
-            <span class="points" id="submittedPoints">0</span>
+            <span class="points" id="submittedPoints"><?php echo $userStats ? number_format($userStats['total_points'], 0) : '0'; ?></span>
         </div>
         <hr>    
         <div id="loadingSubmitted" class="loading-indicator">

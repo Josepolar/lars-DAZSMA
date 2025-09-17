@@ -63,41 +63,144 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
         <div class="stat">
             <div class="stat-content">
                 <h1>W E L C O M E !</h1>
-                <h3>Name of Teacher</h3>
+                <h3 id="teacher-name">Loading...</h3>
             </div>
         </div>
 
         <div class="stat">
             <div class="stat-content">
-                <h1>0</h1>
+                <h1 id="total-students">0</h1>
                 <h3>Total Students</h3>
             </div>
         </div>
-
     </div>
 
 
-        <div class="charts-container">
-            <!-- User Distribution Chart -->
-            <div class="chart-card">
-                <h3>User Distribution</h3>
-            </div>
-
-            <!-- Grade Level Distribution -->
-            <div class="chart-card">
-                <h3>Student Grade Distribution</h3>
-            </div>
-
-            <!-- Recent Activity Chart -->
-            <div class="chart-card">
-                <h3>User Activity</h3>
-            </div>
+    <div class="charts-container">
+        <!-- User Distribution Chart -->
+        <div class="chart-card">
+            <h3>User Distribution</h3>
+            <canvas id="userDistributionChart"></canvas>
         </div>
+
+        <!-- Grade Level Distribution -->
+        <div class="chart-card">
+            <h3>Student Grade Distribution</h3>
+            <canvas id="gradeDistributionChart"></canvas>
+        </div>
+
+        <!-- Recent Activity Chart (placeholder) -->
+        <div class="chart-card">
+            <h3>User Activity</h3>
+            <div style="text-align:center; color:#aaa;">Coming soon</div>
+        </div>
+    </div>
 
 
     </section>
 
-    <script src="teacher-dashboard.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+    // Fetch teacher dashboard stats and render charts
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Starting dashboard fetch...');
+        
+        // First, test simple endpoint
+        fetch('simple-test.php?test=1')
+            .then(res => res.json())
+            .then(data => {
+                console.log('Simple test result:', data);
+            })
+            .catch(err => console.error('Simple test failed:', err));
+        
+        fetch('teacher-activities-backend.php?action=dashboard_stats')
+            .then(res => {
+                console.log('Response status:', res.status);
+                if (!res.ok) {
+                    throw new Error(`HTTP error! status: ${res.status}`);
+                }
+                return res.text(); // Get as text first to see what we're getting
+            })
+            .then(text => {
+                console.log('Raw response:', text);
+                try {
+                    const data = JSON.parse(text);
+                    console.log('Parsed data:', data);
+                    
+                    if (data.error) {
+                        console.error('Backend error:', data.error);
+                        document.getElementById('teacher-name').textContent = 'Error: ' + data.error;
+                        return;
+                    }
+                    
+                    if (!data.success && data.message) {
+                        console.error('Backend message:', data.message);
+                        document.getElementById('teacher-name').textContent = data.message;
+                        return;
+                    }
+                    
+                    // Set teacher name
+                    document.getElementById('teacher-name').textContent = data.teacher_name || 'Unknown';
+                    // Set total students
+                    document.getElementById('total-students').textContent = data.total_students || 0;
 
-</body>
+                    // User Distribution Pie
+                    if (data.user_distribution && data.user_distribution.counts.length > 0) {
+                        const userChart = new Chart(document.getElementById('userDistributionChart'), {
+                            type: 'pie',
+                            data: {
+                                labels: data.user_distribution.labels,
+                                datasets: [{
+                                    data: data.user_distribution.counts,
+                                    backgroundColor: ['#4e79a7', '#f28e2b', '#e15759', '#76b7b2', '#59a14f']
+                                }]
+                            },
+                            options: {
+                                responsive: true, 
+                                plugins: {
+                                    legend: {position: 'bottom'}
+                                }
+                            }
+                        });
+                    } else {
+                        document.getElementById('userDistributionChart').parentElement.innerHTML = 
+                            '<h3>User Distribution</h3><div style="text-align:center; color:#aaa;">No data available</div>';
+                    }
+
+                    // Grade Distribution Pie
+                    if (data.grade_distribution && data.grade_distribution.counts.length > 0) {
+                        const gradeChart = new Chart(document.getElementById('gradeDistributionChart'), {
+                            type: 'pie',
+                            data: {
+                                labels: data.grade_distribution.labels,
+                                datasets: [{
+                                    data: data.grade_distribution.counts,
+                                    backgroundColor: ['#f1c40f', '#e67e22', '#16a085', '#2980b9', '#8e44ad']
+                                }]
+                            },
+                            options: {
+                                responsive: true, 
+                                plugins: {
+                                    legend: {position: 'bottom'}
+                                }
+                            }
+                        });
+                    } else {
+                        document.getElementById('gradeDistributionChart').parentElement.innerHTML = 
+                            '<h3>Student Grade Distribution</h3><div style="text-align:center; color:#aaa;">No data available</div>';
+                    }
+                } catch (parseError) {
+                    console.error('JSON parse error:', parseError);
+                    console.error('Response was:', text);
+                    document.getElementById('teacher-name').textContent = 'Parse Error';
+                    document.getElementById('total-students').textContent = 'Error';
+                }
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+                document.getElementById('teacher-name').textContent = 'Network Error: ' + error.message;
+                document.getElementById('total-students').textContent = 'Error';
+            });
+    });
+    </script></body>
 </html>

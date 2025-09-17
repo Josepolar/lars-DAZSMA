@@ -33,8 +33,12 @@ function log_activity($conn, $user_id, $action, $affected_id = null) {
 
 // Check if user is logged in and is a teacher
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['role_id'] != 3) {
+    // Debug: log what session data we have
+    error_log("Session debug - user_id: " . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'not set'));
+    error_log("Session debug - role_id: " . (isset($_SESSION['role_id']) ? $_SESSION['role_id'] : 'not set'));
+    
     header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
+    echo json_encode(['success' => false, 'message' => 'Unauthorized access - not logged in as teacher']);
     exit();
 }
 
@@ -66,6 +70,14 @@ switch ($action) {
     
     case 'get_teacher_subjects':
         get_teacher_subjects($conn, $teacher_id);
+        break;
+    
+    case 'get_students_for_subject':
+        get_students_for_subject($conn, $teacher_id);
+        break;
+    
+    case 'dashboard_stats':
+        get_dashboard_stats($conn, $teacher_id);
         break;
     
     case 'get_activity_submissions':
@@ -287,6 +299,145 @@ function get_teacher_subjects($conn, $teacher_id) {
         
     } catch (Exception $e) {
         echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    }
+}
+
+function get_students_for_subject($conn, $teacher_id) {
+    try {
+        $subject_id = (int)$_GET['subject_id'];
+        
+        // Verify that teacher teaches this subject
+        $check_stmt = $conn->prepare("SELECT id FROM teacher_subjects WHERE teacher_id = ? AND subject_id = ?");
+        $check_stmt->bind_param("ii", $teacher_id, $subject_id);
+        $check_stmt->execute();
+        $result = $check_stmt->get_result();
+        
+        if ($result->num_rows === 0) {
+            echo json_encode(['success' => false, 'message' => 'You are not authorized to view students for this subject']);
+            return;
+        }
+        
+        // Get the grade level for this subject
+        $grade_stmt = $conn->prepare("SELECT grade_level FROM subjects WHERE subject_id = ?");
+        $grade_stmt->bind_param("i", $subject_id);
+        $grade_stmt->execute();
+        $grade_result = $grade_stmt->get_result();
+        $grade_row = $grade_result->fetch_assoc();
+        
+        if (!$grade_row) {
+            echo json_encode(['success' => false, 'message' => 'Subject not found']);
+            return;
+        }
+        
+        $grade_level = $grade_row['grade_level'];
+        
+        // Get students in this grade level with their total points
+        $sql = "SELECT u.user_id, u.first_name, u.last_name, u.grade_level,
+                       COALESCE(SUM(CASE WHEN ss.submission_status = 'graded' THEN ss.total_score ELSE 0 END), 0) as total_points
+                FROM users u
+                LEFT JOIN student_submissions ss ON u.user_id = ss.student_id
+                LEFT JOIN activities a ON ss.activity_id = a.activity_id AND a.subject_id = ?
+                WHERE u.role_id = 4 AND u.grade_level = ?
+                GROUP BY u.user_id
+                ORDER BY u.first_name, u.last_name";
+        
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("is", $subject_id, $grade_level);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $students = [];
+        while ($row = $result->fetch_assoc()) {
+            $students[] = $row;
+        }
+        
+        echo json_encode(['success' => true, 'students' => $students]);
+        
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    }
+}
+
+function get_dashboard_stats($conn, $teacher_id) {
+    try {
+        $response = [
+            'teacher_name' => '',
+            'total_students' => 0,
+            'user_distribution' => null,
+            'grade_distribution' => null
+        ];
+
+        // Get teacher name
+        $stmt = $conn->prepare("SELECT first_name, last_name FROM users WHERE user_id = ?");
+        $stmt->bind_param("i", $teacher_id);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        if ($row = $res->fetch_assoc()) {
+            $response['teacher_name'] = $row['first_name'] . ' ' . $row['last_name'];
+        }
+        $stmt->close();
+
+        // Get grade levels for subjects taught by this teacher
+        $grade_levels = [];
+        $stmt = $conn->prepare("SELECT DISTINCT s.grade_level FROM subjects s 
+                               JOIN teacher_subjects ts ON s.subject_id = ts.subject_id 
+                               WHERE ts.teacher_id = ?");
+        $stmt->bind_param("i", $teacher_id);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        while ($row = $res->fetch_assoc()) {
+            $grade_levels[] = $row['grade_level'];
+        }
+        $stmt->close();
+
+        // Get students in those grade levels
+        $students = [];
+        if (count($grade_levels) > 0) {
+            $in = implode(',', array_fill(0, count($grade_levels), '?'));
+            $types = str_repeat('s', count($grade_levels));
+            $sql = "SELECT user_id, first_name, last_name, grade_level FROM users 
+                    WHERE grade_level IN ($in) AND role_id = 4";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param($types, ...$grade_levels);
+            $stmt->execute();
+            $res = $stmt->get_result();
+            while ($row = $res->fetch_assoc()) {
+                $students[] = $row;
+            }
+            $stmt->close();
+        }
+        $response['total_students'] = count($students);
+
+        // User distribution (students only for now)
+        $response['user_distribution'] = [
+            'labels' => ['Students'],
+            'counts' => [count($students)]
+        ];
+
+        // Grade distribution
+        $grade_counts = [];
+        foreach ($students as $stu) {
+            $grade = $stu['grade_level'];
+            if (!isset($grade_counts[$grade])) $grade_counts[$grade] = 0;
+            $grade_counts[$grade]++;
+        }
+        
+        if (empty($grade_counts)) {
+            $response['grade_distribution'] = [
+                'labels' => ['No Data'],
+                'counts' => [1]
+            ];
+        } else {
+            $response['grade_distribution'] = [
+                'labels' => array_keys($grade_counts),
+                'counts' => array_values($grade_counts)
+            ];
+        }
+
+        echo json_encode($response);
+        
+    } catch (Exception $e) {
+        echo json_encode(['error' => 'Error: ' . $e->getMessage()]);
     }
 }
 

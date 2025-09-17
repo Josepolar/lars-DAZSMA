@@ -49,19 +49,36 @@ function populateSubjectSelect() {
 
 // Load activities
 function loadActivities() {
+    console.log('Loading activities...');
     fetch('teacher-activities-backend.php?action=get_activities')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                activities = data.activities;
-                populateActivitiesTable();
-            } else {
-                showNotification('Error loading activities: ' + data.message, 'error');
+        .then(response => {
+            console.log('Activities response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.text();
+        })
+        .then(text => {
+            console.log('Activities raw response:', text);
+            try {
+                const data = JSON.parse(text);
+                console.log('Activities parsed data:', data);
+                if (data.success) {
+                    activities = data.activities;
+                    populateActivitiesTable();
+                } else {
+                    console.error('Backend error:', data.message);
+                    showNotification('Error loading activities: ' + data.message, 'error');
+                }
+            } catch (parseError) {
+                console.error('JSON parse error:', parseError);
+                console.error('Response was:', text);
+                showNotification('Parse error loading activities', 'error');
             }
         })
         .catch(error => {
-            console.error('Error:', error);
-            showNotification('Error loading activities', 'error');
+            console.error('Fetch error:', error);
+            showNotification('Network error loading activities: ' + error.message, 'error');
         });
 }
 

@@ -4,6 +4,12 @@ let currentSubjectActivities = {};
 
 // Initialize dashboard when page loads
 document.addEventListener('DOMContentLoaded', function() {
+    // Ensure leaderboard is visible (server-side rendered)
+    const leaderboardList = document.getElementById('leaderboardList');
+    if (leaderboardList) {
+        leaderboardList.style.display = 'block';
+    }
+    
     loadDashboardData();
     setupEventListeners();
 });
@@ -63,6 +69,7 @@ async function loadDashboardData() {
         }
         
         const data = await response.json();
+        console.log('Dashboard data loaded:', data);
         
         if (data.error) {
             throw new Error(data.error);
@@ -82,22 +89,17 @@ async function loadDashboardData() {
 function updateDashboardUI(data) {
     // Update profile information
     updateProfileInfo(data.profile);
-    
+
     // Update statistics
     updateStatistics(data.stats);
-    
     // Update subjects list
     updateSubjectsList(data.subjects);
-    
     // Update activity of the day
     updateActivityOfDay(data.activity_of_day);
-    
     // Update recent activities
     updateRecentActivities(data.pending_activities);
-    
-    // Update leaderboard
-    updateLeaderboard(data.leaderboard);
-    
+    // Update leaderboard (disabled - now using server-side PHP rendering)
+    // updateLeaderboard(data.leaderboard);
     // Update submission lists
     updateSubmissionLists(data.recent_submissions, data.pending_activities);
 }
@@ -137,6 +139,8 @@ function updateStatistics(stats) {
 
 // Update subjects list
 function updateSubjectsList(subjects) {
+    console.log('Updating subjects list with:', subjects);
+    
     const loadingSubjects = document.getElementById('loadingSubjects');
     const subjectsList = document.getElementById('subjectsList');
     
@@ -153,6 +157,7 @@ function updateSubjectsList(subjects) {
     }
     
     subjects.forEach(subject => {
+        console.log('Adding subject:', subject);
         const li = document.createElement('li');
         li.innerHTML = `
             <span class="subject-name">${subject.subject_name}</span>
@@ -320,24 +325,33 @@ function updateRecentActivities(pendingActivities) {
     });
 }
 
-// Update leaderboard
+// Update leaderboard (COMPLETELY DISABLED - using server-side PHP rendering only)
 function updateLeaderboard(leaderboard) {
+    // Function disabled to prevent interference with server-side rendering
+    console.log('updateLeaderboard called but disabled to avoid conflicts with server-side rendering');
+    return;
+    
+    /* ORIGINAL CODE COMMENTED OUT
     const loadingLeaderboard = document.getElementById('loadingLeaderboard');
     const leaderboardList = document.getElementById('leaderboardList');
     
     if (loadingLeaderboard) loadingLeaderboard.style.display = 'none';
-    if (leaderboardList) leaderboardList.style.display = 'block';
-    
     if (!leaderboardList) return;
+
+    // Get the student's grade from the profile
+    const studentGrade = dashboardData && dashboardData.profile ? dashboardData.profile.grade_level : null;
     
     leaderboardList.innerHTML = '';
-    
-    if (leaderboard.length === 0) {
-        leaderboardList.innerHTML = '<li style="text-align: center; color: #666;">No ranking data available</li>';
+
+    // Filter leaderboard to only show students from the same grade
+    const filteredLeaderboard = leaderboard.filter(student => String(student.grade_level) === String(studentGrade));
+
+    if (filteredLeaderboard.length === 0) {
+        leaderboardList.innerHTML = '<li style="text-align:center;color:#666;">No leaderboard data for your grade.</li>';
         return;
     }
-    
-    leaderboard.forEach(student => {
+
+    filteredLeaderboard.forEach(student => {
         const li = document.createElement('li');
         li.className = student.rank <= 3 ? `rank-${student.rank}` : '';
         if (student.is_current_user) {
@@ -354,6 +368,7 @@ function updateLeaderboard(leaderboard) {
         
         leaderboardList.appendChild(li);
     });
+    */
 }
 
 // Update submission lists
@@ -375,8 +390,13 @@ function updateSubmittedList(recentSubmissions) {
     
     submittedList.innerHTML = '';
     
-    const totalPoints = recentSubmissions.reduce((sum, submission) => sum + (submission.total_score || 0), 0);
-    if (submittedPoints) submittedPoints.textContent = Math.round(totalPoints);
+    const totalPoints = recentSubmissions.reduce((sum, submission) => {
+        const score = parseFloat(submission.total_score) || 0;
+        return sum + score;
+    }, 0);
+    if (submittedPoints && !isNaN(totalPoints)) {
+        submittedPoints.textContent = Math.round(totalPoints);
+    }
     
     if (recentSubmissions.length === 0) {
         submittedList.innerHTML = '<li style="text-align: center; color: #666;">No completed activities</li>';
@@ -526,8 +546,8 @@ function showLoadingState() {
         if (indicator) indicator.style.display = 'block';
     });
     
-    // Hide content areas
-    document.querySelectorAll('#subjectsList, #activitiesList, #leaderboardList, #submittedList, #pendingList, #activityOfDayContent').forEach(element => {
+    // Hide content areas (excluding leaderboardList since it's server-side rendered)
+    document.querySelectorAll('#subjectsList, #activitiesList, #submittedList, #pendingList, #activityOfDayContent').forEach(element => {
         if (element) element.style.display = 'none';
     });
 }
@@ -537,6 +557,12 @@ function hideLoadingState() {
     document.querySelectorAll('.loading-indicator').forEach(indicator => {
         if (indicator) indicator.style.display = 'none';
     });
+    
+    // Ensure leaderboard stays visible (server-side rendered)
+    const leaderboardList = document.getElementById('leaderboardList');
+    if (leaderboardList) {
+        leaderboardList.style.display = 'block';
+    }
 }
 
 function showErrorState(message) {
