@@ -1,9 +1,9 @@
 <?php
 session_start();
-require_once 'log_activity.php';
+require_once '../log_activity.php';
 // Redirect to login if session is missing or expired
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['role_id'] != 2) {
-    header('Location: login.php');
+    header('Location: staff-login.php');
     exit();
 }
 ?>
@@ -13,7 +13,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="userman.css">
+    <link rel="stylesheet" href="staff-userman.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .user-credential {
@@ -64,11 +64,11 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
                     </li>
 
                     <li class="nav-link">
-                        <button class="tablinks"><a href="userman.php" class="tablinks">User Management</a></button>
+                        <button class="tablinks"><a href="staff-userman.php" class="tablinks">User Management</a></button>
                     </li>        
 
                      <li class="nav-link">
-                        <button class="tablinks"><a href="subjman.php" class="tablinks">Subject Management</a></button>
+                        <button class="tablinks"><a href="staff-subjman.php" class="tablinks">Subject Management</a></button>
                     </li> 
                     
                 </ul>
@@ -616,7 +616,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
         </div>
     </div>
 
-    <script src="userman.js"></script>
+    <script src="staff-userman.js"></script>
     <script>
         function togglePasswordVisibility(inputId) {
             const passwordInput = document.getElementById(inputId);

@@ -10,7 +10,7 @@
 </head>
 <body>
 <div class="content">
-    <a href="students/students/stud-login.php" id="signin-link">
+    <a href="students/stud-login.php" id="signin-link">
         <img src="assets/signinbtn.png" alt="Sign In" class="signin-img">
     </a>
     <img src="assets/rightarr.png" alt="Right Arrow" class="rightarr-img">

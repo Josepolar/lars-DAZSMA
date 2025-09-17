@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once 'log_activity.php';
+require_once '../log_activity.php';
 // Database connection
 $conn = new mysqli('localhost', 'root', '', 'lars_db');
 if ($conn->connect_error) {
@@ -66,7 +66,7 @@ $subjects = $conn->query($query);
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="subjman.css">
+    <link rel="stylesheet" href="admin-subjman.css">
     <title>Admin Dashboard</title>
 </head>
 <body>
@@ -93,19 +93,19 @@ $subjects = $conn->query($query);
                     </li>
 
                     <li class="nav-link">
-                        <button class="tablinks"><a href="userman.php" class="tablinks">User Management</a></button>
+                        <button class="tablinks"><a href="admin-userman.php" class="tablinks">User Management</a></button>
                     </li>        
                     
                     <li class="nav-link">
-                        <button class="tablinks"><a href="studacc.php" class="tablinks">Student Accounts</a></button>
+                        <button class="tablinks"><a href="admin-studacc.php" class="tablinks">Student Accounts</a></button>
                     </li> 
 
                      <li class="nav-link">
-                        <button class="tablinks"><a href="subjman.php" class="tablinks">Subject Management</a></button>
+                        <button class="tablinks"><a href="admin-subjman.php" class="tablinks">Subject Management</a></button>
                     </li> 
 
                      <li class="nav-link">
-                        <button class="tablinks"><a href="usrlog.php" class="tablinks">User Logs</a></button>
+                        <button class="tablinks"><a href="admin-usrlog.php" class="tablinks">User Logs</a></button>
                     </li> 
                     
                 </ul>
@@ -113,7 +113,7 @@ $subjects = $conn->query($query);
 
             <div class="bottom-content">
             <li class="nav-link">
-                        <button class="tablinks"><a href="logout_admin.php" class="tablinks">Logout</a></button>
+                        <button class="tablinks"><a href="../logout.php" class="tablinks">Logout</a></button>
                     </li>
             </div>
         </div>
@@ -204,7 +204,7 @@ $subjects = $conn->query($query);
 
     </section>
 
-    <script src="subjman.js"></script>
+    <script src="admin-subjman.js"></script>
 
 </body>
 </html>

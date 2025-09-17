@@ -57,7 +57,7 @@ async function loadDashboardData() {
     try {
         showLoadingState();
         
-        const response = await fetch('api/student_dashboard.php');
+        const response = await fetch('../api/student_dashboard.php');
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -186,7 +186,7 @@ async function showSubjectActivities(subjectId, subjectName) {
     if (activitiesList) activitiesList.style.display = 'none';
     
     try {
-        const response = await fetch(`api/student_activities.php?action=subjects&subject_id=${subjectId}`);
+        const response = await fetch(`../api/student_activities.php?action=subjects&subject_id=${subjectId}`);
         const data = await response.json();
         
         if (data.error) {

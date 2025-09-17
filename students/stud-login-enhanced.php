@@ -8,7 +8,7 @@ $lockout_time = 15 * 60; // 15 minutes in seconds
 
 // Redirect to dashboard if already logged in
 if (isset($_SESSION['user_id']) && isset($_SESSION['role_id']) && $_SESSION['role_id'] == 4) {
-    header('Location: home.php');
+    header('Location: student-home.php');
     exit();
 }
 
@@ -101,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     $stmt->close();
                     $conn->close();
                     
-                    header("Location: home.php");
+                    header("Location: student-home.php");
                     exit();
                 } else {
                     // Failed login - log attempt
@@ -132,7 +132,7 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LARS - Student Login</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="login.css">
+    <link rel="stylesheet" href="stud-login.css">
     <style>
         .login-info {
             background: rgba(255, 255, 255, 0.9);
@@ -192,7 +192,7 @@ $conn->close();
 </head>
 <body>
 <div class="login-container">
-    <a href="index.php">
+    <a href="../index.php">
         <img src="../assets/lars.png" alt="LARS Logo" class="lars-img">
     </a>
     

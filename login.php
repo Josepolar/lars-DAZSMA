@@ -5,7 +5,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['password'] ?? '';
     if ($username === 'admin' && $password === 'admin123') {
         $_SESSION['admin_logged_in'] = true;
-        header('Location: admin/admin/admin-dashboard.php');
+        header('Location: admin/admin-dashboard.php');
         exit();
     } else {
         $error = 'Invalid credentials.';

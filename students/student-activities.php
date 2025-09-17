@@ -3,7 +3,7 @@ session_start();
 
 // Redirect to login if session is missing or expired
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['role_id'] != 4) {
-    header('Location: login.php');
+    header('Location: stud-login.php');
     exit();
 }
 ?>
@@ -13,7 +13,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Activities - LARS</title>
-    <link rel="stylesheet" href="activities.css">
+    <link rel="stylesheet" href="student-activities.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
@@ -35,8 +35,8 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
         <div class="dropdown">
             <button class="dropbtn">☰</button>
             <div class="dropdown-content">
-                <a href="home.php"><i class="fas fa-home"></i> Dashboard</a>
-                <a href="viewprof.php"><i class="fas fa-user"></i> View Profile</a>
+                <a href="student-home.php"><i class="fas fa-home"></i> Dashboard</a>
+                <a href="student-viewprof.php"><i class="fas fa-user"></i> View Profile</a>
                 <a href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
             </div>
         </div>
@@ -173,6 +173,6 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
         </div>
     </div>
 
-    <script src="activities.js"></script>
+    <script src="student-activities.js"></script>
 </body>
 </html>

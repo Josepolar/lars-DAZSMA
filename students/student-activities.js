@@ -62,14 +62,17 @@ function checkUrlParameters() {
     if (viewActivity) {
         setTimeout(() => showActivityDetails(viewActivity), 1000);
     } else if (takeActivity) {
-        setTimeout(() => startActivity(takeActivity), 1000);
+        setTimeout(() => {
+            console.log('Attempting to start activity:', takeActivity);
+            startActivity(takeActivity);
+        }, 1000);
     }
 }
 
 // Load user profile information
 async function loadUserProfile() {
     try {
-        const response = await fetch('api/student_dashboard.php');
+        const response = await fetch('../api/student_dashboard.php');
         const data = await response.json();
         
         if (data.error) {
@@ -92,7 +95,7 @@ async function loadActivities() {
         showLoadingState();
         
         const params = new URLSearchParams(currentFilters);
-        const response = await fetch(`api/student_activities.php?action=list&${params}`);
+        const response = await fetch(`../api/student_activities.php?action=list&${params}`);
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -257,7 +260,7 @@ async function showActivityDetails(activityId) {
         modalContent.innerHTML = '<div class="loading-indicator"><i class="fas fa-spinner fa-spin"></i> Loading activity details...</div>';
         modal.style.display = 'block';
         
-        const response = await fetch(`api/student_activities.php?action=details&activity_id=${activityId}`);
+        const response = await fetch(`../api/student_activities.php?action=details&activity_id=${activityId}`);
         const data = await response.json();
         
         if (data.error) {
@@ -361,12 +364,19 @@ function createActivityDetailsContent(data) {
 
 // Start activity
 async function startActivity(activityId) {
+    // Validate activity ID
+    if (!activityId || activityId === 'null' || activityId === 'undefined') {
+        console.error('Invalid activity ID:', activityId);
+        alert('Invalid activity specified.');
+        return;
+    }
+    
     try {
         // First start the activity in the backend
         const formData = new FormData();
         formData.append('activity_id', activityId);
         
-        const response = await fetch('api/student_activities.php?action=start', {
+        const response = await fetch('../api/student_activities.php?action=start', {
             method: 'POST',
             body: formData
         });
@@ -382,7 +392,23 @@ async function startActivity(activityId) {
         
     } catch (error) {
         console.error('Error starting activity:', error);
-        alert('Failed to start activity: ' + error.message);
+        
+        // Remove the 'take' parameter from URL to prevent repeated attempts
+        const url = new URL(window.location);
+        url.searchParams.delete('take');
+        window.history.replaceState({}, document.title, url.pathname + url.search);
+        
+        // Show user-friendly error message
+        const errorMessage = error.message.includes('Activity not found') 
+            ? 'This activity is no longer available or has expired.' 
+            : error.message.includes('already completed')
+            ? 'You have already completed this activity.'
+            : 'Unable to start activity: ' + error.message;
+            
+        alert(errorMessage);
+        
+        // Refresh the activities list to show current state
+        loadActivities();
     }
 }
 
@@ -398,7 +424,7 @@ async function showTakeActivityModal(activityId) {
         modalContent.innerHTML = '<div class="loading-indicator"><i class="fas fa-spinner fa-spin"></i> Loading activity...</div>';
         modal.style.display = 'block';
         
-        const response = await fetch(`api/student_activities.php?action=details&activity_id=${activityId}`);
+        const response = await fetch(`../api/student_activities.php?action=details&activity_id=${activityId}`);
         const data = await response.json();
         
         if (data.error) {
@@ -556,7 +582,7 @@ async function submitActivity(event, activityId) {
             submitBtn.disabled = true;
         }
         
-        const response = await fetch('api/student_activities.php?action=submit', {
+        const response = await fetch('../api/student_activities.php?action=submit', {
             method: 'POST',
             body: formData
         });

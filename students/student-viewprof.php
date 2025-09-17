@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View Profile</title>
-    <link rel="stylesheet" href="viewprof.css">
+    <link rel="stylesheet" href="student-viewprof.css">
 </head>
 <body>
     <div class="profile-container">
-        <a href="home.php" class="back-btn">← Back</a>
+        <a href="student-home.php" class="back-btn">← Back</a>
         <br>
         <div class="profile-pic">
             <img src="default-profile.png" alt="Profile Picture" id="profileImage">
@@ -24,6 +24,6 @@
         </div>
     </div>
 
-    <script src="viewprof.js"></script>
+    <script src="student-viewprof.js"></script>
 </body>
 </html>
