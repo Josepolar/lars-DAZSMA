@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Sep 14, 2025 at 06:55 PM
+-- Generation Time: Sep 17, 2025 at 04:20 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -166,12 +166,8 @@ CREATE TABLE `activities` (
 --
 
 INSERT INTO `activities` (`activity_id`, `title`, `description`, `teacher_id`, `subject_id`, `activity_type`, `total_points`, `time_limit`, `due_date`, `is_active`, `created_at`, `updated_at`) VALUES
-(1, 'Filipino 7 - Midterm Quiz', 'Pagsusulit sa Filipino para sa unang markahan', 8, 1, 'quiz', 100, 30, '2025-09-20 23:59:59', 1, '2025-09-14 15:42:43', '2025-09-14 15:42:43'),
-(2, 'Math 10 - Problem Solving Assignment', 'Solve various algebra and geometry problems', 8, 4, 'assignment', 150, NULL, '2025-09-25 23:59:59', 1, '2025-09-14 15:42:43', '2025-09-14 15:42:43'),
-(3, 'English 8 - Grammar Test', 'Comprehensive test on English grammar rules', 9, 2, 'quiz', 120, 45, '2025-09-22 23:59:59', 1, '2025-09-14 15:42:43', '2025-09-14 15:42:43'),
-(4, 'Science 9 - Lab Report', 'Submit detailed report on chemistry experiment', 9, 3, 'assignment', 200, NULL, '2025-09-30 23:59:59', 1, '2025-09-14 15:42:43', '2025-09-14 15:42:43'),
-(5, 'Sample lang', 'Easy lang toh guys', 8, 4, '', 100, 40, '2025-09-16 00:39:00', 1, '2025-09-14 16:40:16', '2025-09-14 16:41:41'),
-(6, 'Sampleeee', 'sdsd', 8, 1, '', 100, 12, '2025-09-16 00:53:00', 1, '2025-09-14 16:54:00', '2025-09-14 16:54:00');
+(29, 'Filipino Recitation Quiz – Grade 7', '', 62, 1, 'quiz', 50, 15, '2025-09-17 17:30:00', 1, '2025-09-17 07:34:47', '2025-09-17 07:34:47'),
+(30, 'sample 2', '', 62, 1, 'recitation', 30, 10, '2025-09-17 19:52:00', 1, '2025-09-17 09:52:59', '2025-09-17 09:52:59');
 
 -- --------------------------------------------------------
 
@@ -212,9 +208,11 @@ CREATE TABLE `activity_questions` (
 --
 
 INSERT INTO `activity_questions` (`question_id`, `activity_id`, `question_text`, `question_type`, `points`, `question_order`, `created_at`) VALUES
-(1, 1, 'Ano ang kahulugan ng salitang \"pananampalataya\"?', 'multiple_choice', 10, 1, '2025-09-14 15:42:43'),
-(2, 1, 'Tukuyin ang uri ng pangungusap: \"Ang araw ay sumisikat sa silangan.\"', 'multiple_choice', 10, 2, '2025-09-14 15:42:43'),
-(3, 1, 'Magbigay ng halimbawa ng pang-abay na pamaraan.', 'short_answer', 15, 3, '2025-09-14 15:42:43');
+(51, 29, 'Ano ang ibig sabihin ng salitang “pangarap”?', 'multiple_choice', 10, 1, '2025-09-17 07:34:47'),
+(52, 29, 'Ano ang pangunahing layunin ng tula o panulaan?', 'multiple_choice', 10, 2, '2025-09-17 07:34:47'),
+(53, 30, '1', 'multiple_choice', 10, 1, '2025-09-17 09:52:59'),
+(54, 30, '2', 'multiple_choice', 10, 2, '2025-09-17 09:52:59'),
+(55, 30, '3', 'multiple_choice', 10, 3, '2025-09-17 09:52:59');
 
 -- --------------------------------------------------------
 
@@ -235,14 +233,23 @@ CREATE TABLE `question_choices` (
 --
 
 INSERT INTO `question_choices` (`choice_id`, `question_id`, `choice_text`, `is_correct`, `choice_order`) VALUES
-(1, 1, 'Paniniwala at tiwala sa Diyos', 1, 1),
-(2, 1, 'Pagmamahal sa kapamilya', 0, 2),
-(3, 1, 'Paggalang sa nakatatanda', 0, 3),
-(4, 1, 'Pagtulong sa kapwa', 0, 4),
-(5, 2, 'Pasalaysay', 0, 1),
-(6, 2, 'Patanong', 0, 2),
-(7, 2, 'Pakikinig', 0, 3),
-(8, 2, 'Pasalip', 1, 4);
+(137, 51, 'Takot', 0, 1),
+(138, 51, 'Layunin o minimithing bagay', 1, 2),
+(139, 51, 'Pagkakamali', 0, 3),
+(140, 51, 'Kaibigan', 0, 4),
+(141, 52, 'Maglaro', 0, 1),
+(142, 52, 'Magpahayag ng damdamin at kaisipan', 1, 2),
+(143, 52, 'Magturo ng matematika', 0, 3),
+(144, 52, 'Magbenta ng produkto', 0, 4),
+(145, 53, '1', 1, 1),
+(146, 53, '2', 0, 2),
+(147, 53, '3', 0, 3),
+(148, 54, '1', 0, 1),
+(149, 54, '2', 1, 2),
+(150, 54, '3', 0, 3),
+(151, 55, '1', 0, 1),
+(152, 55, '2', 0, 2),
+(153, 55, '3', 1, 3);
 
 -- --------------------------------------------------------
 
@@ -281,6 +288,40 @@ CREATE TABLE `student_answers` (
   `is_correct` tinyint(1) DEFAULT NULL,
   `answered_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `student_answers`
+--
+
+INSERT INTO `student_answers` (`answer_id`, `submission_id`, `question_id`, `choice_id`, `answer_text`, `points_earned`, `is_correct`, `answered_at`) VALUES
+(26, 26, 51, 138, NULL, 10.00, 1, '2025-09-17 07:36:21'),
+(27, 26, 52, 142, NULL, 10.00, 1, '2025-09-17 07:36:21'),
+(28, 27, 51, 138, NULL, 10.00, 1, '2025-09-17 07:37:09'),
+(29, 27, 52, 142, NULL, 10.00, 1, '2025-09-17 07:37:09'),
+(30, 28, 51, 138, NULL, 10.00, 1, '2025-09-17 07:37:57'),
+(31, 28, 52, 141, NULL, 0.00, 0, '2025-09-17 07:37:57'),
+(32, 29, 51, 140, NULL, 0.00, 0, '2025-09-17 07:39:08'),
+(33, 29, 52, 143, NULL, 0.00, 0, '2025-09-17 07:39:08'),
+(34, 30, 51, 138, NULL, 10.00, 1, '2025-09-17 07:39:40'),
+(35, 30, 52, 142, NULL, 10.00, 1, '2025-09-17 07:39:40'),
+(36, 31, 51, 138, NULL, 10.00, 1, '2025-09-17 07:41:54'),
+(37, 31, 52, 142, NULL, 10.00, 1, '2025-09-17 07:41:54'),
+(38, 32, 51, 138, NULL, 10.00, 1, '2025-09-17 07:42:24'),
+(39, 32, 52, 142, NULL, 10.00, 1, '2025-09-17 07:42:24'),
+(40, 33, 51, 138, NULL, 10.00, 1, '2025-09-17 07:43:01'),
+(41, 33, 52, 142, NULL, 10.00, 1, '2025-09-17 07:43:01'),
+(42, 34, 51, 138, NULL, 10.00, 1, '2025-09-17 07:43:26'),
+(43, 34, 52, 142, NULL, 10.00, 1, '2025-09-17 07:43:26'),
+(44, 35, 52, 142, NULL, 10.00, 1, '2025-09-17 07:44:11'),
+(45, 36, 51, 138, NULL, 10.00, 1, '2025-09-17 07:44:33'),
+(46, 36, 52, 142, NULL, 10.00, 1, '2025-09-17 07:44:33'),
+(47, 37, 51, 138, NULL, 10.00, 1, '2025-09-17 07:44:57'),
+(48, 38, 53, 145, NULL, 10.00, 1, '2025-09-17 09:53:47'),
+(49, 38, 54, 149, NULL, 10.00, 1, '2025-09-17 09:53:47'),
+(50, 38, 55, 152, NULL, 0.00, 0, '2025-09-17 09:53:47'),
+(51, 39, 53, 145, NULL, 10.00, 1, '2025-09-17 10:13:47'),
+(52, 39, 54, 149, NULL, 10.00, 1, '2025-09-17 10:13:47'),
+(53, 39, 55, 153, NULL, 10.00, 1, '2025-09-17 10:13:47');
 
 -- --------------------------------------------------------
 
@@ -325,9 +366,20 @@ CREATE TABLE `student_submissions` (
 --
 
 INSERT INTO `student_submissions` (`submission_id`, `activity_id`, `student_id`, `submission_status`, `total_score`, `max_score`, `percentage`, `time_spent`, `submitted_at`, `graded_at`, `created_at`, `updated_at`) VALUES
-(1, 1, 59, 'submitted', 0.00, 100.00, 0.00, NULL, '2025-09-14 16:42:58', NULL, '2025-09-14 16:37:31', '2025-09-14 16:42:58'),
-(2, 5, 59, 'in_progress', NULL, 100.00, NULL, NULL, NULL, NULL, '2025-09-14 16:40:57', '2025-09-14 16:54:10'),
-(3, 6, 59, 'in_progress', NULL, 100.00, NULL, NULL, NULL, NULL, '2025-09-14 16:54:35', '2025-09-14 16:54:35');
+(26, 29, 23, 'submitted', 20.00, 50.00, 40.00, NULL, '2025-09-17 07:36:21', NULL, '2025-09-17 07:36:14', '2025-09-17 07:36:21'),
+(27, 29, 24, 'submitted', 20.00, 50.00, 40.00, NULL, '2025-09-17 07:37:09', NULL, '2025-09-17 07:37:04', '2025-09-17 07:37:09'),
+(28, 29, 16, 'submitted', 10.00, 50.00, 20.00, NULL, '2025-09-17 07:37:57', NULL, '2025-09-17 07:37:52', '2025-09-17 07:37:57'),
+(29, 29, 15, 'submitted', 0.00, 50.00, 0.00, NULL, '2025-09-17 07:39:08', NULL, '2025-09-17 07:39:03', '2025-09-17 07:39:08'),
+(30, 29, 60, 'submitted', 20.00, 50.00, 40.00, NULL, '2025-09-17 07:39:40', NULL, '2025-09-17 07:39:36', '2025-09-17 07:39:40'),
+(31, 29, 14, 'submitted', 20.00, 50.00, 40.00, NULL, '2025-09-17 07:41:54', NULL, '2025-09-17 07:41:49', '2025-09-17 07:41:54'),
+(32, 29, 21, 'submitted', 20.00, 50.00, 40.00, NULL, '2025-09-17 07:42:24', NULL, '2025-09-17 07:42:20', '2025-09-17 07:42:24'),
+(33, 29, 19, 'submitted', 20.00, 50.00, 40.00, NULL, '2025-09-17 07:43:01', NULL, '2025-09-17 07:42:57', '2025-09-17 07:43:01'),
+(34, 29, 22, 'submitted', 20.00, 50.00, 40.00, NULL, '2025-09-17 07:43:26', NULL, '2025-09-17 07:43:22', '2025-09-17 07:43:26'),
+(35, 29, 17, 'submitted', 10.00, 50.00, 20.00, NULL, '2025-09-17 07:44:11', NULL, '2025-09-17 07:44:07', '2025-09-17 07:44:11'),
+(36, 29, 18, 'submitted', 20.00, 50.00, 40.00, NULL, '2025-09-17 07:44:33', NULL, '2025-09-17 07:44:26', '2025-09-17 07:44:33'),
+(37, 29, 20, 'submitted', 10.00, 50.00, 20.00, NULL, '2025-09-17 07:44:57', NULL, '2025-09-17 07:44:48', '2025-09-17 07:44:57'),
+(38, 30, 24, 'submitted', 20.00, 30.00, 66.67, NULL, '2025-09-17 09:53:47', NULL, '2025-09-17 09:53:41', '2025-09-17 09:53:47'),
+(39, 30, 16, 'submitted', 30.00, 30.00, 100.00, NULL, '2025-09-17 10:13:47', NULL, '2025-09-17 10:13:38', '2025-09-17 10:13:47');
 
 -- --------------------------------------------------------
 
@@ -370,10 +422,10 @@ CREATE TABLE `teacher_subjects` (
 --
 
 INSERT INTO `teacher_subjects` (`id`, `teacher_id`, `subject_id`) VALUES
-(1, 8, 1),
-(2, 8, 4),
-(3, 9, 2),
-(4, 9, 3);
+(8, 62, 1),
+(9, 63, 2),
+(7, 64, 4),
+(10, 65, 3);
 
 -- --------------------------------------------------------
 
@@ -391,67 +443,71 @@ CREATE TABLE `users` (
   `last_name` varchar(50) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `grade_level` varchar(2) DEFAULT NULL
+  `grade_level` varchar(2) DEFAULT NULL,
+  `section` varchar(10) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`user_id`, `username`, `password`, `email`, `role_id`, `first_name`, `last_name`, `created_at`, `updated_at`, `grade_level`) VALUES
-(1, 'admin', 'admin123', 'admin@lars.edu.ph', 1, 'System', 'Administrator', '2025-09-14 12:22:01', '2025-09-14 12:22:01', NULL),
-(3, 'adminuser', 'securepass123', 'adminuser@lars.edu.ph', 1, 'New', 'Admin', '2025-09-14 12:25:41', '2025-09-14 12:30:35', NULL),
-(4, 'admin2', 'securepass123', 'admin2@lars.edu.ph', 1, 'New', 'Admin', '2025-09-14 12:30:35', '2025-09-14 12:30:35', NULL),
-(5, 'samanthaagagas8425', 'sammy123', 'sammylars@gmail.com', 2, 'samantha', 'agagas', '2025-09-14 12:32:04', '2025-09-14 12:33:48', NULL),
-(6, 'haydendayap7086', 'hayden123', 'haydenlars@gmail.com', 2, 'hayden', 'dayap', '2025-09-14 12:32:35', '2025-09-14 12:33:55', NULL),
-(7, 'josefernandez3180', 'jose123', 'joselars@gmail.com', 2, 'jose', 'fernandez', '2025-09-14 12:33:19', '2025-09-14 12:33:19', NULL),
-(8, 'teachersurname13901', '123', 'teacher1@gmail.com', 3, 'teacher', 'surname1', '2025-09-14 12:34:28', '2025-09-14 12:34:28', NULL),
-(9, 'teachersurname25450', '123', 'teacher2@gmail.com', 3, 'teacher', 'surname2', '2025-09-14 12:34:49', '2025-09-14 12:34:49', NULL),
-(14, 'johndoe7', 'password123', 'johndoe7@lars.edu.ph', 4, 'John', 'Doe', '2025-09-14 12:39:41', '2025-09-14 16:10:26', '7'),
-(15, 'ethan.c7', 'Eth@n07!', 'ethan.c7@lars.edu.ph', 4, 'Ethan', 'Cruz', '2025-09-14 12:39:41', '2025-09-14 16:10:26', '7'),
-(16, 'jasmineb7', 'Jb#2025!', 'jasmineb7@lars.edu.ph', 4, 'Jasmine', 'Bautista', '2025-09-14 12:39:41', '2025-09-14 16:10:26', '7'),
-(17, 'nathanr07', 'Nr@m07#', 'nathanr07@lars.edu.ph', 4, 'Nathan', 'Ramos', '2025-09-14 12:39:41', '2025-09-14 16:10:26', '7'),
-(18, 'chloe.s07', 'Ch!oE7*', 'chloe.s07@lars.edu.ph', 4, 'Chloe', 'Santiago', '2025-09-14 12:39:41', '2025-09-14 16:10:26', '7'),
-(19, 'adrianm07', 'Am@2025#', 'adrianm07@lars.edu.ph', 4, 'Adrian', 'Morales', '2025-09-14 12:39:41', '2025-09-14 16:10:26', '7'),
-(20, 'bianca.t7', 'Bt*Grd7!', 'bianca.t7@lars.edu.ph', 4, 'Bianca', 'Torres', '2025-09-14 12:39:41', '2025-09-14 16:10:26', '7'),
-(21, 'elijahd7', 'El!07Pwd', 'elijahd7@lars.edu.ph', 4, 'Elijah', 'Dominguez', '2025-09-14 12:39:41', '2025-09-14 16:10:26', '7'),
-(22, 'camillep7', 'Cp@ssw07!', 'camillep7@lars.edu.ph', 4, 'Camille', 'Perez', '2025-09-14 12:39:41', '2025-09-14 16:10:26', '7'),
-(23, 'marcusf07', 'Mf_2025*', 'marcusf07@lars.edu.ph', 4, 'Marcus', 'Fernandez', '2025-09-14 12:39:41', '2025-09-14 16:10:26', '7'),
-(24, 'trisha.a7', 'Ta#7Grd!', 'trisha.a7@lars.edu.ph', 4, 'Trisha', 'Alvarez', '2025-09-14 12:39:41', '2025-09-14 16:10:26', '7'),
-(26, 'johndoe8', 'password123', 'johndoe8@lars.edu.ph', 4, 'John', 'Doe', '2025-09-14 12:41:48', '2025-09-14 16:10:26', '8'),
-(27, 'lucasm8', 'Lm@08#Pwd', 'lucasm8@lars.edu.ph', 4, 'Lucas', 'Mendoza', '2025-09-14 12:41:48', '2025-09-14 16:10:26', '8'),
-(28, 'alyssa.r8', 'Ar#2025!', 'alyssa.r8@lars.edu.ph', 4, 'Alyssa', 'Reyes', '2025-09-14 12:41:48', '2025-09-14 16:10:26', '8'),
-(29, 'danielg08', 'Dg!Grd8*', 'danielg08@lars.edu.ph', 4, 'Daniel', 'Gutierrez', '2025-09-14 12:41:48', '2025-09-14 16:10:26', '8'),
-(30, 'sophian8', 'Sn@08Pass', 'sophian8@lars.edu.ph', 4, 'Sophia', 'Navarro', '2025-09-14 12:41:48', '2025-09-14 16:10:26', '8'),
-(31, 'mattf08', 'Mf_2025#', 'mattf08@lars.edu.ph', 4, 'Matthew', 'Flores', '2025-09-14 12:41:48', '2025-09-14 16:10:26', '8'),
-(32, 'andreac08', 'Ac#8Grd!', 'andreac08@lars.edu.ph', 4, 'Andrea', 'Castillo', '2025-09-14 12:41:48', '2025-09-14 16:10:26', '8'),
-(33, 'joshua.s8', 'Js@08Pwd!', 'joshua.s8@lars.edu.ph', 4, 'Joshua', 'Santos', '2025-09-14 12:41:48', '2025-09-14 16:10:26', '8'),
-(34, 'katrina.v8', 'Kv!Gr8*', 'katrina.v8@lars.edu.ph', 4, 'Katrina', 'Villanueva', '2025-09-14 12:41:48', '2025-09-14 16:10:26', '8'),
-(35, 'chrisr08', 'Cr#2025!', 'chrisr08@lars.edu.ph', 4, 'Christian', 'Ramos', '2025-09-14 12:41:48', '2025-09-14 16:10:26', '8'),
-(36, 'denisec8', 'Dc@08#Pwd', 'denisec8@lars.edu.ph', 4, 'Denise', 'Cruz', '2025-09-14 12:41:48', '2025-09-14 16:10:26', '8'),
-(37, 'johndoe9', 'password123', 'johndoe9@lars.edu.ph', 4, 'John', 'Doe', '2025-09-14 12:42:08', '2025-09-14 16:10:26', '9'),
-(38, 'miguel.s9', 'Ms@nt09!', 'miguel.s9@lars.edu.ph', 4, 'Miguel', 'Santos', '2025-09-14 12:42:08', '2025-09-14 16:10:26', '9'),
-(39, 'aira.dc9', 'Aira#2025', 'aira.dc9@lars.edu.ph', 4, 'Aira', 'Dela Cruz', '2025-09-14 12:42:08', '2025-09-14 16:10:26', '9'),
-(40, 'jayv_09', 'Jay*vn09', 'jayv_09@lars.edu.ph', 4, 'Jayson', 'Villanueva', '2025-09-14 12:42:08', '2025-09-14 16:10:26', '9'),
-(41, 'krystalr09', 'Kry$tal9#', 'krystalr09@lars.edu.ph', 4, 'Krystal', 'Ramirez', '2025-09-14 12:42:08', '2025-09-14 16:10:26', '9'),
-(42, 'domm_09', 'Dom!2024', 'domm_09@lars.edu.ph', 4, 'Dominic', 'Mendoza', '2025-09-14 12:42:08', '2025-09-14 16:10:26', '9'),
-(43, 'liannef_9', 'LfL0res!', 'liannef_9@lars.edu.ph', 4, 'Lianne', 'Flores', '2025-09-14 12:42:08', '2025-09-14 16:10:26', '9'),
-(44, 'carlorey9', 'C@rl0Rey9', 'carlorey9@lars.edu.ph', 4, 'Carlo', 'Reyes', '2025-09-14 12:42:08', '2025-09-14 16:10:26', '9'),
-(45, 'hannahc09', 'Hc#9Pass!', 'hannahc09@lars.edu.ph', 4, 'Hannah', 'Castillo', '2025-09-14 12:42:08', '2025-09-14 16:10:26', '9'),
-(46, 'jerome_9n', 'JN_2025*', 'jerome_9n@lars.edu.ph', 4, 'Jerome', 'Navarro', '2025-09-14 12:42:08', '2025-09-14 16:10:26', '9'),
-(47, 'sofia.g9', 'Sof!a#9', 'sofia.g9@lars.edu.ph', 4, 'Sofia', 'Gutierrez', '2025-09-14 12:42:08', '2025-09-14 16:10:26', '9'),
-(48, 'johndoe10', 'password123', 'johndoe10@lars.edu.ph', 4, 'John', 'Doe', '2025-09-14 12:42:24', '2025-09-14 16:10:26', '10'),
-(49, 'nathanr10', 'Nr@10Pwd!', 'nathanr10@lars.edu.ph', 4, 'Nathaniel', 'Ramos', '2025-09-14 12:42:24', '2025-09-14 16:10:26', '10'),
-(50, 'isabelles10', 'Is#2025*', 'isabelles10@lars.edu.ph', 4, 'Isabelle', 'Santos', '2025-09-14 12:42:24', '2025-09-14 16:10:26', '10'),
-(51, 'gabeb10', 'Gb!Grd10#', 'gabeb10@lars.edu.ph', 4, 'Gabriel', 'Bautista', '2025-09-14 12:42:24', '2025-09-14 16:10:26', '10'),
-(52, 'clarism10', 'Cm@10Pass', 'clarism10@lars.edu.ph', 4, 'Clarisse', 'Mendoza', '2025-09-14 12:42:24', '2025-09-14 16:10:26', '10'),
-(53, 'timv10', 'Tv#2025!', 'timv10@lars.edu.ph', 4, 'Timothy', 'Villanueva', '2025-09-14 12:42:24', '2025-09-14 16:10:26', '10'),
-(54, 'francisc10', 'Fc@Pwd10*', 'francisc10@lars.edu.ph', 4, 'Francesca', 'Castillo', '2025-09-14 12:42:24', '2025-09-14 16:10:26', '10'),
-(55, 'adriang10', 'Ag!10Grd#', 'adriang10@lars.edu.ph', 4, 'Adrian', 'Gutierrez', '2025-09-14 12:42:24', '2025-09-14 16:10:26', '10'),
-(56, 'julianac10', 'Jc@10Pwd!', 'julianac10@lars.edu.ph', 4, 'Juliana', 'Cruz', '2025-09-14 12:42:24', '2025-09-14 16:10:26', '10'),
-(57, 'domt10', 'Dt#Pass10', 'domt10@lars.edu.ph', 4, 'Dominic', 'Torres', '2025-09-14 12:42:24', '2025-09-14 16:10:26', '10'),
-(58, 'katr10', 'Kr!2025*', 'katr10@lars.edu.ph', 4, 'Katrina', 'Reyes', '2025-09-14 12:42:24', '2025-09-14 16:10:26', '10'),
-(59, 'bernard', 'bernard123', 'bernard@lars.edu.ph', 4, 'Jose Rizal', 'Bernard', '2025-09-14 16:12:30', '2025-09-14 16:12:30', '8');
+INSERT INTO `users` (`user_id`, `username`, `password`, `email`, `role_id`, `first_name`, `last_name`, `created_at`, `updated_at`, `grade_level`, `section`) VALUES
+(1, 'admin', 'admin123', 'admin@lars.edu.ph', 1, 'System', 'Administrator', '2025-09-14 12:22:01', '2025-09-14 12:22:01', NULL, NULL),
+(3, 'adminuser', 'securepass123', 'adminuser@lars.edu.ph', 1, 'New', 'Admin', '2025-09-14 12:25:41', '2025-09-14 12:30:35', NULL, NULL),
+(4, 'admin2', 'securepass123', 'admin2@lars.edu.ph', 1, 'New', 'Admin', '2025-09-14 12:30:35', '2025-09-14 12:30:35', NULL, NULL),
+(5, 'samanthaagagas8425', 'sammy123', 'sammylars@gmail.com', 2, 'samantha', 'agagas', '2025-09-14 12:32:04', '2025-09-14 12:33:48', NULL, NULL),
+(6, 'haydendayap7086', 'hayden123', 'haydenlars@gmail.com', 2, 'hayden', 'dayap', '2025-09-14 12:32:35', '2025-09-14 12:33:55', NULL, NULL),
+(7, 'josefernandez3180', 'jose123', 'joselars@gmail.com', 2, 'jose', 'fernandez', '2025-09-14 12:33:19', '2025-09-14 12:33:19', NULL, NULL),
+(14, 'johndoe7', 'password123', 'johndoe7@lars.edu.ph', 4, 'John', 'Doe', '2025-09-14 12:39:41', '2025-09-16 18:01:46', '7', 'A'),
+(15, 'ethan.c7', 'Eth@n07!', 'ethan.c7@lars.edu.ph', 4, 'Ethan', 'Cruz', '2025-09-14 12:39:41', '2025-09-16 18:01:46', '7', 'A'),
+(16, 'jasmineb7', 'Jb#2025!', 'jasmineb7@lars.edu.ph', 4, 'Jasmine', 'Bautista', '2025-09-14 12:39:41', '2025-09-16 18:01:46', '7', 'A'),
+(17, 'nathanr07', 'Nr@m07#', 'nathanr07@lars.edu.ph', 4, 'Nathan', 'Ramos', '2025-09-14 12:39:41', '2025-09-16 18:01:46', '7', 'A'),
+(18, 'chloe.s07', 'Ch!oE7*', 'chloe.s07@lars.edu.ph', 4, 'Chloe', 'Santiago', '2025-09-14 12:39:41', '2025-09-16 18:01:46', '7', 'A'),
+(19, 'adrianm07', 'Am@2025#', 'adrianm07@lars.edu.ph', 4, 'Adrian', 'Morales', '2025-09-14 12:39:41', '2025-09-16 18:01:46', '7', 'A'),
+(20, 'bianca.t7', 'Bt*Grd7!', 'bianca.t7@lars.edu.ph', 4, 'Bianca', 'Torres', '2025-09-14 12:39:41', '2025-09-16 18:01:46', '7', 'A'),
+(21, 'elijahd7', 'El!07Pwd', 'elijahd7@lars.edu.ph', 4, 'Elijah', 'Dominguez', '2025-09-14 12:39:41', '2025-09-16 18:01:46', '7', 'A'),
+(22, 'camillep7', 'Cp@ssw07!', 'camillep7@lars.edu.ph', 4, 'Camille', 'Perez', '2025-09-14 12:39:41', '2025-09-16 18:01:46', '7', 'A'),
+(23, 'marcusf07', 'Mf_2025*', 'marcusf07@lars.edu.ph', 4, 'Marcus', 'Fernandez', '2025-09-14 12:39:41', '2025-09-16 18:01:46', '7', 'A'),
+(24, 'trisha.a7', 'Ta#7Grd!', 'trisha.a7@lars.edu.ph', 4, 'Trisha', 'Alvarez', '2025-09-14 12:39:41', '2025-09-16 18:01:46', '7', 'A'),
+(26, 'johndoe8', 'password123', 'johndoe8@lars.edu.ph', 4, 'John', 'Doe', '2025-09-14 12:41:48', '2025-09-14 16:10:26', '8', NULL),
+(27, 'lucasm8', 'Lm@08#Pwd', 'lucasm8@lars.edu.ph', 4, 'Lucas', 'Mendoza', '2025-09-14 12:41:48', '2025-09-14 16:10:26', '8', NULL),
+(28, 'alyssa.r8', 'Ar#2025!', 'alyssa.r8@lars.edu.ph', 4, 'Alyssa', 'Reyes', '2025-09-14 12:41:48', '2025-09-14 16:10:26', '8', NULL),
+(29, 'danielg08', 'Dg!Grd8*', 'danielg08@lars.edu.ph', 4, 'Daniel', 'Gutierrez', '2025-09-14 12:41:48', '2025-09-14 16:10:26', '8', NULL),
+(30, 'sophian8', 'Sn@08Pass', 'sophian8@lars.edu.ph', 4, 'Sophia', 'Navarro', '2025-09-14 12:41:48', '2025-09-14 16:10:26', '8', NULL),
+(31, 'mattf08', 'Mf_2025#', 'mattf08@lars.edu.ph', 4, 'Matthew', 'Flores', '2025-09-14 12:41:48', '2025-09-14 16:10:26', '8', NULL),
+(32, 'andreac08', 'Ac#8Grd!', 'andreac08@lars.edu.ph', 4, 'Andrea', 'Castillo', '2025-09-14 12:41:48', '2025-09-14 16:10:26', '8', NULL),
+(33, 'joshua.s8', 'Js@08Pwd!', 'joshua.s8@lars.edu.ph', 4, 'Joshua', 'Santos', '2025-09-14 12:41:48', '2025-09-14 16:10:26', '8', NULL),
+(34, 'katrina.v8', 'Kv!Gr8*', 'katrina.v8@lars.edu.ph', 4, 'Katrina', 'Villanueva', '2025-09-14 12:41:48', '2025-09-14 16:10:26', '8', NULL),
+(35, 'chrisr08', 'Cr#2025!', 'chrisr08@lars.edu.ph', 4, 'Christian', 'Ramos', '2025-09-14 12:41:48', '2025-09-14 16:10:26', '8', NULL),
+(36, 'denisec8', 'Dc@08#Pwd', 'denisec8@lars.edu.ph', 4, 'Denise', 'Cruz', '2025-09-14 12:41:48', '2025-09-14 16:10:26', '8', NULL),
+(37, 'johndoe9', 'password123', 'johndoe9@lars.edu.ph', 4, 'John', 'Doe', '2025-09-14 12:42:08', '2025-09-14 16:10:26', '9', NULL),
+(38, 'miguel.s9', 'Ms@nt09!', 'miguel.s9@lars.edu.ph', 4, 'Miguel', 'Santos', '2025-09-14 12:42:08', '2025-09-14 16:10:26', '9', NULL),
+(39, 'aira.dc9', 'Aira#2025', 'aira.dc9@lars.edu.ph', 4, 'Aira', 'Dela Cruz', '2025-09-14 12:42:08', '2025-09-14 16:10:26', '9', NULL),
+(40, 'jayv_09', 'Jay*vn09', 'jayv_09@lars.edu.ph', 4, 'Jayson', 'Villanueva', '2025-09-14 12:42:08', '2025-09-14 16:10:26', '9', NULL),
+(41, 'krystalr09', 'Kry$tal9#', 'krystalr09@lars.edu.ph', 4, 'Krystal', 'Ramirez', '2025-09-14 12:42:08', '2025-09-14 16:10:26', '9', NULL),
+(42, 'domm_09', 'Dom!2024', 'domm_09@lars.edu.ph', 4, 'Dominic', 'Mendoza', '2025-09-14 12:42:08', '2025-09-14 16:10:26', '9', NULL),
+(43, 'liannef_9', 'LfL0res!', 'liannef_9@lars.edu.ph', 4, 'Lianne', 'Flores', '2025-09-14 12:42:08', '2025-09-14 16:10:26', '9', NULL),
+(44, 'carlorey9', 'C@rl0Rey9', 'carlorey9@lars.edu.ph', 4, 'Carlo', 'Reyes', '2025-09-14 12:42:08', '2025-09-14 16:10:26', '9', NULL),
+(45, 'hannahc09', 'Hc#9Pass!', 'hannahc09@lars.edu.ph', 4, 'Hannah', 'Castillo', '2025-09-14 12:42:08', '2025-09-14 16:10:26', '9', NULL),
+(46, 'jerome_9n', 'JN_2025*', 'jerome_9n@lars.edu.ph', 4, 'Jerome', 'Navarro', '2025-09-14 12:42:08', '2025-09-14 16:10:26', '9', NULL),
+(47, 'sofia.g9', 'Sof!a#9', 'sofia.g9@lars.edu.ph', 4, 'Sofia', 'Gutierrez', '2025-09-14 12:42:08', '2025-09-14 16:10:26', '9', NULL),
+(48, 'johndoe10', 'password123', 'johndoe10@lars.edu.ph', 4, 'John', 'Doe', '2025-09-14 12:42:24', '2025-09-14 16:10:26', '10', NULL),
+(49, 'nathanr10', 'Nr@10Pwd!', 'nathanr10@lars.edu.ph', 4, 'Nathaniel', 'Ramos', '2025-09-14 12:42:24', '2025-09-14 16:10:26', '10', NULL),
+(50, 'isabelles10', 'Is#2025*', 'isabelles10@lars.edu.ph', 4, 'Isabelle', 'Santos', '2025-09-14 12:42:24', '2025-09-14 16:10:26', '10', NULL),
+(51, 'gabeb10', 'Gb!Grd10#', 'gabeb10@lars.edu.ph', 4, 'Gabriel', 'Bautista', '2025-09-14 12:42:24', '2025-09-14 16:10:26', '10', NULL),
+(52, 'clarism10', 'Cm@10Pass', 'clarism10@lars.edu.ph', 4, 'Clarisse', 'Mendoza', '2025-09-14 12:42:24', '2025-09-14 16:10:26', '10', NULL),
+(53, 'timv10', 'Tv#2025!', 'timv10@lars.edu.ph', 4, 'Timothy', 'Villanueva', '2025-09-14 12:42:24', '2025-09-14 16:10:26', '10', NULL),
+(54, 'francisc10', 'Fc@Pwd10*', 'francisc10@lars.edu.ph', 4, 'Francesca', 'Castillo', '2025-09-14 12:42:24', '2025-09-14 16:10:26', '10', NULL),
+(55, 'adriang10', 'Ag!10Grd#', 'adriang10@lars.edu.ph', 4, 'Adrian', 'Gutierrez', '2025-09-14 12:42:24', '2025-09-14 16:10:26', '10', NULL),
+(56, 'julianac10', 'Jc@10Pwd!', 'julianac10@lars.edu.ph', 4, 'Juliana', 'Cruz', '2025-09-14 12:42:24', '2025-09-14 16:10:26', '10', NULL),
+(57, 'domt10', 'Dt#Pass10', 'domt10@lars.edu.ph', 4, 'Dominic', 'Torres', '2025-09-14 12:42:24', '2025-09-14 16:10:26', '10', NULL),
+(58, 'katr10', 'Kr!2025*', 'katr10@lars.edu.ph', 4, 'Katrina', 'Reyes', '2025-09-14 12:42:24', '2025-09-14 16:10:26', '10', NULL),
+(59, 'bernard', 'bernard123', 'bernard@lars.edu.ph', 4, 'Jose Rizal', 'Bernard', '2025-09-14 16:12:30', '2025-09-14 16:12:30', '8', NULL),
+(60, 'dayap', '123', 'dayap@lars.edu.ph', 4, 'Hayden', 'Dayap', '2025-09-14 17:18:47', '2025-09-16 18:01:46', '7', 'A'),
+(62, 'filipinotaeacher9891', '123', 'Filipino@lars.edu.ph', 3, 'Filipino', 'Taeacher', '2025-09-17 07:23:44', '2025-09-17 07:23:44', NULL, NULL),
+(63, 'englishteacher6749', '123', 'englishteacher6749@lars.edu.ph', 3, 'english', 'teacher', '2025-09-17 07:24:21', '2025-09-17 07:26:11', NULL, NULL),
+(64, 'mathteacher7015', '123', 'math@lars.edu.ph', 3, 'math', 'teacher', '2025-09-17 07:24:44', '2025-09-17 07:24:44', NULL, NULL),
+(65, 'scienceteacher1799', '123', 'science@lars.edu.ph', 3, 'Science', 'teacher', '2025-09-17 07:25:09', '2025-09-17 07:25:09', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -485,36 +541,140 @@ INSERT INTO `user_logs` (`log_id`, `user_id`, `action`, `affected_user_id`, `act
 (12, 4, 'Edited Staff', 6, '2025-09-14 12:33:36', NULL),
 (13, 4, 'Edited Staff', 5, '2025-09-14 12:33:48', NULL),
 (14, 4, 'Edited Staff', 6, '2025-09-14 12:33:55', NULL),
-(15, 4, 'Added Teacher', 8, '2025-09-14 12:34:28', NULL),
-(16, 4, 'Added Teacher', 9, '2025-09-14 12:34:49', NULL),
 (19, 5, 'Login', NULL, '2025-09-14 12:38:59', '::1'),
 (22, 4, 'Login', NULL, '2025-09-14 12:43:07', '::1'),
 (23, 5, 'Login', NULL, '2025-09-14 14:46:00', '::1'),
 (25, 4, 'Login', NULL, '2025-09-14 14:47:38', '::1'),
 (26, 5, 'Login', NULL, '2025-09-14 14:48:48', '::1'),
 (29, 5, 'Added Subject', 1, '2025-09-14 14:56:09', NULL),
-(30, 5, 'Assigned Subject to Teacher', 8, '2025-09-14 14:56:36', NULL),
 (31, 5, 'Added Subject', NULL, '2025-09-14 14:56:53', NULL),
 (32, 5, 'Added Subject', 3, '2025-09-14 14:57:05', NULL),
 (33, 5, 'Added Subject', 4, '2025-09-14 14:57:17', NULL),
-(34, 5, 'Assigned Subject to Teacher', 8, '2025-09-14 14:57:56', NULL),
-(35, 5, 'Assigned Subject to Teacher', 9, '2025-09-14 14:58:07', NULL),
-(36, 5, 'Assigned Subject to Teacher', 9, '2025-09-14 14:58:18', NULL),
-(37, 8, 'Login', NULL, '2025-09-14 15:02:36', NULL),
 (38, 5, 'Logout', NULL, '2025-09-14 15:14:23', '::1'),
 (39, 5, 'Login', NULL, '2025-09-14 15:17:37', '::1'),
-(40, 8, 'Login', NULL, '2025-09-14 15:24:39', NULL),
 (41, 4, 'Login', NULL, '2025-09-14 15:46:20', '::1'),
 (42, 5, 'Login', NULL, '2025-09-14 15:47:56', '::1'),
 (43, 5, 'Added Student', 59, '2025-09-14 16:12:30', NULL),
 (44, 59, 'Login', NULL, '2025-09-14 16:13:05', '::1'),
-(45, 8, 'Login', NULL, '2025-09-14 16:20:25', NULL),
 (46, 59, 'Login', NULL, '2025-09-14 16:37:17', '::1'),
-(47, 8, 'Login', NULL, '2025-09-14 16:38:40', NULL),
-(48, 8, 'Created Activity', 5, '2025-09-14 16:40:16', '::1'),
-(49, 8, 'Deactivated Activity', 5, '2025-09-14 16:41:35', '::1'),
-(50, 8, 'Activated Activity', 5, '2025-09-14 16:41:41', '::1'),
-(51, 8, 'Created Activity', 6, '2025-09-14 16:54:00', '::1');
+(55, 59, 'Logout', NULL, '2025-09-14 17:15:00', '::1'),
+(56, 24, 'Login', NULL, '2025-09-14 17:15:20', '::1'),
+(57, 4, 'Login', NULL, '2025-09-14 17:18:14', '::1'),
+(58, 5, 'Login', NULL, '2025-09-14 17:18:28', '::1'),
+(59, 5, 'Added Student', 60, '2025-09-14 17:18:47', NULL),
+(60, 60, 'Login', NULL, '2025-09-14 17:19:04', '::1'),
+(76, 4, 'Login', NULL, '2025-09-16 14:42:48', '::1'),
+(77, 4, 'Logout', NULL, '2025-09-16 14:44:56', '::1'),
+(78, 4, 'Login', NULL, '2025-09-16 14:51:11', '::1'),
+(79, 7, 'Login', NULL, '2025-09-16 14:57:53', '::1'),
+(83, 7, 'Deleted User', NULL, '2025-09-16 14:59:51', NULL),
+(84, 4, 'Login', NULL, '2025-09-16 15:00:57', '::1'),
+(85, 7, 'Login', NULL, '2025-09-16 15:06:12', '::1'),
+(87, 4, 'Logout', NULL, '2025-09-16 15:06:56', '::1'),
+(90, 24, 'Login', NULL, '2025-09-16 15:18:10', '::1'),
+(97, 24, 'Login', NULL, '2025-09-16 16:59:59', '::1'),
+(103, 51, 'Login', NULL, '2025-09-16 17:02:39', '::1'),
+(104, 51, 'Logout', NULL, '2025-09-16 17:13:37', '::1'),
+(105, 24, 'Login', NULL, '2025-09-16 17:14:18', '::1'),
+(108, 24, 'Login', NULL, '2025-09-16 17:15:37', '::1'),
+(111, 24, 'Login', NULL, '2025-09-16 17:19:15', '::1'),
+(114, 24, 'Logout', NULL, '2025-09-16 17:39:09', '::1'),
+(115, 16, 'Login', NULL, '2025-09-16 17:39:27', '::1'),
+(116, 16, 'Logout', NULL, '2025-09-16 18:07:49', '::1'),
+(117, 15, 'Login', NULL, '2025-09-16 18:08:13', '::1'),
+(118, 15, 'Login', NULL, '2025-09-16 18:14:04', '::1'),
+(119, 15, 'Login', NULL, '2025-09-16 18:14:13', '::1'),
+(120, 15, 'Logout', NULL, '2025-09-16 18:14:36', '::1'),
+(121, 15, 'Login', NULL, '2025-09-16 18:14:47', '::1'),
+(122, 15, 'Login', NULL, '2025-09-16 18:14:59', '::1'),
+(123, 15, 'Logout', NULL, '2025-09-16 18:21:25', '::1'),
+(124, 24, 'Login', NULL, '2025-09-16 18:21:54', '::1'),
+(125, 24, 'Login', NULL, '2025-09-16 18:48:25', '::1'),
+(128, 7, 'Login', NULL, '2025-09-16 19:17:26', '::1'),
+(129, 51, 'Login', NULL, '2025-09-16 19:20:14', '::1'),
+(130, 51, 'Logout', NULL, '2025-09-16 19:36:36', '::1'),
+(131, 15, 'Login', NULL, '2025-09-16 19:36:53', '::1'),
+(133, 7, 'Login', NULL, '2025-09-17 03:21:15', '::1'),
+(134, 24, 'Login', NULL, '2025-09-17 03:22:53', '::1'),
+(136, 16, 'Login', NULL, '2025-09-17 03:28:24', '::1'),
+(141, 24, 'Login', NULL, '2025-09-17 03:42:34', '::1'),
+(146, 24, 'Login', NULL, '2025-09-17 03:59:19', '::1'),
+(148, 24, 'Login', NULL, '2025-09-17 04:07:16', '::1'),
+(151, 24, 'Login', NULL, '2025-09-17 04:08:43', '::1'),
+(153, 24, 'Login', NULL, '2025-09-17 04:13:40', '::1'),
+(159, 24, 'Login', NULL, '2025-09-17 05:32:23', '::1'),
+(164, 24, 'Login', NULL, '2025-09-17 05:34:35', '::1'),
+(168, 24, 'Login', NULL, '2025-09-17 05:47:29', '::1'),
+(170, 4, 'Login', NULL, '2025-09-17 06:04:07', '::1'),
+(172, 24, 'Login', NULL, '2025-09-17 06:05:02', '::1'),
+(174, 24, 'Login', NULL, '2025-09-17 06:23:25', '::1'),
+(175, 24, 'Logout', NULL, '2025-09-17 06:38:33', '::1'),
+(176, 16, 'Login', NULL, '2025-09-17 06:38:47', '::1'),
+(177, 16, 'Logout', NULL, '2025-09-17 06:39:20', '::1'),
+(178, 15, 'Login', NULL, '2025-09-17 06:39:32', '::1'),
+(179, 15, 'Logout', NULL, '2025-09-17 06:50:20', '::1'),
+(180, 24, 'Login', NULL, '2025-09-17 06:50:33', '::1'),
+(181, 24, 'Logout', NULL, '2025-09-17 06:50:40', '::1'),
+(182, 16, 'Login', NULL, '2025-09-17 06:50:50', '::1'),
+(183, 4, 'Login', NULL, '2025-09-17 07:07:22', '::1'),
+(184, 24, 'Login', NULL, '2025-09-17 07:09:49', '::1'),
+(185, 24, 'Logout', NULL, '2025-09-17 07:14:03', '::1'),
+(186, 59, 'Login', NULL, '2025-09-17 07:14:08', '::1'),
+(187, 4, 'Login', NULL, '2025-09-17 07:15:17', '::1'),
+(190, 4, 'Added Teacher', 62, '2025-09-17 07:23:44', NULL),
+(191, 4, 'Added Teacher', 63, '2025-09-17 07:24:21', NULL),
+(192, 4, 'Added Teacher', 64, '2025-09-17 07:24:44', NULL),
+(193, 4, 'Added Teacher', 65, '2025-09-17 07:25:10', NULL),
+(194, 7, 'Login', NULL, '2025-09-17 07:26:02', '::1'),
+(195, 7, 'Edited User', 63, '2025-09-17 07:26:11', NULL),
+(196, 7, 'Assigned Subject to Teacher', 64, '2025-09-17 07:26:26', NULL),
+(197, 7, 'Assigned Subject to Teacher', 62, '2025-09-17 07:26:37', NULL),
+(198, 7, 'Assigned Subject to Teacher', 63, '2025-09-17 07:26:45', NULL),
+(199, 7, 'Assigned Subject to Teacher', 65, '2025-09-17 07:26:59', NULL),
+(200, 62, 'Login', NULL, '2025-09-17 07:27:24', NULL),
+(201, 62, 'Created Activity', 29, '2025-09-17 07:34:47', '::1'),
+(202, 23, 'Login', NULL, '2025-09-17 07:35:49', '::1'),
+(203, 23, 'Logout', NULL, '2025-09-17 07:36:48', '::1'),
+(204, 24, 'Login', NULL, '2025-09-17 07:37:01', '::1'),
+(205, 24, 'Logout', NULL, '2025-09-17 07:37:28', '::1'),
+(206, 16, 'Login', NULL, '2025-09-17 07:37:49', '::1'),
+(207, 62, 'Login', NULL, '2025-09-17 07:38:13', NULL),
+(208, 62, 'Logout', NULL, '2025-09-17 07:38:49', '::1'),
+(209, 15, 'Login', NULL, '2025-09-17 07:39:01', '::1'),
+(210, 15, 'Logout', NULL, '2025-09-17 07:39:21', '::1'),
+(211, 60, 'Login', NULL, '2025-09-17 07:39:34', '::1'),
+(212, 62, 'Login', NULL, '2025-09-17 07:39:57', NULL),
+(213, 62, 'Logout', NULL, '2025-09-17 07:40:18', '::1'),
+(214, 62, 'Login', NULL, '2025-09-17 07:40:51', NULL),
+(215, 14, 'Login', NULL, '2025-09-17 07:41:47', '::1'),
+(216, 14, 'Logout', NULL, '2025-09-17 07:42:12', '::1'),
+(217, 21, 'Login', NULL, '2025-09-17 07:42:18', '::1'),
+(218, 21, 'Logout', NULL, '2025-09-17 07:42:33', '::1'),
+(219, 23, 'Login', NULL, '2025-09-17 07:42:39', '::1'),
+(220, 23, 'Logout', NULL, '2025-09-17 07:42:46', '::1'),
+(221, 19, 'Login', NULL, '2025-09-17 07:42:55', '::1'),
+(222, 19, 'Logout', NULL, '2025-09-17 07:43:09', '::1'),
+(223, 22, 'Login', NULL, '2025-09-17 07:43:20', '::1'),
+(224, 22, 'Logout', NULL, '2025-09-17 07:43:45', '::1'),
+(225, 17, 'Login', NULL, '2025-09-17 07:44:05', '::1'),
+(226, 17, 'Logout', NULL, '2025-09-17 07:44:18', '::1'),
+(227, 18, 'Login', NULL, '2025-09-17 07:44:24', '::1'),
+(228, 18, 'Logout', NULL, '2025-09-17 07:44:40', '::1'),
+(229, 20, 'Login', NULL, '2025-09-17 07:44:46', '::1'),
+(230, 62, 'Login', NULL, '2025-09-17 07:45:52', NULL),
+(231, 24, 'Login', NULL, '2025-09-17 07:47:03', '::1'),
+(232, 62, 'Login', NULL, '2025-09-17 07:57:31', NULL),
+(233, 24, 'Login', NULL, '2025-09-17 08:38:06', '::1'),
+(234, 62, 'Login', NULL, '2025-09-17 09:52:02', NULL),
+(235, 62, 'Created Activity', 30, '2025-09-17 09:52:59', '::1'),
+(236, 24, 'Login', NULL, '2025-09-17 09:53:13', '::1'),
+(237, 62, 'Login', NULL, '2025-09-17 09:54:17', NULL),
+(238, 62, 'Logout', NULL, '2025-09-17 10:05:09', '::1'),
+(239, 16, 'Login', NULL, '2025-09-17 10:05:19', '::1'),
+(240, 62, 'Login', NULL, '2025-09-17 12:56:08', NULL),
+(241, 51, 'Login', NULL, '2025-09-17 12:58:35', '::1'),
+(242, 51, 'Logout', NULL, '2025-09-17 12:58:56', '::1'),
+(243, 24, 'Login', NULL, '2025-09-17 12:59:12', '::1');
 
 -- --------------------------------------------------------
 
@@ -774,7 +934,7 @@ ALTER TABLE `account_creation_log`
 -- AUTO_INCREMENT for table `activities`
 --
 ALTER TABLE `activities`
-  MODIFY `activity_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `activity_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
 
 --
 -- AUTO_INCREMENT for table `activity_analytics`
@@ -786,13 +946,13 @@ ALTER TABLE `activity_analytics`
 -- AUTO_INCREMENT for table `activity_questions`
 --
 ALTER TABLE `activity_questions`
-  MODIFY `question_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `question_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=56;
 
 --
 -- AUTO_INCREMENT for table `question_choices`
 --
 ALTER TABLE `question_choices`
-  MODIFY `choice_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `choice_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=154;
 
 --
 -- AUTO_INCREMENT for table `roles`
@@ -804,7 +964,7 @@ ALTER TABLE `roles`
 -- AUTO_INCREMENT for table `student_answers`
 --
 ALTER TABLE `student_answers`
-  MODIFY `answer_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `answer_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=54;
 
 --
 -- AUTO_INCREMENT for table `student_login_audit`
@@ -816,7 +976,7 @@ ALTER TABLE `student_login_audit`
 -- AUTO_INCREMENT for table `student_submissions`
 --
 ALTER TABLE `student_submissions`
-  MODIFY `submission_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `submission_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=40;
 
 --
 -- AUTO_INCREMENT for table `subjects`
@@ -828,19 +988,19 @@ ALTER TABLE `subjects`
 -- AUTO_INCREMENT for table `teacher_subjects`
 --
 ALTER TABLE `teacher_subjects`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=60;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=66;
 
 --
 -- AUTO_INCREMENT for table `user_logs`
 --
 ALTER TABLE `user_logs`
-  MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=52;
+  MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=244;
 
 --
 -- Constraints for dumped tables
