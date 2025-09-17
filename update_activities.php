@@ -1,5 +1,5 @@
 <?php
-$pdo = new PDO("mysql:host=localhost;dbname=lars_db", "root", "");
+include 'Database/database.php';
 
 // Update activities to have future due dates
 $pdo->exec("UPDATE activities SET due_date = DATE_ADD(NOW(), INTERVAL 2 HOUR) WHERE activity_id IN (27, 28)");

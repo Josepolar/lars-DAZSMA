@@ -1,21 +1,8 @@
 <?php
 session_start();
 
-// Database connection
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "lars_db";
-
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-
-// Set charset
-$conn->set_charset("utf8mb4");
+// Use shared PDO connection
+require_once __DIR__ . '/../Database/database.php';
 
 // Security function to prevent SQL injection
 function sanitize_input($data) {
@@ -23,12 +10,11 @@ function sanitize_input($data) {
 }
 
 // Function to log activities
-function log_activity($conn, $user_id, $action, $affected_id = null) {
+function log_activity_local($user_id, $action, $affected_id = null) {
+    global $pdo;
     $ip_address = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
-    $stmt = $conn->prepare("INSERT INTO user_logs (user_id, action, affected_user_id, ip_address) VALUES (?, ?, ?, ?)");
-    $stmt->bind_param("isis", $user_id, $action, $affected_id, $ip_address);
-    $stmt->execute();
-    $stmt->close();
+    $stmt = $pdo->prepare("INSERT INTO user_logs (user_id, action, affected_user_id, ip_address) VALUES (?, ?, ?, ?)");
+    $stmt->execute([$user_id, $action, $affected_id, $ip_address]);
 }
 
 // Check if user is logged in and is a teacher
@@ -37,7 +23,9 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
     error_log("Session debug - user_id: " . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'not set'));
     error_log("Session debug - role_id: " . (isset($_SESSION['role_id']) ? $_SESSION['role_id'] : 'not set'));
     
-    header('Content-Type: application/json');
+    if (!headers_sent()) {
+        header('Content-Type: application/json');
+    }
     echo json_encode(['success' => false, 'message' => 'Unauthorized access - not logged in as teacher']);
     exit();
 }
@@ -45,59 +33,61 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
 $teacher_id = $_SESSION['user_id'];
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
-header('Content-Type: application/json');
+if (!headers_sent()) {
+    header('Content-Type: application/json');
+}
 
 switch ($action) {
     case 'create_activity':
-        create_activity($conn, $teacher_id);
+    create_activity($teacher_id);
         break;
     
     case 'get_activities':
-        get_activities($conn, $teacher_id);
+    get_activities($teacher_id);
         break;
     
     case 'get_activity_details':
-        get_activity_details($conn, $teacher_id);
+    get_activity_details($teacher_id);
         break;
     
     case 'update_activity':
-        update_activity($conn, $teacher_id);
+    update_activity($teacher_id);
         break;
     
     case 'delete_activity':
-        delete_activity($conn, $teacher_id);
+    delete_activity($teacher_id);
         break;
     
     case 'get_teacher_subjects':
-        get_teacher_subjects($conn, $teacher_id);
+    get_teacher_subjects($teacher_id);
         break;
     
     case 'get_students_for_subject':
-        get_students_for_subject($conn, $teacher_id);
+    get_students_for_subject($teacher_id);
         break;
     
     case 'dashboard_stats':
-        get_dashboard_stats($conn, $teacher_id);
+    get_dashboard_stats($teacher_id);
         break;
     
     case 'get_activity_submissions':
-        get_activity_submissions($conn, $teacher_id);
+    get_activity_submissions($teacher_id);
         break;
     
     case 'get_student_answers':
-        get_student_answers($conn, $teacher_id);
+    get_student_answers($teacher_id);
         break;
     
     case 'grade_submission':
-        grade_submission($conn, $teacher_id);
+    grade_submission($teacher_id);
         break;
     
     case 'get_activity_analytics':
-        get_activity_analytics($conn, $teacher_id);
+    get_activity_analytics($teacher_id);
         break;
     
     case 'toggle_activity_status':
-        toggle_activity_status($conn, $teacher_id);
+    toggle_activity_status($teacher_id);
         break;
     
     default:
@@ -105,7 +95,8 @@ switch ($action) {
         break;
 }
 
-function create_activity($conn, $teacher_id) {
+function create_activity($teacher_id) {
+    global $pdo;
     try {
         $title = sanitize_input($_POST['title']);
         $description = sanitize_input($_POST['description']);
@@ -116,33 +107,30 @@ function create_activity($conn, $teacher_id) {
         $due_date = !empty($_POST['due_date']) ? $_POST['due_date'] : null;
         
         // Validate that teacher teaches this subject
-        $check_stmt = $conn->prepare("SELECT id FROM teacher_subjects WHERE teacher_id = ? AND subject_id = ?");
-        $check_stmt->bind_param("ii", $teacher_id, $subject_id);
-        $check_stmt->execute();
-        $result = $check_stmt->get_result();
-        
-        if ($result->num_rows === 0) {
+        $check_stmt = $pdo->prepare("SELECT id FROM teacher_subjects WHERE teacher_id = ? AND subject_id = ?");
+        $check_stmt->execute([$teacher_id, $subject_id]);
+        if ($check_stmt->rowCount() === 0) {
             echo json_encode(['success' => false, 'message' => 'You are not authorized to create activities for this subject']);
             return;
         }
         
         // Insert activity - handle nullable fields properly
         if ($time_limit === null && $due_date === null) {
-            $stmt = $conn->prepare("INSERT INTO activities (title, description, teacher_id, subject_id, activity_type, total_points) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("ssiisi", $title, $description, $teacher_id, $subject_id, $activity_type, $total_points);
+            $stmt = $pdo->prepare("INSERT INTO activities (title, description, teacher_id, subject_id, activity_type, total_points) VALUES (?, ?, ?, ?, ?, ?)");
+            $ok = $stmt->execute([$title, $description, $teacher_id, $subject_id, $activity_type, $total_points]);
         } elseif ($time_limit === null) {
-            $stmt = $conn->prepare("INSERT INTO activities (title, description, teacher_id, subject_id, activity_type, total_points, due_date) VALUES (?, ?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("ssiisis", $title, $description, $teacher_id, $subject_id, $activity_type, $total_points, $due_date);
+            $stmt = $pdo->prepare("INSERT INTO activities (title, description, teacher_id, subject_id, activity_type, total_points, due_date) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $ok = $stmt->execute([$title, $description, $teacher_id, $subject_id, $activity_type, $total_points, $due_date]);
         } elseif ($due_date === null) {
-            $stmt = $conn->prepare("INSERT INTO activities (title, description, teacher_id, subject_id, activity_type, total_points, time_limit) VALUES (?, ?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("ssiisii", $title, $description, $teacher_id, $subject_id, $activity_type, $total_points, $time_limit);
+            $stmt = $pdo->prepare("INSERT INTO activities (title, description, teacher_id, subject_id, activity_type, total_points, time_limit) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $ok = $stmt->execute([$title, $description, $teacher_id, $subject_id, $activity_type, $total_points, $time_limit]);
         } else {
-            $stmt = $conn->prepare("INSERT INTO activities (title, description, teacher_id, subject_id, activity_type, total_points, time_limit, due_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("ssiisiss", $title, $description, $teacher_id, $subject_id, $activity_type, $total_points, $time_limit, $due_date);
+            $stmt = $pdo->prepare("INSERT INTO activities (title, description, teacher_id, subject_id, activity_type, total_points, time_limit, due_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $ok = $stmt->execute([$title, $description, $teacher_id, $subject_id, $activity_type, $total_points, $time_limit, $due_date]);
         }
         
-        if ($stmt->execute()) {
-            $activity_id = $conn->insert_id;
+        if ($ok) {
+            $activity_id = (int)$pdo->lastInsertId();
             
             // Handle questions if provided
             if (isset($_POST['questions']) && !empty($_POST['questions'])) {
@@ -160,11 +148,9 @@ function create_activity($conn, $teacher_id) {
                         $points = (int)$question['points'];
                         $order = $index + 1;
                         
-                        $q_stmt = $conn->prepare("INSERT INTO activity_questions (activity_id, question_text, question_type, points, question_order) VALUES (?, ?, ?, ?, ?)");
-                        $q_stmt->bind_param("issii", $activity_id, $question_text, $question_type, $points, $order);
-                        
-                        if ($q_stmt->execute()) {
-                            $question_id = $conn->insert_id;
+                        $q_stmt = $pdo->prepare("INSERT INTO activity_questions (activity_id, question_text, question_type, points, question_order) VALUES (?, ?, ?, ?, ?)");
+                        if ($q_stmt->execute([$activity_id, $question_text, $question_type, $points, $order])) {
+                            $question_id = (int)$pdo->lastInsertId();
                             
                             // Handle choices for multiple choice questions
                             if ($question_type === 'multiple_choice' && isset($question['choices']) && is_array($question['choices'])) {
@@ -177,9 +163,8 @@ function create_activity($conn, $teacher_id) {
                                     $is_correct = isset($choice['is_correct']) && $choice['is_correct'] === true ? 1 : 0;
                                     $choice_order = $choice_index + 1;
                                     
-                                    $c_stmt = $conn->prepare("INSERT INTO question_choices (question_id, choice_text, is_correct, choice_order) VALUES (?, ?, ?, ?)");
-                                    $c_stmt->bind_param("isii", $question_id, $choice_text, $is_correct, $choice_order);
-                                    $c_stmt->execute();
+                                    $c_stmt = $pdo->prepare("INSERT INTO question_choices (question_id, choice_text, is_correct, choice_order) VALUES (?, ?, ?, ?)");
+                                    $c_stmt->execute([$question_id, $choice_text, $is_correct, $choice_order]);
                                 }
                             }
                         }
@@ -187,7 +172,7 @@ function create_activity($conn, $teacher_id) {
                 }
             }
             
-            log_activity($conn, $teacher_id, 'Created Activity', $activity_id);
+            log_activity_local($teacher_id, 'Created Activity', $activity_id);
             echo json_encode(['success' => true, 'activity_id' => $activity_id, 'message' => 'Activity created successfully']);
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to create activity']);
@@ -198,7 +183,8 @@ function create_activity($conn, $teacher_id) {
     }
 }
 
-function get_activities($conn, $teacher_id) {
+function get_activities($teacher_id) {
+    global $pdo;
     try {
         $sql = "SELECT a.*, s.subject_name, s.grade_level,
                        COUNT(DISTINCT sub.student_id) as total_submissions,
@@ -210,16 +196,9 @@ function get_activities($conn, $teacher_id) {
                 WHERE a.teacher_id = ? 
                 GROUP BY a.activity_id
                 ORDER BY a.created_at DESC";
-        
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("i", $teacher_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        $activities = [];
-        while ($row = $result->fetch_assoc()) {
-            $activities[] = $row;
-        }
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$teacher_id]);
+        $activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         echo json_encode(['success' => true, 'activities' => $activities]);
         
@@ -228,42 +207,30 @@ function get_activities($conn, $teacher_id) {
     }
 }
 
-function get_activity_details($conn, $teacher_id) {
+function get_activity_details($teacher_id) {
+    global $pdo;
     try {
         $activity_id = (int)$_GET['activity_id'];
         
         // Verify ownership
-        $check_stmt = $conn->prepare("SELECT * FROM activities WHERE activity_id = ? AND teacher_id = ?");
-        $check_stmt->bind_param("ii", $activity_id, $teacher_id);
-        $check_stmt->execute();
-        $activity_result = $check_stmt->get_result();
-        
-        if ($activity_result->num_rows === 0) {
+        $check_stmt = $pdo->prepare("SELECT * FROM activities WHERE activity_id = ? AND teacher_id = ?");
+        $check_stmt->execute([$activity_id, $teacher_id]);
+        $activity = $check_stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$activity) {
             echo json_encode(['success' => false, 'message' => 'Activity not found or unauthorized']);
             return;
         }
         
-        $activity = $activity_result->fetch_assoc();
-        
         // Get questions
-        $q_stmt = $conn->prepare("SELECT * FROM activity_questions WHERE activity_id = ? ORDER BY question_order");
-        $q_stmt->bind_param("i", $activity_id);
-        $q_stmt->execute();
-        $questions_result = $q_stmt->get_result();
-        
+        $q_stmt = $pdo->prepare("SELECT * FROM activity_questions WHERE activity_id = ? ORDER BY question_order");
+        $q_stmt->execute([$activity_id]);
         $questions = [];
-        while ($question = $questions_result->fetch_assoc()) {
+        while ($question = $q_stmt->fetch(PDO::FETCH_ASSOC)) {
             // Get choices for multiple choice questions
             if ($question['question_type'] === 'multiple_choice') {
-                $c_stmt = $conn->prepare("SELECT * FROM question_choices WHERE question_id = ? ORDER BY choice_order");
-                $c_stmt->bind_param("i", $question['question_id']);
-                $c_stmt->execute();
-                $choices_result = $c_stmt->get_result();
-                
-                $choices = [];
-                while ($choice = $choices_result->fetch_assoc()) {
-                    $choices[] = $choice;
-                }
+                $c_stmt = $pdo->prepare("SELECT * FROM question_choices WHERE question_id = ? ORDER BY choice_order");
+                $c_stmt->execute([$question['question_id']]);
+                $choices = $c_stmt->fetchAll(PDO::FETCH_ASSOC);
                 $question['choices'] = $choices;
             }
             $questions[] = $question;
@@ -278,22 +245,16 @@ function get_activity_details($conn, $teacher_id) {
     }
 }
 
-function get_teacher_subjects($conn, $teacher_id) {
+function get_teacher_subjects($teacher_id) {
+    global $pdo;
     try {
         $sql = "SELECT s.subject_id, s.subject_name, s.grade_level 
                 FROM subjects s 
                 JOIN teacher_subjects ts ON s.subject_id = ts.subject_id 
                 WHERE ts.teacher_id = ?";
-        
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("i", $teacher_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        $subjects = [];
-        while ($row = $result->fetch_assoc()) {
-            $subjects[] = $row;
-        }
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$teacher_id]);
+        $subjects = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         echo json_encode(['success' => true, 'subjects' => $subjects]);
         
@@ -302,27 +263,23 @@ function get_teacher_subjects($conn, $teacher_id) {
     }
 }
 
-function get_students_for_subject($conn, $teacher_id) {
+function get_students_for_subject($teacher_id) {
+    global $pdo;
     try {
         $subject_id = (int)$_GET['subject_id'];
         
         // Verify that teacher teaches this subject
-        $check_stmt = $conn->prepare("SELECT id FROM teacher_subjects WHERE teacher_id = ? AND subject_id = ?");
-        $check_stmt->bind_param("ii", $teacher_id, $subject_id);
-        $check_stmt->execute();
-        $result = $check_stmt->get_result();
-        
-        if ($result->num_rows === 0) {
+        $check_stmt = $pdo->prepare("SELECT id FROM teacher_subjects WHERE teacher_id = ? AND subject_id = ?");
+        $check_stmt->execute([$teacher_id, $subject_id]);
+        if ($check_stmt->rowCount() === 0) {
             echo json_encode(['success' => false, 'message' => 'You are not authorized to view students for this subject']);
             return;
         }
         
         // Get the grade level for this subject
-        $grade_stmt = $conn->prepare("SELECT grade_level FROM subjects WHERE subject_id = ?");
-        $grade_stmt->bind_param("i", $subject_id);
-        $grade_stmt->execute();
-        $grade_result = $grade_stmt->get_result();
-        $grade_row = $grade_result->fetch_assoc();
+        $grade_stmt = $pdo->prepare("SELECT grade_level FROM subjects WHERE subject_id = ?");
+        $grade_stmt->execute([$subject_id]);
+        $grade_row = $grade_stmt->fetch(PDO::FETCH_ASSOC);
         
         if (!$grade_row) {
             echo json_encode(['success' => false, 'message' => 'Subject not found']);
@@ -340,16 +297,9 @@ function get_students_for_subject($conn, $teacher_id) {
                 WHERE u.role_id = 4 AND u.grade_level = ?
                 GROUP BY u.user_id
                 ORDER BY u.first_name, u.last_name";
-        
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("is", $subject_id, $grade_level);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        $students = [];
-        while ($row = $result->fetch_assoc()) {
-            $students[] = $row;
-        }
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$subject_id, $grade_level]);
+        $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         echo json_encode(['success' => true, 'students' => $students]);
         
@@ -358,7 +308,8 @@ function get_students_for_subject($conn, $teacher_id) {
     }
 }
 
-function get_dashboard_stats($conn, $teacher_id) {
+function get_dashboard_stats($teacher_id) {
+    global $pdo;
     try {
         $response = [
             'teacher_name' => '',
@@ -368,43 +319,31 @@ function get_dashboard_stats($conn, $teacher_id) {
         ];
 
         // Get teacher name
-        $stmt = $conn->prepare("SELECT first_name, last_name FROM users WHERE user_id = ?");
-        $stmt->bind_param("i", $teacher_id);
-        $stmt->execute();
-        $res = $stmt->get_result();
-        if ($row = $res->fetch_assoc()) {
+        $stmt = $pdo->prepare("SELECT first_name, last_name FROM users WHERE user_id = ?");
+        $stmt->execute([$teacher_id]);
+        if ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $response['teacher_name'] = $row['first_name'] . ' ' . $row['last_name'];
         }
-        $stmt->close();
 
         // Get grade levels for subjects taught by this teacher
         $grade_levels = [];
-        $stmt = $conn->prepare("SELECT DISTINCT s.grade_level FROM subjects s 
+        $stmt = $pdo->prepare("SELECT DISTINCT s.grade_level FROM subjects s 
                                JOIN teacher_subjects ts ON s.subject_id = ts.subject_id 
                                WHERE ts.teacher_id = ?");
-        $stmt->bind_param("i", $teacher_id);
-        $stmt->execute();
-        $res = $stmt->get_result();
-        while ($row = $res->fetch_assoc()) {
+        $stmt->execute([$teacher_id]);
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $grade_levels[] = $row['grade_level'];
         }
-        $stmt->close();
 
         // Get students in those grade levels
         $students = [];
         if (count($grade_levels) > 0) {
             $in = implode(',', array_fill(0, count($grade_levels), '?'));
-            $types = str_repeat('s', count($grade_levels));
             $sql = "SELECT user_id, first_name, last_name, grade_level FROM users 
                     WHERE grade_level IN ($in) AND role_id = 4";
-            $stmt = $conn->prepare($sql);
-            $stmt->bind_param($types, ...$grade_levels);
-            $stmt->execute();
-            $res = $stmt->get_result();
-            while ($row = $res->fetch_assoc()) {
-                $students[] = $row;
-            }
-            $stmt->close();
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($grade_levels);
+            $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
         $response['total_students'] = count($students);
 
@@ -441,17 +380,15 @@ function get_dashboard_stats($conn, $teacher_id) {
     }
 }
 
-function get_activity_submissions($conn, $teacher_id) {
+function get_activity_submissions($teacher_id) {
+    global $pdo;
     try {
         $activity_id = (int)$_GET['activity_id'];
         
         // Verify ownership
-        $check_stmt = $conn->prepare("SELECT activity_id FROM activities WHERE activity_id = ? AND teacher_id = ?");
-        $check_stmt->bind_param("ii", $activity_id, $teacher_id);
-        $check_stmt->execute();
-        $result = $check_stmt->get_result();
-        
-        if ($result->num_rows === 0) {
+        $check_stmt = $pdo->prepare("SELECT activity_id FROM activities WHERE activity_id = ? AND teacher_id = ?");
+        $check_stmt->execute([$activity_id, $teacher_id]);
+        if ($check_stmt->rowCount() === 0) {
             echo json_encode(['success' => false, 'message' => 'Activity not found or unauthorized']);
             return;
         }
@@ -461,16 +398,9 @@ function get_activity_submissions($conn, $teacher_id) {
                 JOIN users u ON sub.student_id = u.user_id
                 WHERE sub.activity_id = ?
                 ORDER BY sub.submitted_at DESC";
-        
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("i", $activity_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        $submissions = [];
-        while ($row = $result->fetch_assoc()) {
-            $submissions[] = $row;
-        }
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$activity_id]);
+        $submissions = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         echo json_encode(['success' => true, 'submissions' => $submissions]);
         
@@ -479,17 +409,15 @@ function get_activity_submissions($conn, $teacher_id) {
     }
 }
 
-function get_activity_analytics($conn, $teacher_id) {
+function get_activity_analytics($teacher_id) {
+    global $pdo;
     try {
         $activity_id = (int)$_GET['activity_id'];
         
         // Verify ownership
-        $check_stmt = $conn->prepare("SELECT activity_id FROM activities WHERE activity_id = ? AND teacher_id = ?");
-        $check_stmt->bind_param("ii", $activity_id, $teacher_id);
-        $check_stmt->execute();
-        $result = $check_stmt->get_result();
-        
-        if ($result->num_rows === 0) {
+        $check_stmt = $pdo->prepare("SELECT activity_id FROM activities WHERE activity_id = ? AND teacher_id = ?");
+        $check_stmt->execute([$activity_id, $teacher_id]);
+        if ($check_stmt->rowCount() === 0) {
             echo json_encode(['success' => false, 'message' => 'Activity not found or unauthorized']);
             return;
         }
@@ -504,12 +432,9 @@ function get_activity_analytics($conn, $teacher_id) {
                     MIN(CASE WHEN sub.submission_status = 'graded' THEN sub.percentage END) as lowest_score
                 FROM student_submissions sub
                 WHERE sub.activity_id = ?";
-        
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("i", $activity_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $analytics = $result->fetch_assoc();
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$activity_id]);
+        $analytics = $stmt->fetch(PDO::FETCH_ASSOC);
         
         echo json_encode(['success' => true, 'analytics' => $analytics]);
         
@@ -518,7 +443,8 @@ function get_activity_analytics($conn, $teacher_id) {
     }
 }
 
-function update_activity($conn, $teacher_id) {
+function update_activity($teacher_id) {
+    global $pdo;
     try {
         $activity_id = (int)$_POST['activity_id'];
         $title = sanitize_input($_POST['title']);
@@ -529,21 +455,17 @@ function update_activity($conn, $teacher_id) {
         $due_date = !empty($_POST['due_date']) ? $_POST['due_date'] : null;
         
         // Verify ownership
-        $check_stmt = $conn->prepare("SELECT activity_id FROM activities WHERE activity_id = ? AND teacher_id = ?");
-        $check_stmt->bind_param("ii", $activity_id, $teacher_id);
-        $check_stmt->execute();
-        $result = $check_stmt->get_result();
-        
-        if ($result->num_rows === 0) {
+        $check_stmt = $pdo->prepare("SELECT activity_id FROM activities WHERE activity_id = ? AND teacher_id = ?");
+        $check_stmt->execute([$activity_id, $teacher_id]);
+        if ($check_stmt->rowCount() === 0) {
             echo json_encode(['success' => false, 'message' => 'Activity not found or unauthorized']);
             return;
         }
         
-        $stmt = $conn->prepare("UPDATE activities SET title = ?, description = ?, activity_type = ?, total_points = ?, time_limit = ?, due_date = ? WHERE activity_id = ?");
-        $stmt->bind_param("sssisii", $title, $description, $activity_type, $total_points, $time_limit, $due_date, $activity_id);
-        
-        if ($stmt->execute()) {
-            log_activity($conn, $teacher_id, 'Updated Activity', $activity_id);
+        $stmt = $pdo->prepare("UPDATE activities SET title = ?, description = ?, activity_type = ?, total_points = ?, time_limit = ?, due_date = ? WHERE activity_id = ?");
+        $ok = $stmt->execute([$title, $description, $activity_type, $total_points, $time_limit, $due_date, $activity_id]);
+        if ($ok) {
+            log_activity_local($teacher_id, 'Updated Activity', $activity_id);
             echo json_encode(['success' => true, 'message' => 'Activity updated successfully']);
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to update activity']);
@@ -554,27 +476,24 @@ function update_activity($conn, $teacher_id) {
     }
 }
 
-function delete_activity($conn, $teacher_id) {
+function delete_activity($teacher_id) {
+    global $pdo;
     try {
         $activity_id = (int)$_POST['activity_id'];
         
         // Verify ownership
-        $check_stmt = $conn->prepare("SELECT activity_id FROM activities WHERE activity_id = ? AND teacher_id = ?");
-        $check_stmt->bind_param("ii", $activity_id, $teacher_id);
-        $check_stmt->execute();
-        $result = $check_stmt->get_result();
-        
-        if ($result->num_rows === 0) {
+        $check_stmt = $pdo->prepare("SELECT activity_id FROM activities WHERE activity_id = ? AND teacher_id = ?");
+        $check_stmt->execute([$activity_id, $teacher_id]);
+        if ($check_stmt->rowCount() === 0) {
             echo json_encode(['success' => false, 'message' => 'Activity not found or unauthorized']);
             return;
         }
         
         // Delete activity (cascade will handle related records)
-        $stmt = $conn->prepare("DELETE FROM activities WHERE activity_id = ?");
-        $stmt->bind_param("i", $activity_id);
-        
-        if ($stmt->execute()) {
-            log_activity($conn, $teacher_id, 'Deleted Activity', $activity_id);
+        $stmt = $pdo->prepare("DELETE FROM activities WHERE activity_id = ?");
+        $ok = $stmt->execute([$activity_id]);
+        if ($ok) {
+            log_activity_local($teacher_id, 'Deleted Activity', $activity_id);
             echo json_encode(['success' => true, 'message' => 'Activity deleted successfully']);
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to delete activity']);
@@ -585,22 +504,20 @@ function delete_activity($conn, $teacher_id) {
     }
 }
 
-function get_student_answers($conn, $teacher_id) {
+function get_student_answers($teacher_id) {
+    global $pdo;
     try {
         $submission_id = (int)$_GET['submission_id'];
         
         // Verify ownership through activity
-        $check_stmt = $conn->prepare("
+        $check_stmt = $pdo->prepare("
             SELECT a.activity_id 
             FROM student_submissions sub
             JOIN activities a ON sub.activity_id = a.activity_id
             WHERE sub.submission_id = ? AND a.teacher_id = ?
         ");
-        $check_stmt->bind_param("ii", $submission_id, $teacher_id);
-        $check_stmt->execute();
-        $result = $check_stmt->get_result();
-        
-        if ($result->num_rows === 0) {
+        $check_stmt->execute([$submission_id, $teacher_id]);
+        if ($check_stmt->rowCount() === 0) {
             echo json_encode(['success' => false, 'message' => 'Submission not found or unauthorized']);
             return;
         }
@@ -612,16 +529,9 @@ function get_student_answers($conn, $teacher_id) {
                 LEFT JOIN question_choices qc ON sa.choice_id = qc.choice_id
                 WHERE sa.submission_id = ?
                 ORDER BY aq.question_order";
-        
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("i", $submission_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        $answers = [];
-        while ($row = $result->fetch_assoc()) {
-            $answers[] = $row;
-        }
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$submission_id]);
+        $answers = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         echo json_encode(['success' => true, 'answers' => $answers]);
         
@@ -630,39 +540,36 @@ function get_student_answers($conn, $teacher_id) {
     }
 }
 
-function grade_submission($conn, $teacher_id) {
+function grade_submission($teacher_id) {
+    global $pdo;
     try {
         $submission_id = (int)$_POST['submission_id'];
         $total_score = (float)$_POST['total_score'];
         $max_score = (float)$_POST['max_score'];
         
         // Verify ownership
-        $check_stmt = $conn->prepare("
+        $check_stmt = $pdo->prepare("
             SELECT a.activity_id 
             FROM student_submissions sub
             JOIN activities a ON sub.activity_id = a.activity_id
             WHERE sub.submission_id = ? AND a.teacher_id = ?
         ");
-        $check_stmt->bind_param("ii", $submission_id, $teacher_id);
-        $check_stmt->execute();
-        $result = $check_stmt->get_result();
-        
-        if ($result->num_rows === 0) {
+        $check_stmt->execute([$submission_id, $teacher_id]);
+        if ($check_stmt->rowCount() === 0) {
             echo json_encode(['success' => false, 'message' => 'Submission not found or unauthorized']);
             return;
         }
         
         $percentage = ($total_score / $max_score) * 100;
         
-        $stmt = $conn->prepare("
+        $stmt = $pdo->prepare("
             UPDATE student_submissions 
             SET total_score = ?, percentage = ?, submission_status = 'graded', graded_at = NOW()
             WHERE submission_id = ?
         ");
-        $stmt->bind_param("ddi", $total_score, $percentage, $submission_id);
-        
-        if ($stmt->execute()) {
-            log_activity($conn, $teacher_id, 'Graded Submission', $submission_id);
+        $ok = $stmt->execute([$total_score, $percentage, $submission_id]);
+        if ($ok) {
+            log_activity_local($teacher_id, 'Graded Submission', $submission_id);
             echo json_encode(['success' => true, 'message' => 'Submission graded successfully', 'percentage' => $percentage]);
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to grade submission']);
@@ -673,30 +580,26 @@ function grade_submission($conn, $teacher_id) {
     }
 }
 
-function toggle_activity_status($conn, $teacher_id) {
+function toggle_activity_status($teacher_id) {
+    global $pdo;
     try {
         $activity_id = (int)$_POST['activity_id'];
         
         // Verify ownership
-        $check_stmt = $conn->prepare("SELECT is_active FROM activities WHERE activity_id = ? AND teacher_id = ?");
-        $check_stmt->bind_param("ii", $activity_id, $teacher_id);
-        $check_stmt->execute();
-        $result = $check_stmt->get_result();
-        
-        if ($result->num_rows === 0) {
+        $check_stmt = $pdo->prepare("SELECT is_active FROM activities WHERE activity_id = ? AND teacher_id = ?");
+        $check_stmt->execute([$activity_id, $teacher_id]);
+        $row = $check_stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row) {
             echo json_encode(['success' => false, 'message' => 'Activity not found or unauthorized']);
             return;
         }
-        
-        $current_status = $result->fetch_assoc()['is_active'];
+        $current_status = (int)$row['is_active'];
         $new_status = $current_status ? 0 : 1;
-        
-        $update_stmt = $conn->prepare("UPDATE activities SET is_active = ? WHERE activity_id = ?");
-        $update_stmt->bind_param("ii", $new_status, $activity_id);
-        
-        if ($update_stmt->execute()) {
+        $update_stmt = $pdo->prepare("UPDATE activities SET is_active = ? WHERE activity_id = ?");
+        $ok = $update_stmt->execute([$new_status, $activity_id]);
+        if ($ok) {
             $action = $new_status ? 'Activated Activity' : 'Deactivated Activity';
-            log_activity($conn, $teacher_id, $action, $activity_id);
+            log_activity_local($teacher_id, $action, $activity_id);
             echo json_encode(['success' => true, 'new_status' => $new_status]);
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to update activity status']);
@@ -706,6 +609,4 @@ function toggle_activity_status($conn, $teacher_id) {
         echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
     }
 }
-
-$conn->close();
 ?>

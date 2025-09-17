@@ -5,24 +5,19 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role_id']) && $_SESSION['rol
     header('Location: student-home.php');
     exit();
 }
-$conn = new mysqli('localhost', 'root', '', 'lars_db');
-if ($conn->connect_error) {
-    die('Connection failed: ' . $conn->connect_error);
-}
+include '../Database/database.php';
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $login_input = $conn->real_escape_string($_POST['email']); // Can be email or username
+    $login_input = $_POST['email']; // Can be email or username
     $password = $_POST['password'];
     
     // Query to find user by email OR username for students (role_id = 4)
     $query = "SELECT user_id, password, first_name, last_name, username FROM users WHERE (email = ? OR username = ?) AND role_id = 4";
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param('ss', $login_input, $login_input);
-    $stmt->execute();
-    $result = $stmt->get_result();
+    $stmt = $pdo->prepare($query);
+    $stmt->execute([$login_input, $login_input]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
     
-    if ($result->num_rows > 0) {
-        $user = $result->fetch_assoc();
+    if ($user) {
         // Check password (supports both plain text and hashed passwords)
         if ($password === $user['password'] || password_verify($password, $user['password'])) {
             $_SESSION['user_id'] = $user['user_id'];
@@ -32,17 +27,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             
             // Log the login action
             $log_query = "INSERT INTO user_logs (user_id, action, ip_address) VALUES (?, 'Login', ?)";
-            $log_stmt = $conn->prepare($log_query);
+            $log_stmt = $pdo->prepare($log_query);
             $ip = $_SERVER['REMOTE_ADDR'];
-            $log_stmt->bind_param('is', $user['user_id'], $ip);
             
-            if (!$log_stmt->execute()) {
+            if (!$log_stmt->execute([$user['user_id'], $ip])) {
                 // Log insertion failed, but don't stop the login process
                 error_log("Failed to log student login for user_id: " . $user['user_id']);
             }
-            $log_stmt->close();
-            $stmt->close();
-            $conn->close();
             
             header("Location: student-home.php");
             exit();
@@ -52,9 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } else {
         $error = 'Invalid email/username or you do not have student privileges';
     }
-    $stmt->close();
 }
-$conn->close();
 ?>
 <!DOCTYPE html>
 <html lang="en">

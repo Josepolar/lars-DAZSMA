@@ -61,90 +61,87 @@
     <?php
     session_start();
     require_once '../log_activity.php';
-    // Database connection
-    $conn = new mysqli('localhost', 'root', '', 'lars_db');
-    if ($conn->connect_error) {
-        die('Connection failed: ' . $conn->connect_error);
-    }
+    include '../Database/database.php';
 
     // Handle Edit Student
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_student'])) {
-        $user_id = $conn->real_escape_string($_POST['user_id']);
-        $firstname = $conn->real_escape_string($_POST['firstname']);
-        $lastname = $conn->real_escape_string($_POST['lastname']);
-        $username = $conn->real_escape_string($_POST['username']);
+        $user_id = $_POST['user_id'];
+        $firstname = $_POST['firstname'];
+        $lastname = $_POST['lastname'];
+        $username = $_POST['username'];
         $email = $username . "@lars.edu.ph";
-        $grade = $conn->real_escape_string($_POST['grade']);
+        $grade = $_POST['grade'];
         
-        $password_sql = "";
         if (!empty($_POST['password'])) {
             $password = $_POST['password'];
-            $password_sql = ", password = '$password'";
+            $stmt = $pdo->prepare("UPDATE users SET 
+                first_name = ?,
+                last_name = ?,
+                username = ?,
+                email = ?,
+                grade_level = ?,
+                password = ?
+                WHERE user_id = ? AND role_id = 4");
+            $stmt->execute([$firstname, $lastname, $username, $email, $grade, $password, $user_id]);
+        } else {
+            $stmt = $pdo->prepare("UPDATE users SET 
+                first_name = ?,
+                last_name = ?,
+                username = ?,
+                email = ?,
+                grade_level = ?
+                WHERE user_id = ? AND role_id = 4");
+            $stmt->execute([$firstname, $lastname, $username, $email, $grade, $user_id]);
         }
 
-        $sql = "UPDATE users SET 
-                first_name = '$firstname',
-                last_name = '$lastname',
-                username = '$username',
-                email = '$email',
-                grade_level = '$grade'
-                $password_sql
-                WHERE user_id = '$user_id' AND role_id = 4";
-
-        if ($conn->query($sql)) {
+        if ($stmt->rowCount() > 0) {
             log_activity('Edited Student', $user_id);
             echo "<script>alert('Student updated successfully!'); window.location.href=window.location.pathname;</script>";
             exit;
         } else {
-            echo "<script>alert('Error updating student: " . $conn->error . "');</script>";
+            echo "<script>alert('Error updating student');</script>";
         }
     }
 
     // Handle Delete Student
     if (isset($_POST['delete_student'])) {
-        $user_id = $conn->real_escape_string($_POST['user_id']);
+        $user_id = $_POST['user_id'];
         
         try {
             // Start a transaction
-            $conn->begin_transaction();
+            $pdo->beginTransaction();
             
             // Log the deletion first
             log_activity('Deleted Student', $user_id);
             
             // Delete logs where the student is the user
-            $stmt = $conn->prepare("DELETE FROM user_logs WHERE user_id = ?");
-            $stmt->bind_param('i', $user_id);
-            $stmt->execute();
-            $stmt->close();
+            $stmt = $pdo->prepare("DELETE FROM user_logs WHERE user_id = ?");
+            $stmt->execute([$user_id]);
             
             // Delete logs where the student is the affected user
-            $stmt = $conn->prepare("DELETE FROM user_logs WHERE affected_user_id = ?");
-            $stmt->bind_param('i', $user_id);
-            $stmt->execute();
-            $stmt->close();
+            $stmt = $pdo->prepare("DELETE FROM user_logs WHERE affected_user_id = ?");
+            $stmt->execute([$user_id]);
             
             // Finally delete the student
-            $stmt = $conn->prepare("DELETE FROM users WHERE user_id = ? AND role_id = 4");
-            $stmt->bind_param('i', $user_id);
-            $stmt->execute();
-            $stmt->close();
+            $stmt = $pdo->prepare("DELETE FROM users WHERE user_id = ? AND role_id = 4");
+            $stmt->execute([$user_id]);
             
             // Commit the transaction
-            $conn->commit();
+            $pdo->commit();
             
             echo "<script>alert('Student deleted successfully!'); window.location.href=window.location.pathname;</script>";
             exit;
         } catch (Exception $e) {
             // Roll back the transaction in case of error
-            $conn->rollback();
-            echo "<script>console.error('Error: " . $e->getMessage() . "'); alert('Error deleting student: " . $conn->error . "');</script>";
+            $pdo->rollBack();
+            echo "<script>console.error('Error: " . $e->getMessage() . "'); alert('Error deleting student');</script>";
         }
     }
 
     // Get total number of students
     $countQuery = "SELECT COUNT(*) as total FROM users WHERE role_id = 4";
-    $countResult = $conn->query($countQuery);
-    $totalStudents = $countResult->fetch_assoc()['total'];
+    $countResult = $pdo->query($countQuery);
+    $totalStudents = $countResult->fetch(PDO::FETCH_ASSOC)['total'];
     ?>
 
     <div class="stats-container">
@@ -193,10 +190,11 @@
                              FROM users 
                              WHERE role_id = 4 
                              ORDER BY grade_level, last_name, first_name";
-                    $result = $conn->query($query);
+                    $result = $pdo->query($query);
+                    $students = $result->fetchAll(PDO::FETCH_ASSOC);
 
-                    if ($result && $result->num_rows > 0) {
-                        while ($row = $result->fetch_assoc()) {
+                    if ($students) {
+                        foreach ($students as $row) {
                             echo "<tr data-grade='{$row['grade_level']}'>";
                             echo "<td>" . htmlspecialchars($row['user_id']) . "</td>";
                             echo "<td>" . htmlspecialchars($row['email']) . "</td>";

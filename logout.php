@@ -6,16 +6,11 @@ $role = isset($_SESSION['role_id']) ? $_SESSION['role_id'] : null;
 
 // Log the logout action if user_id exists
 if ($user_id) {
-    $conn = new mysqli('localhost', 'root', '', 'lars_db');
-    if (!$conn->connect_error) {
-        $log_query = "INSERT INTO user_logs (user_id, action, ip_address) VALUES (?, 'Logout', ?)";
-        $log_stmt = $conn->prepare($log_query);
-        $ip = $_SERVER['REMOTE_ADDR'];
-        $log_stmt->bind_param('is', $user_id, $ip);
-        $log_stmt->execute();
-        $log_stmt->close();
-        $conn->close();
-    }
+    include 'Database/database.php';
+    $log_query = "INSERT INTO user_logs (user_id, action, ip_address) VALUES (?, 'Logout', ?)";
+    $log_stmt = $pdo->prepare($log_query);
+    $ip = $_SERVER['REMOTE_ADDR'];
+    $log_stmt->execute([$user_id, $ip]);
 }
 
 // Clear and destroy session

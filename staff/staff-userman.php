@@ -87,118 +87,128 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
 
     <?php
     // Database connection
-    $conn = new mysqli('localhost', 'root', '', 'lars_db');
-    if ($conn->connect_error) {
-        die('Connection failed: ' . $conn->connect_error);
-    }
+    include '../Database/database.php';
 
     // Check if grade_level column exists, if not add it
-    $checkColumn = $conn->query("SHOW COLUMNS FROM users LIKE 'grade_level'");
-    if ($checkColumn->num_rows === 0) {
-        $conn->query("ALTER TABLE users ADD COLUMN grade_level VARCHAR(2) DEFAULT NULL");
+    try {
+        $checkColumn = $pdo->query("SHOW COLUMNS FROM users LIKE 'grade_level'");
+        if ($checkColumn->rowCount() === 0) {
+            $pdo->exec("ALTER TABLE users ADD COLUMN grade_level VARCHAR(2) DEFAULT NULL");
+        }
+    } catch (PDOException $e) {
+        // Column might already exist or other error, continue
     }
 
     // Handle Add Teacher
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_teacher'])) {
-        $fname = $conn->real_escape_string($_POST['teacher_fname'] ?? '');
-        $lname = $conn->real_escape_string($_POST['teacher_lname'] ?? '');
-        $username = $conn->real_escape_string($_POST['teacher_username'] ?? '');
+        $fname = $_POST['teacher_fname'] ?? '';
+        $lname = $_POST['teacher_lname'] ?? '';
+        $username = $_POST['teacher_username'] ?? '';
         // Create email based on username
         $email = $username . "@lars.edu.ph";
         $password = $_POST['teacher_password'] ?? '';  // Store password as plain text
         $role_id = 3; // Teacher
 
         // Check if username already exists
-        $check = $conn->query("SELECT user_id FROM users WHERE username = '$username'");
-        if ($check && $check->num_rows > 0) {
+        $stmt = $pdo->prepare("SELECT user_id FROM users WHERE username = ?");
+        $stmt->execute([$username]);
+        if ($stmt->rowCount() > 0) {
             echo "<script>alert('Username already exists. Please choose another.');</script>";
         } else {
-            $sql = "INSERT INTO users (first_name, last_name, username, email, password, role_id) 
-                    VALUES ('$fname', '$lname', '$username', '$email', '$password', $role_id)";
-            if ($conn->query($sql)) {
-                log_activity('Added Teacher', $conn->insert_id);
+            $stmt = $pdo->prepare("INSERT INTO users (first_name, last_name, username, email, password, role_id) 
+                    VALUES (?, ?, ?, ?, ?, ?)");
+            if ($stmt->execute([$fname, $lname, $username, $email, $password, $role_id])) {
+                log_activity('Added Teacher', $pdo->lastInsertId());
                 echo "<script>alert('Teacher added successfully!'); window.location.href=window.location.pathname;</script>";
                 exit;
             } else {
-                echo "<script>alert('Error adding teacher: {$conn->error}');</script>";
+                echo "<script>alert('Error adding teacher.');</script>";
             }
         }
     }
 
     // Handle Delete User
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_user'])) {
-        $user_id = $conn->real_escape_string($_POST['user_id']);
+        $user_id = $_POST['user_id'];
         
         // Start transaction
-        $conn->begin_transaction();
+        $pdo->beginTransaction();
         
         try {
             // First delete from teacher_subjects
-            $sql_subjects = "DELETE FROM teacher_subjects WHERE teacher_id = '$user_id'";
-            $conn->query($sql_subjects);
+            $stmt = $pdo->prepare("DELETE FROM teacher_subjects WHERE teacher_id = ?");
+            $stmt->execute([$user_id]);
 
             // Delete logs where user is user_id
-            $sql_logs1 = "DELETE FROM user_logs WHERE user_id = '$user_id'";
-            $conn->query($sql_logs1);
+            $stmt = $pdo->prepare("DELETE FROM user_logs WHERE user_id = ?");
+            $stmt->execute([$user_id]);
 
             // Delete logs where user is affected_user_id
-            $sql_logs2 = "DELETE FROM user_logs WHERE affected_user_id = '$user_id'";
-            $conn->query($sql_logs2);
+            $stmt = $pdo->prepare("DELETE FROM user_logs WHERE affected_user_id = ?");
+            $stmt->execute([$user_id]);
 
             // Then delete the user
-            $sql_user = "DELETE FROM users WHERE user_id = '$user_id'";
-            $conn->query($sql_user);
+            $stmt = $pdo->prepare("DELETE FROM users WHERE user_id = ?");
+            $stmt->execute([$user_id]);
             log_activity('Deleted User', $user_id);
             // If we get here, commit the transaction
-            $conn->commit();
+            $pdo->commit();
             echo "<script>alert('User deleted successfully!'); window.location.href=window.location.pathname;</script>";
             exit;
         } catch (Exception $e) {
             // If there's an error, rollback the transaction
-            $conn->rollback();
-            echo "<script>alert('Error deleting user: " . $conn->error . "');</script>";
+            $pdo->rollBack();
+            echo "<script>alert('Error deleting user: " . $e->getMessage() . "');</script>";
         }
     }
 
     // Handle Edit User
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_user'])) {
-        $user_id = $conn->real_escape_string($_POST['user_id']);
-        $fname = $conn->real_escape_string($_POST['edit_fname']);
-        $lname = $conn->real_escape_string($_POST['edit_lname']);
-        $username = $conn->real_escape_string($_POST['edit_username']);
+        $user_id = $_POST['user_id'];
+        $fname = $_POST['edit_fname'];
+        $lname = $_POST['edit_lname'];
+        $username = $_POST['edit_username'];
         // Update email to match username format
         $email = $username . "@lars.edu.ph";
-        $grade = isset($_POST['edit_grade']) ? $conn->real_escape_string($_POST['edit_grade']) : null;
+        $grade = isset($_POST['edit_grade']) ? $_POST['edit_grade'] : null;
         
         // Check if username already exists for other users
-        $check = $conn->query("SELECT user_id FROM users WHERE username = '$username' AND user_id != '$user_id'");
-        if ($check && $check->num_rows > 0) {
+        $stmt = $pdo->prepare("SELECT user_id FROM users WHERE username = ? AND user_id != ?");
+        $stmt->execute([$username, $user_id]);
+        if ($stmt->rowCount() > 0) {
             echo "<script>alert('Username already exists. Please choose another.');</script>";
         } else {
-            $password_sql = "";
-            if (!empty($_POST['edit_password'])) {
-                $password = $_POST['edit_password'];  // Store password as plain text
-                $password_sql = ", password = '$password'";
-            }
-            
             // Get user's role
-            $role_query = "SELECT role_id FROM users WHERE user_id = '$user_id'";
-            $role_result = $conn->query($role_query);
-            $role_row = $role_result->fetch_assoc();
+            $stmt = $pdo->prepare("SELECT role_id FROM users WHERE user_id = ?");
+            $stmt->execute([$user_id]);
+            $role_row = $stmt->fetch(PDO::FETCH_ASSOC);
             $is_student = $role_row['role_id'] == 4;
             
-            $grade_sql = $is_student ? ", grade_level = " . ($grade ? "'$grade'" : "NULL") : "";
+            // Build update query dynamically
+            $params = [$fname, $lname, $username, $email];
+            $sql = "UPDATE users SET first_name = ?, last_name = ?, username = ?, email = ?";
             
-            $sql = "UPDATE users SET first_name = '$fname', last_name = '$lname', 
-                    username = '$username', email = '$email' $password_sql $grade_sql 
-                    WHERE user_id = '$user_id'";
+            if (!empty($_POST['edit_password'])) {
+                $password = $_POST['edit_password'];  // Store password as plain text
+                $sql .= ", password = ?";
+                $params[] = $password;
+            }
             
-            if ($conn->query($sql)) {
+            if ($is_student) {
+                $sql .= ", grade_level = ?";
+                $params[] = $grade;
+            }
+            
+            $sql .= " WHERE user_id = ?";
+            $params[] = $user_id;
+            
+            $stmt = $pdo->prepare($sql);
+            if ($stmt->execute($params)) {
                 log_activity('Edited User', $user_id);
                 echo "<script>alert('User updated successfully!'); window.location.href=window.location.pathname;</script>";
                 exit;
             } else {
-                echo "<script>alert('Error updating user: {$conn->error}');</script>";
+                echo "<script>alert('Error updating user.');</script>";
             }
         }
     }
@@ -220,17 +230,17 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
             $success_count = 0;
             $error_count = 0;
             $errors = [];            // Start transaction
-            $conn->begin_transaction();
+            $pdo->beginTransaction();
             
             try {
                 while (($data = fgetcsv($handle)) !== FALSE) {
                     if (count($data) >= 6) {
-                        $fname = $conn->real_escape_string($data[0]);
-                        $lname = $conn->real_escape_string($data[1]);
-                        $username = $conn->real_escape_string($data[2]);
-                        $email = $conn->real_escape_string($data[3]);
+                        $fname = $data[0];
+                        $lname = $data[1];
+                        $username = $data[2];
+                        $email = $data[3];
                         $password = $data[4];  // Store password as plain text
-                        $grade = $conn->real_escape_string($data[5]);
+                        $grade = $data[5];
                         $role_id = 4;
                         
                         // Validate grade level
@@ -241,19 +251,20 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
                         }
                         
                         // Check if username exists
-                        $check = $conn->query("SELECT user_id FROM users WHERE username = '$username'");
-                        if ($check && $check->num_rows > 0) {
+                        $stmt = $pdo->prepare("SELECT user_id FROM users WHERE username = ?");
+                        $stmt->execute([$username]);
+                        if ($stmt->rowCount() > 0) {
                             $errors[] = "Username '$username' already exists";
                             $error_count++;
                             continue;
                         }
                         
-                        $sql = "INSERT INTO users (first_name, last_name, username, email, password, role_id, grade_level) 
-                                VALUES ('$fname', '$lname', '$username', '$email', '$password', $role_id, '$grade')";
-                        if ($conn->query($sql)) {
+                        $stmt = $pdo->prepare("INSERT INTO users (first_name, last_name, username, email, password, role_id, grade_level) 
+                                VALUES (?, ?, ?, ?, ?, ?, ?)");
+                        if ($stmt->execute([$fname, $lname, $username, $email, $password, $role_id, $grade])) {
                             $success_count++;
                         } else {
-                            $errors[] = "Error adding student $fname $lname: " . $conn->error;
+                            $errors[] = "Error adding student $fname $lname";
                             $error_count++;
                         }
                     }
@@ -262,7 +273,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
                 fclose($handle);
                 
                 if ($success_count > 0) {
-                    $conn->commit();
+                    $pdo->commit();
                     $message = "$success_count students added successfully.";
                     if ($error_count > 0) {
                         $message .= "\n$error_count errors occurred:\n" . implode("\n", $errors);
@@ -273,7 +284,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
                     throw new Exception("No students were added. Errors:\n" . implode("\n", $errors));
                 }
             } catch (Exception $e) {
-                $conn->rollback();
+                $pdo->rollBack();
                 echo "<script>alert('Error processing CSV file: " . str_replace("'", "\\'", $e->getMessage()) . "');</script>";
             }
         } else {
@@ -283,43 +294,44 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
 
     // Handle Add Student
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_student'])) {
-        $fname = $conn->real_escape_string($_POST['student_fname'] ?? '');
-        $lname = $conn->real_escape_string($_POST['student_lname'] ?? '');
-        $username = $conn->real_escape_string($_POST['student_username'] ?? '');
+        $fname = $_POST['student_fname'] ?? '';
+        $lname = $_POST['student_lname'] ?? '';
+        $username = $_POST['student_username'] ?? '';
         // Create email based on username
         $email = $username . "@lars.edu.ph";
         $password = $_POST['student_password'] ?? '';  // Store password as plain text
-        $grade = $conn->real_escape_string($_POST['student_grade'] ?? '');
+        $grade = $_POST['student_grade'] ?? '';
         $role_id = 4; // Student
         
         // Check if username already exists
-        $check = $conn->query("SELECT user_id FROM users WHERE username = '$username'");
-        if ($check && $check->num_rows > 0) {
+        $stmt = $pdo->prepare("SELECT user_id FROM users WHERE username = ?");
+        $stmt->execute([$username]);
+        if ($stmt->rowCount() > 0) {
             echo "<script>alert('Username already exists. Please choose another.');</script>";
         } else {
-            $sql = "INSERT INTO users (first_name, last_name, username, email, password, role_id, grade_level) 
-                    VALUES ('$fname', '$lname', '$username', '$email', '$password', $role_id, '$grade')";
-            if ($conn->query($sql)) {
-                log_activity('Added Student', $conn->insert_id);
+            $stmt = $pdo->prepare("INSERT INTO users (first_name, last_name, username, email, password, role_id, grade_level) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?)");
+            if ($stmt->execute([$fname, $lname, $username, $email, $password, $role_id, $grade])) {
+                log_activity('Added Student', $pdo->lastInsertId());
                 echo "<script>alert('Student added successfully!'); window.location.href=window.location.pathname;</script>";
                 exit;
             } else {
-                echo "<script>alert('Error adding student: {$conn->error}');</script>";
+                echo "<script>alert('Error adding student.');</script>";
             }
         }
     }
 
     // Get teacher count
     $teacherCount = 0;
-    $result = $conn->query("SELECT COUNT(*) as cnt FROM users WHERE role_id = 3");
-    if ($result && $row = $result->fetch_assoc()) {
+    $stmt = $pdo->query("SELECT COUNT(*) as cnt FROM users WHERE role_id = 3");
+    if ($stmt && $row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $teacherCount = $row['cnt'];
     }
 
     // Get student count
     $studentCount = 0;
-    $result = $conn->query("SELECT COUNT(*) as cnt FROM users WHERE role_id = 4");
-    if ($result && $row = $result->fetch_assoc()) {
+    $stmt = $pdo->query("SELECT COUNT(*) as cnt FROM users WHERE role_id = 4");
+    if ($stmt && $row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $studentCount = $row['cnt'];
     }
     ?>
@@ -477,9 +489,9 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
                 <?php
                 // Fetch teachers
                 $teacherQuery = "SELECT user_id, first_name, last_name, email, username, password FROM users WHERE role_id = 3 ORDER BY last_name";
-                $teacherResult = $conn->query($teacherQuery);
-                if ($teacherResult && $teacherResult->num_rows > 0) {
-                    while ($row = $teacherResult->fetch_assoc()) {
+                $teacherResult = $pdo->query($teacherQuery);
+                if ($teacherResult && $teacherResult->rowCount() > 0) {
+                    while ($row = $teacherResult->fetch(PDO::FETCH_ASSOC)) {
                         echo "<tr>";
                         echo "<td>" . htmlspecialchars($row['first_name'] . " " . $row['last_name']) . "</td>";
                         echo "<td>" . htmlspecialchars($row['email']) . "</td>";
@@ -532,9 +544,9 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
                 <?php
                 // Fetch students
                 $studentQuery = "SELECT user_id, first_name, last_name, username, grade_level, password FROM users WHERE role_id = 4 ORDER BY grade_level, last_name";
-                $studentResult = $conn->query($studentQuery);
-                if ($studentResult && $studentResult->num_rows > 0) {
-                    while ($row = $studentResult->fetch_assoc()) {
+                $studentResult = $pdo->query($studentQuery);
+                if ($studentResult && $studentResult->rowCount() > 0) {
+                    while ($row = $studentResult->fetch(PDO::FETCH_ASSOC)) {
                         // Generate email from username
                         $email = $row['username'] . "@lars.edu.ph";
                         echo "<tr>";
@@ -820,10 +832,10 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
                     </thead>
                     <tbody>
                         <?php
-                        // Reset the teacher result pointer
-                        $teacherResult->data_seek(0);
-                        if ($teacherResult && $teacherResult->num_rows > 0) {
-                            while ($row = $teacherResult->fetch_assoc()) {
+                        // Re-fetch teachers for modal
+                        $teacherResult = $pdo->query($teacherQuery);
+                        if ($teacherResult && $teacherResult->rowCount() > 0) {
+                            while ($row = $teacherResult->fetch(PDO::FETCH_ASSOC)) {
                                 echo "<tr>";
                                 echo "<td>" . htmlspecialchars($row['first_name'] . " " . $row['last_name']) . "</td>";
                                 echo "<td>" . htmlspecialchars($row['email']) . "</td>";
@@ -879,10 +891,10 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
                     </thead>
                     <tbody class="student-list">
                         <?php
-                        // Reset the student result pointer
-                        $studentResult->data_seek(0);
-                        if ($studentResult && $studentResult->num_rows > 0) {
-                            while ($row = $studentResult->fetch_assoc()) {
+                        // Re-fetch students for modal
+                        $studentResult = $pdo->query($studentQuery);
+                        if ($studentResult && $studentResult->rowCount() > 0) {
+                            while ($row = $studentResult->fetch(PDO::FETCH_ASSOC)) {
                                 $email = $row['username'] . "@lars.edu.ph";
                                 echo "<tr>";
                                 echo "<td>" . htmlspecialchars($row['first_name'] . " " . $row['last_name']) . "</td>";

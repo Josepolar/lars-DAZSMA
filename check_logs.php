@@ -1,13 +1,10 @@
 <?php
 header('Content-Type: application/json');
 
-try {
-    // Database connection
-    $conn = new mysqli('localhost', 'root', '', 'lars_db');
-    if ($conn->connect_error) {
-        throw new Exception('Connection failed: ' . $conn->connect_error);
-    }
+// Database connection
+include 'Database/database.php';
 
+try {
     // Validate date parameter
     $date = $_GET['date'] ?? date('Y-m-d');
     if (!strtotime($date)) {
@@ -15,23 +12,17 @@ try {
     }
 
     // Check if user_logs table exists
-    $tableCheck = $conn->query("SHOW TABLES LIKE 'user_logs'");
-    if ($tableCheck->num_rows === 0) {
+    $tableCheck = $pdo->query("SHOW TABLES LIKE 'user_logs'");
+    if ($tableCheck->fetchColumn() === false) {
         throw new Exception('User logs table does not exist');
     }
 
     // Check if there are any logs for the given date
     $query = "SELECT COUNT(*) as count FROM user_logs WHERE DATE(action_timestamp) = ?";
     
-    $stmt = $conn->prepare($query);
-    if (!$stmt) {
-        throw new Exception('Query preparation failed: ' . $conn->error);
-    }
-
-    $stmt->bind_param('s', $date);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $row = $result->fetch_assoc();
+    $stmt = $pdo->prepare($query);
+    $stmt->execute([$date]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
     echo json_encode([
         'status' => 'success',
@@ -39,15 +30,10 @@ try {
         'count' => $row['count']
     ]);
 
-    $stmt->close();
 } catch (Exception $e) {
     echo json_encode([
         'status' => 'error',
         'message' => $e->getMessage()
     ]);
-} finally {
-    if (isset($conn)) {
-        $conn->close();
-    }
 }
 ?>

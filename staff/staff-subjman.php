@@ -9,56 +9,54 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role_id'] != 2) {
 }
 
 // Database connection
-$conn = new mysqli('localhost', 'root', '', 'lars_db');
-if ($conn->connect_error) {
-    die('Connection failed: ' . $conn->connect_error);
-}
+include '../Database/database.php';
 
 // Handle Add Subject
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_subject'])) {
-    $subject_name = $conn->real_escape_string($_POST['subject_name']);
-    $grade_level = $conn->real_escape_string($_POST['grade_level']);
+    $subject_name = $_POST['subject_name'];
+    $grade_level = $_POST['grade_level'];
     
-    $sql = "INSERT INTO subjects (subject_name, grade_level) VALUES ('$subject_name', '$grade_level')";
-    if ($conn->query($sql)) {
-        $subject_id = $conn->insert_id;
+    $stmt = $pdo->prepare("INSERT INTO subjects (subject_name, grade_level) VALUES (?, ?)");
+    if ($stmt->execute([$subject_name, $grade_level])) {
+        $subject_id = $pdo->lastInsertId();
         log_activity('Added Subject', $subject_id);
         echo "<script>alert('Subject added successfully!');</script>";
     } else {
-        echo "<script>alert('Error adding subject: " . $conn->error . "');</script>";
+        echo "<script>alert('Error adding subject.');</script>";
     }
 }
 
 // Handle Delete Subject
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_subject'])) {
-    $subject_id = $conn->real_escape_string($_POST['subject_id']);
+    $subject_id = $_POST['subject_id'];
     
     // First check if subject exists
-    $subjectCheck = $conn->query("SELECT subject_id FROM subjects WHERE subject_id = '$subject_id'");
-    if ($subjectCheck->num_rows == 0) {
+    $stmt = $pdo->prepare("SELECT subject_id FROM subjects WHERE subject_id = ?");
+    $stmt->execute([$subject_id]);
+    if ($stmt->rowCount() == 0) {
         echo "<script>alert('Error: Subject does not exist!');</script>";
     } else {
         // Start transaction
-        $conn->begin_transaction();
+        $pdo->beginTransaction();
         
         try {
             // First, delete any logs that reference this subject
-            $sql_logs = "DELETE FROM user_logs WHERE affected_user_id = '$subject_id'";
-            $conn->query($sql_logs);
+            $stmt = $pdo->prepare("DELETE FROM user_logs WHERE affected_user_id = ?");
+            $stmt->execute([$subject_id]);
             
             // Next delete from teacher_subjects
-            $sql1 = "DELETE FROM teacher_subjects WHERE subject_id = '$subject_id'";
-            $conn->query($sql1);
+            $stmt = $pdo->prepare("DELETE FROM teacher_subjects WHERE subject_id = ?");
+            $stmt->execute([$subject_id]);
             
             // Then delete the subject
-            $sql2 = "DELETE FROM subjects WHERE subject_id = '$subject_id'";
-            $conn->query($sql2);
+            $stmt = $pdo->prepare("DELETE FROM subjects WHERE subject_id = ?");
+            $stmt->execute([$subject_id]);
             
             log_activity('Deleted Subject', $subject_id);
-            $conn->commit();
+            $pdo->commit();
             echo "<script>alert('Subject deleted successfully!');</script>";
         } catch (Exception $e) {
-            $conn->rollback();
+            $pdo->rollBack();
             // Log the error for debugging
             error_log("Error deleting subject ID $subject_id: " . $e->getMessage());
             echo "<script>alert('Error deleting subject: " . $e->getMessage() . "');</script>";
@@ -68,31 +66,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_subject'])) {
 
 // Handle Assign Subject
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_subject'])) {
-    $teacher_id = $conn->real_escape_string($_POST['teacher_id']);
-    $subject_id = $conn->real_escape_string($_POST['subject_id']);
+    $teacher_id = $_POST['teacher_id'];
+    $subject_id = $_POST['subject_id'];
     
     // First, verify both teacher and subject exist
-    $teacherCheck = $conn->query("SELECT user_id FROM users WHERE user_id = '$teacher_id' AND role_id = 3");
-    $subjectCheck = $conn->query("SELECT subject_id FROM subjects WHERE subject_id = '$subject_id'");
+    $stmt = $pdo->prepare("SELECT user_id FROM users WHERE user_id = ? AND role_id = 3");
+    $stmt->execute([$teacher_id]);
+    $teacherExists = $stmt->rowCount() > 0;
     
-    if ($teacherCheck->num_rows == 0) {
+    $stmt = $pdo->prepare("SELECT subject_id FROM subjects WHERE subject_id = ?");
+    $stmt->execute([$subject_id]);
+    $subjectExists = $stmt->rowCount() > 0;
+    
+    if (!$teacherExists) {
         echo "<script>alert('Error: Teacher does not exist!');</script>";
     } 
-    else if ($subjectCheck->num_rows == 0) {
+    else if (!$subjectExists) {
         echo "<script>alert('Error: Subject does not exist!');</script>";
     }
     // Check if assignment already exists
     else {
-        $check = $conn->query("SELECT * FROM teacher_subjects WHERE teacher_id = '$teacher_id' AND subject_id = '$subject_id'");
-        if ($check->num_rows > 0) {
+        $stmt = $pdo->prepare("SELECT * FROM teacher_subjects WHERE teacher_id = ? AND subject_id = ?");
+        $stmt->execute([$teacher_id, $subject_id]);
+        if ($stmt->rowCount() > 0) {
             echo "<script>alert('This teacher is already assigned to this subject!');</script>";
         } else {
-            $sql = "INSERT INTO teacher_subjects (teacher_id, subject_id) VALUES ('$teacher_id', '$subject_id')";
-            if ($conn->query($sql)) {
+            $stmt = $pdo->prepare("INSERT INTO teacher_subjects (teacher_id, subject_id) VALUES (?, ?)");
+            if ($stmt->execute([$teacher_id, $subject_id])) {
                 log_activity('Assigned Subject to Teacher', $teacher_id);
                 echo "<script>alert('Subject assigned successfully!');</script>";
             } else {
-                echo "<script>alert('Error assigning subject: " . $conn->error . "');</script>";
+                echo "<script>alert('Error assigning subject.');</script>";
             }
         }
     }
@@ -100,11 +104,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_subject'])) {
 
 // Get all teachers
 $teacherQuery = "SELECT user_id, first_name, last_name FROM users WHERE role_id = 3 ORDER BY last_name";
-$teachers = $conn->query($teacherQuery);
+$teachers = $pdo->query($teacherQuery);
 
 // Get all subjects
 $subjectQuery = "SELECT * FROM subjects ORDER BY grade_level, subject_name";
-$subjects = $conn->query($subjectQuery);
+$subjects = $pdo->query($subjectQuery);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -210,7 +214,7 @@ $subjects = $conn->query($subjectQuery);
             <label>Teacher</label>
             <select name="teacher_id" required>
                 <option value="" disabled selected>Select teacher</option>
-                <?php while($teacher = $teachers->fetch_assoc()): ?>
+                <?php while($teacher = $teachers->fetch(PDO::FETCH_ASSOC)): ?>
                     <option value="<?= $teacher['user_id'] ?>">
                         <?= htmlspecialchars($teacher['first_name'] . ' ' . $teacher['last_name']) ?>
                     </option>
@@ -221,9 +225,9 @@ $subjects = $conn->query($subjectQuery);
             <select name="subject_id" required>
                 <option value="" disabled selected>Select subject</option>
                 <?php 
-                // Reset the subjects result pointer
-                $subjects->data_seek(0);
-                while($subject = $subjects->fetch_assoc()): 
+                // Re-query subjects
+                $subjects = $pdo->query($subjectQuery);
+                while($subject = $subjects->fetch(PDO::FETCH_ASSOC)): 
                 ?>
                     <option value="<?= $subject['subject_id'] ?>">
                         <?= htmlspecialchars($subject['subject_name']) ?> (Grade <?= $subject['grade_level'] ?>)
@@ -268,10 +272,10 @@ $subjects = $conn->query($subjectQuery);
                  GROUP BY s.subject_id
                  ORDER BY s.grade_level, s.subject_name";
         
-        $result = $conn->query($query);
+        $result = $pdo->query($query);
         
-        if ($result && $result->num_rows > 0) {
-            while ($row = $result->fetch_assoc()) {
+        if ($result && $result->rowCount() > 0) {
+            while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
                 echo "<tr>";
                 echo "<td>" . htmlspecialchars($row['subject_name']) . "</td>";
                 echo "<td>Grade " . htmlspecialchars($row['grade_level']) . "</td>";

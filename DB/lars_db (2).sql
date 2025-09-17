@@ -18,113 +18,13 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `lars_db`
+-- Database: `lars`
 --
-
-DELIMITER $$
---
--- Procedures
---
-CREATE DEFINER=`root`@`localhost` PROCEDURE `AuthenticateStudentLogin` (IN `p_login_input` VARCHAR(100), IN `p_password` VARCHAR(255), IN `p_ip_address` VARCHAR(45), OUT `p_user_id` INT, OUT `p_success` BOOLEAN, OUT `p_message` VARCHAR(255), OUT `p_user_info` TEXT)   BEGIN
-    DECLARE v_db_password VARCHAR(255);
-    DECLARE v_first_name VARCHAR(50);
-    DECLARE v_last_name VARCHAR(50);
-    DECLARE v_username VARCHAR(50);
-    DECLARE v_grade_level VARCHAR(2);
-    DECLARE v_user_found INT DEFAULT 0;
-    
-    -- Find user by username or email
-    SELECT user_id, password, first_name, last_name, username, grade_level
-    INTO p_user_id, v_db_password, v_first_name, v_last_name, v_username, v_grade_level
-    FROM users 
-    WHERE (email = p_login_input OR username = p_login_input) 
-    AND role_id = 4
-    LIMIT 1;
-    
-    SET v_user_found = FOUND_ROWS();
-    
-    IF v_user_found = 0 THEN
-        SET p_success = FALSE;
-        SET p_message = 'Invalid username/email or account not found';
-        SET p_user_id = 0;
-        SET p_user_info = NULL;
-        
-        -- Log failed attempt
-        INSERT INTO student_login_audit (username_attempted, ip_address, login_status, failure_reason)
-        VALUES (p_login_input, p_ip_address, 'failed', 'User not found');
-        
-    ELSEIF p_password = v_db_password THEN
-        SET p_success = TRUE;
-        SET p_message = 'Login successful';
-        SET p_user_info = CONCAT('{"user_id":', p_user_id, ',"username":"', v_username, '","first_name":"', v_first_name, '","last_name":"', v_last_name, '","full_name":"', CONCAT(v_first_name, ' ', v_last_name), '","grade_level":"', IFNULL(v_grade_level, ''), '"}');
-        
-        -- Log successful login
-        INSERT INTO student_login_audit (user_id, username_attempted, ip_address, login_status)
-        VALUES (p_user_id, p_login_input, p_ip_address, 'success');
-        
-        -- Also log in user_logs table for compatibility
-        INSERT INTO user_logs (user_id, action, ip_address)
-        VALUES (p_user_id, 'Login', p_ip_address);
-        
-    ELSE
-        SET p_success = FALSE;
-        SET p_message = 'Invalid password';
-        SET p_user_info = NULL;
-        
-        -- Log failed attempt
-        INSERT INTO student_login_audit (user_id, username_attempted, ip_address, login_status, failure_reason)
-        VALUES (p_user_id, p_login_input, p_ip_address, 'failed', 'Invalid password');
-        
-    END IF;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `CreateStudentAccount` (IN `p_first_name` VARCHAR(50), IN `p_last_name` VARCHAR(50), IN `p_username` VARCHAR(50), IN `p_password` VARCHAR(255), IN `p_grade_level` VARCHAR(2), IN `p_created_by_staff_id` INT, OUT `p_user_id` INT, OUT `p_success` BOOLEAN, OUT `p_message` VARCHAR(255))   BEGIN
-    DECLARE v_email VARCHAR(100);
-    DECLARE v_username_exists INT DEFAULT 0;
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-    BEGIN
-        ROLLBACK;
-        SET p_success = FALSE;
-        SET p_message = 'Database error occurred while creating account';
-        SET p_user_id = 0;
-    END;
-
-    START TRANSACTION;
-    
-    -- Generate email
-    SET v_email = CONCAT(p_username, '@lars.edu.ph');
-    
-    -- Check if username already exists
-    SELECT COUNT(*) INTO v_username_exists 
-    FROM users 
-    WHERE username = p_username;
-    
-    IF v_username_exists > 0 THEN
-        SET p_success = FALSE;
-        SET p_message = 'Username already exists';
-        SET p_user_id = 0;
-        ROLLBACK;
-    ELSE
-        -- Insert new student
-        INSERT INTO users (first_name, last_name, username, email, password, role_id, grade_level)
-        VALUES (p_first_name, p_last_name, p_username, v_email, p_password, 4, p_grade_level);
-        
-        SET p_user_id = LAST_INSERT_ID();
-        
-        -- Log the account creation
-        INSERT INTO account_creation_log (created_user_id, created_by_staff_id, account_type)
-        VALUES (p_user_id, p_created_by_staff_id, 'student');
-        
-        SET p_success = TRUE;
-        SET p_message = 'Student account created successfully';
-        
-        COMMIT;
-    END IF;
-END$$
-
-DELIMITER ;
 
 -- --------------------------------------------------------
+
+--
+-- Table structure for table `account_creation_log`
 
 --
 -- Table structure for table `account_creation_log`
@@ -770,7 +670,7 @@ CREATE TABLE `v_student_activity_scores` (
 --
 DROP TABLE IF EXISTS `v_activity_summary`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v_activity_summary`  AS SELECT `a`.`activity_id` AS `activity_id`, `a`.`title` AS `title`, `a`.`description` AS `description`, `a`.`activity_type` AS `activity_type`, `a`.`total_points` AS `total_points`, `a`.`due_date` AS `due_date`, `a`.`is_active` AS `is_active`, concat(`u`.`first_name`,' ',`u`.`last_name`) AS `teacher_name`, `s`.`subject_name` AS `subject_name`, `s`.`grade_level` AS `grade_level`, coalesce(`an`.`total_students`,0) AS `total_students`, coalesce(`an`.`completed_submissions`,0) AS `completed_submissions`, coalesce(`an`.`pending_submissions`,0) AS `pending_submissions`, coalesce(`an`.`average_score`,0) AS `average_score`, `a`.`created_at` AS `created_at` FROM (((`activities` `a` join `users` `u` on(`a`.`teacher_id` = `u`.`user_id`)) join `subjects` `s` on(`a`.`subject_id` = `s`.`subject_id`)) left join `activity_analytics` `an` on(`a`.`activity_id` = `an`.`activity_id`)) ORDER BY `a`.`created_at` DESC ;
+CREATE ALGORITHM=UNDEFINED VIEW `v_activity_summary`  AS SELECT `a`.`activity_id` AS `activity_id`, `a`.`title` AS `title`, `a`.`description` AS `description`, `a`.`activity_type` AS `activity_type`, `a`.`total_points` AS `total_points`, `a`.`due_date` AS `due_date`, `a`.`is_active` AS `is_active`, concat(`u`.`first_name`,' ',`u`.`last_name`) AS `teacher_name`, `s`.`subject_name` AS `subject_name`, `s`.`grade_level` AS `grade_level`, coalesce(`an`.`total_students`,0) AS `total_students`, coalesce(`an`.`completed_submissions`,0) AS `completed_submissions`, coalesce(`an`.`pending_submissions`,0) AS `pending_submissions`, coalesce(`an`.`average_score`,0) AS `average_score`, `a`.`created_at` AS `created_at` FROM (((`activities` `a` join `users` `u` on(`a`.`teacher_id` = `u`.`user_id`)) join `subjects` `s` on(`a`.`subject_id` = `s`.`subject_id`)) left join `activity_analytics` `an` on(`a`.`activity_id` = `an`.`activity_id`)) ORDER BY `a`.`created_at` DESC ;
 
 -- --------------------------------------------------------
 
@@ -779,7 +679,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `v_login_statistics`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v_login_statistics`  AS SELECT cast(`student_login_audit`.`attempt_timestamp` as date) AS `login_date`, count(0) AS `total_attempts`, sum(case when `student_login_audit`.`login_status` = 'success' then 1 else 0 end) AS `successful_logins`, sum(case when `student_login_audit`.`login_status` = 'failed' then 1 else 0 end) AS `failed_attempts`, count(distinct `student_login_audit`.`user_id`) AS `unique_users`, count(distinct `student_login_audit`.`ip_address`) AS `unique_ips` FROM `student_login_audit` GROUP BY cast(`student_login_audit`.`attempt_timestamp` as date) ORDER BY cast(`student_login_audit`.`attempt_timestamp` as date) DESC ;
+CREATE ALGORITHM=UNDEFINED VIEW `v_login_statistics`  AS SELECT cast(`student_login_audit`.`attempt_timestamp` as date) AS `login_date`, count(0) AS `total_attempts`, sum(case when `student_login_audit`.`login_status` = 'success' then 1 else 0 end) AS `successful_logins`, sum(case when `student_login_audit`.`login_status` = 'failed' then 1 else 0 end) AS `failed_attempts`, count(distinct `student_login_audit`.`user_id`) AS `unique_users`, count(distinct `student_login_audit`.`ip_address`) AS `unique_ips` FROM `student_login_audit` GROUP BY cast(`student_login_audit`.`attempt_timestamp` as date) ORDER BY cast(`student_login_audit`.`attempt_timestamp` as date) DESC ;
 
 -- --------------------------------------------------------
 
@@ -788,7 +688,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `v_student_accounts`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v_student_accounts`  AS SELECT `u`.`user_id` AS `user_id`, `u`.`username` AS `username`, `u`.`email` AS `email`, `u`.`first_name` AS `first_name`, `u`.`last_name` AS `last_name`, concat(`u`.`first_name`,' ',`u`.`last_name`) AS `full_name`, `u`.`grade_level` AS `grade_level`, `u`.`created_at` AS `created_at`, `u`.`updated_at` AS `updated_at`, `acl`.`created_by_staff_id` AS `created_by_staff_id`, `staff`.`username` AS `created_by_staff_username`, concat(`staff`.`first_name`,' ',`staff`.`last_name`) AS `created_by_staff_name`, `acl`.`creation_method` AS `creation_method`, `acl`.`creation_timestamp` AS `creation_timestamp`, (select count(0) from `student_login_audit` `sla` where `sla`.`user_id` = `u`.`user_id` and `sla`.`login_status` = 'success') AS `total_logins`, (select max(`sla`.`attempt_timestamp`) from `student_login_audit` `sla` where `sla`.`user_id` = `u`.`user_id` and `sla`.`login_status` = 'success') AS `last_login` FROM ((`users` `u` left join `account_creation_log` `acl` on(`u`.`user_id` = `acl`.`created_user_id`)) left join `users` `staff` on(`acl`.`created_by_staff_id` = `staff`.`user_id`)) WHERE `u`.`role_id` = 4 ORDER BY `u`.`grade_level` ASC, `u`.`last_name` ASC, `u`.`first_name` ASC ;
+CREATE ALGORITHM=UNDEFINED VIEW `v_student_accounts`  AS SELECT `u`.`user_id` AS `user_id`, `u`.`username` AS `username`, `u`.`email` AS `email`, `u`.`first_name` AS `first_name`, `u`.`last_name` AS `last_name`, concat(`u`.`first_name`,' ',`u`.`last_name`) AS `full_name`, `u`.`grade_level` AS `grade_level`, `u`.`created_at` AS `created_at`, `u`.`updated_at` AS `updated_at`, `acl`.`created_by_staff_id` AS `created_by_staff_id`, `staff`.`username` AS `created_by_staff_username`, concat(`staff`.`first_name`,' ',`staff`.`last_name`) AS `created_by_staff_name`, `acl`.`creation_method` AS `creation_method`, `acl`.`creation_timestamp` AS `creation_timestamp`, (select count(0) from `student_login_audit` `sla` where `sla`.`user_id` = `u`.`user_id` and `sla`.`login_status` = 'success') AS `total_logins`, (select max(`sla`.`attempt_timestamp`) from `student_login_audit` `sla` where `sla`.`user_id` = `u`.`user_id` and `sla`.`login_status` = 'success') AS `last_login` FROM ((`users` `u` left join `account_creation_log` `acl` on(`u`.`user_id` = `acl`.`created_user_id`)) left join `users` `staff` on(`acl`.`created_by_staff_id` = `staff`.`user_id`)) WHERE `u`.`role_id` = 4 ORDER BY `u`.`grade_level` ASC, `u`.`last_name` ASC, `u`.`first_name` ASC ;
 
 -- --------------------------------------------------------
 
@@ -797,7 +697,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `v_student_activity_scores`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v_student_activity_scores`  AS SELECT `sub`.`submission_id` AS `submission_id`, `sub`.`activity_id` AS `activity_id`, `a`.`title` AS `activity_title`, `a`.`activity_type` AS `activity_type`, concat(`u`.`first_name`,' ',`u`.`last_name`) AS `student_name`, `u`.`grade_level` AS `grade_level`, `s`.`subject_name` AS `subject_name`, `sub`.`total_score` AS `total_score`, `sub`.`max_score` AS `max_score`, `sub`.`percentage` AS `percentage`, `sub`.`submission_status` AS `submission_status`, `sub`.`submitted_at` AS `submitted_at`, `sub`.`graded_at` AS `graded_at`, concat(`t`.`first_name`,' ',`t`.`last_name`) AS `teacher_name` FROM ((((`student_submissions` `sub` join `activities` `a` on(`sub`.`activity_id` = `a`.`activity_id`)) join `users` `u` on(`sub`.`student_id` = `u`.`user_id`)) join `subjects` `s` on(`a`.`subject_id` = `s`.`subject_id`)) join `users` `t` on(`a`.`teacher_id` = `t`.`user_id`)) ORDER BY `sub`.`submitted_at` DESC ;
+CREATE ALGORITHM=UNDEFINED VIEW `v_student_activity_scores`  AS SELECT `sub`.`submission_id` AS `submission_id`, `sub`.`activity_id` AS `activity_id`, `a`.`title` AS `activity_title`, `a`.`activity_type` AS `activity_type`, concat(`u`.`first_name`,' ',`u`.`last_name`) AS `student_name`, `u`.`grade_level` AS `grade_level`, `s`.`subject_name` AS `subject_name`, `sub`.`total_score` AS `total_score`, `sub`.`max_score` AS `max_score`, `sub`.`percentage` AS `percentage`, `sub`.`submission_status` AS `submission_status`, `sub`.`submitted_at` AS `submitted_at`, `sub`.`graded_at` AS `graded_at`, concat(`t`.`first_name`,' ',`t`.`last_name`) AS `teacher_name` FROM ((((`student_submissions` `sub` join `activities` `a` on(`sub`.`activity_id` = `a`.`activity_id`)) join `users` `u` on(`sub`.`student_id` = `u`.`user_id`)) join `subjects` `s` on(`a`.`subject_id` = `s`.`subject_id`)) join `users` `t` on(`a`.`teacher_id` = `t`.`user_id`)) ORDER BY `sub`.`submitted_at` DESC ;
 
 --
 -- Indexes for dumped tables

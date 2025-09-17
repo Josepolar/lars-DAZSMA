@@ -1,13 +1,10 @@
 <?php
 header('Content-Type: application/json');
 
-try {
-    // Database connection
-    $conn = new mysqli('localhost', 'root', '', 'lars_db');
-    if ($conn->connect_error) {
-        throw new Exception('Connection failed: ' . $conn->connect_error);
-    }
+// Database connection
+include 'Database/database.php';
 
+try {
     // Validate date parameter
     $date = $_GET['date'] ?? date('Y-m-d');
     if (!strtotime($date)) {
@@ -17,8 +14,8 @@ try {
     // Check if required tables exist
     $tables = ['user_logs', 'users', 'roles'];
     foreach ($tables as $table) {
-        $tableCheck = $conn->query("SHOW TABLES LIKE '$table'");
-        if ($tableCheck->num_rows === 0) {
+        $tableCheck = $pdo->query("SHOW TABLES LIKE '$table'");
+        if ($tableCheck->rowCount() === 0) {
             throw new Exception("Table '$table' does not exist");
         }
     }
@@ -36,18 +33,13 @@ try {
               WHERE DATE(ul.action_timestamp) = ?
               ORDER BY ul.action_timestamp DESC";
 
-    $stmt = $conn->prepare($query);
-    if (!$stmt) {
-        throw new Exception('Query preparation failed: ' . $conn->error);
-    }
+    $stmt = $pdo->prepare($query);
+    $stmt->execute([$date]);
+    $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    $stmt->bind_param('s', $date);
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    $logs = [];
-    while ($row = $result->fetch_assoc()) {
-        $logs[] = [
+    $formatted_logs = [];
+    foreach ($logs as $row) {
+        $formatted_logs[] = [
             'user_name' => $row['user_name'],
             'role' => $row['role'],
             'action' => $row['action'],
@@ -57,18 +49,13 @@ try {
 
     echo json_encode([
         'status' => 'success',
-        'data' => $logs
+        'data' => $formatted_logs
     ]);
 
-    $stmt->close();
 } catch (Exception $e) {
     echo json_encode([
         'status' => 'error',
         'message' => $e->getMessage()
     ]);
-} finally {
-    if (isset($conn)) {
-        $conn->close();
-    }
 }
 ?>

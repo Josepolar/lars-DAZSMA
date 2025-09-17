@@ -1,7 +1,6 @@
 <?php
 // Debug script to test student activities API
-$pdo = new PDO("mysql:host=localhost;dbname=lars_db", "root", "");
-$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+include 'Database/database.php';
 
 $student_id = 14; // Grade 7 student - John Doe
 

@@ -1,5 +1,5 @@
 <?php
-$pdo = new PDO("mysql:host=localhost;dbname=lars_db", "root", "");
+include 'Database/database.php';
 
 echo "Submission statuses in database:\n";
 $stmt = $pdo->query("SELECT DISTINCT submission_status FROM student_submissions WHERE submission_status IS NOT NULL");

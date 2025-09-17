@@ -8,17 +8,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
 }
 
 // Database connection
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "lars_db";
-
-try {
-    $pdo = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch(PDOException $e) {
-    die("Database connection failed: " . $e->getMessage());
-}
+include '../Database/database.php';
 
 // Get current student's profile information
 $profileStmt = $pdo->prepare("SELECT user_id, first_name, last_name, grade_level FROM users WHERE user_id = ? AND role_id = 4");

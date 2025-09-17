@@ -1,5 +1,5 @@
 <?php
-$pdo = new PDO("mysql:host=localhost;dbname=lars_db", "root", "");
+include 'Database/database.php';
 
 // Update one activity to have no due date for testing
 $pdo->exec("UPDATE activities SET due_date = NULL WHERE activity_id = 26");

@@ -70,20 +70,17 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role_id'] != 1) {
    <section class="home" id="home-section">
     <?php
     // Database connection
-    $conn = new mysqli('localhost', 'root', '', 'lars_db');
-    if ($conn->connect_error) {
-        die('Connection failed: ' . $conn->connect_error);
-    }
+    include '../Database/database.php';
 
     // Get total logs count
     $totalQuery = "SELECT COUNT(*) as total FROM user_logs";
-    $totalResult = $conn->query($totalQuery);
-    $totalLogs = $totalResult->fetch_assoc()['total'];
+    $totalResult = $pdo->query($totalQuery);
+    $totalLogs = $totalResult->fetch(PDO::FETCH_ASSOC)['total'];
 
     // Get today's logs count
     $todayQuery = "SELECT COUNT(*) as today FROM user_logs WHERE DATE(action_timestamp) = CURDATE()";
-    $todayResult = $conn->query($todayQuery);
-    $todayLogs = $todayResult->fetch_assoc()['today'];
+    $todayResult = $pdo->query($todayQuery);
+    $todayLogs = $todayResult->fetch(PDO::FETCH_ASSOC)['today'];
     ?>
 
     <div class="stats-container">
@@ -141,11 +138,12 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role_id'] != 1) {
                          LEFT JOIN roles r2 ON u2.role_id = r2.role_id
                          ORDER BY ul.action_timestamp DESC 
                          LIMIT 100";
-                $result = $conn->query($query);
+                $result = $pdo->query($query);
 
                 $currentDate = '';
-                if ($result && $result->num_rows > 0) {
-                    while ($row = $result->fetch_assoc()) {
+                if ($result) {
+                    $rows = $result->fetchAll(PDO::FETCH_ASSOC);
+                    foreach ($rows as $row) {
                         $logDate = date('Y-m-d', strtotime($row['action_timestamp']));
                         $logTime = date('h:i:s A', strtotime($row['action_timestamp']));
                         
@@ -185,7 +183,6 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role_id'] != 1) {
                 } else {
                     echo "<p class='no-logs'>No logs found</p>";
                 }
-                $conn->close();
                 ?>
             </div>
         </div>

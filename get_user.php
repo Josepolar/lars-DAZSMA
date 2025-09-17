@@ -1,17 +1,16 @@
 <?php
 // Database connection
-$conn = new mysqli('localhost', 'root', '', 'lars_db');
-if ($conn->connect_error) {
-    die(json_encode(['error' => 'Connection failed: ' . $conn->connect_error]));
-}
+include 'Database/database.php';
 
 if (isset($_GET['id'])) {
-    $user_id = $conn->real_escape_string($_GET['id']);
+    $user_id = $_GET['id'];
     $query = "SELECT user_id, first_name, last_name, username, email, grade_level, role_id 
-              FROM users WHERE user_id = '$user_id'";
+              FROM users WHERE user_id = ?";
     
-    $result = $conn->query($query);
-    if ($result && $row = $result->fetch_assoc()) {
+    $stmt = $pdo->prepare($query);
+    $stmt->execute([$user_id]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($row) {
         // Remove sensitive data like password
         echo json_encode($row);
     } else {
@@ -20,6 +19,4 @@ if (isset($_GET['id'])) {
 } else {
     echo json_encode(['error' => 'No user ID provided']);
 }
-
-$conn->close();
 ?>

@@ -1,51 +1,43 @@
 <?php
 session_start();
 require_once '../log_activity.php';
-// Database connection
-$conn = new mysqli('localhost', 'root', '', 'lars_db');
-if ($conn->connect_error) {
-    die('Connection failed: ' . $conn->connect_error);
-}
+include '../Database/database.php';
 
 // Handle Edit Subject
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_subject'])) {
-    $subject_id = $conn->real_escape_string($_POST['edit_subject_id']);
-    $subject_name = $conn->real_escape_string($_POST['edit_subject_name']);
-    $grade_level = $conn->real_escape_string($_POST['edit_grade_level']);
+    $subject_id = $_POST['edit_subject_id'];
+    $subject_name = $_POST['edit_subject_name'];
+    $grade_level = $_POST['edit_grade_level'];
     
-    $sql = "UPDATE subjects SET subject_name = '$subject_name', grade_level = '$grade_level' 
-            WHERE subject_id = '$subject_id'";
-    
-    if ($conn->query($sql)) {
+    $stmt = $pdo->prepare("UPDATE subjects SET subject_name = ?, grade_level = ? WHERE subject_id = ?");
+    if ($stmt->execute([$subject_name, $grade_level, $subject_id])) {
         log_activity('Edited Subject', $subject_id);
         echo "<script>alert('Subject updated successfully!');</script>";
     } else {
-        echo "<script>alert('Error updating subject: " . $conn->error . "');</script>";
+        echo "<script>alert('Error updating subject');</script>";
     }
 }
 
 // Handle Delete Subject
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_subject'])) {
-    $subject_id = $conn->real_escape_string($_POST['subject_id']);
+    $subject_id = $_POST['subject_id'];
     
     // Start transaction
-    $conn->begin_transaction();
+    $pdo->beginTransaction();
     
     try {
         // First delete from teacher_subjects
-        $sql1 = "DELETE FROM teacher_subjects WHERE subject_id = '$subject_id'";
-        $conn->query($sql1);
+        $pdo->exec("DELETE FROM teacher_subjects WHERE subject_id = $subject_id");
         
         // Then delete the subject
-        $sql2 = "DELETE FROM subjects WHERE subject_id = '$subject_id'";
-        $conn->query($sql2);
+        $pdo->exec("DELETE FROM subjects WHERE subject_id = $subject_id");
         
-    $conn->commit();
-    log_activity('Deleted Subject', $subject_id);
-    echo "<script>alert('Subject deleted successfully!');</script>";
+        $pdo->commit();
+        log_activity('Deleted Subject', $subject_id);
+        echo "<script>alert('Subject deleted successfully!');</script>";
     } catch (Exception $e) {
-        $conn->rollback();
-        echo "<script>alert('Error deleting subject: " . $conn->error . "');</script>";
+        $pdo->rollBack();
+        echo "<script>alert('Error deleting subject');</script>";
     }
 }
 
@@ -58,7 +50,7 @@ $query = "SELECT s.subject_id, s.subject_name, s.grade_level,
          GROUP BY s.subject_id
          ORDER BY s.grade_level, s.subject_name";
 
-$subjects = $conn->query($query);
+$subjects = $pdo->query($query)->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -171,8 +163,8 @@ $subjects = $conn->query($query);
         </thead>
         <tbody>
             <?php
-            if ($subjects && $subjects->num_rows > 0) {
-                while ($row = $subjects->fetch_assoc()) {
+            if ($subjects) {
+                foreach ($subjects as $row) {
                     echo "<tr>";
                     echo "<td>" . htmlspecialchars($row['subject_name']) . "</td>";
                     echo "<td>Grade " . htmlspecialchars($row['grade_level']) . "</td>";

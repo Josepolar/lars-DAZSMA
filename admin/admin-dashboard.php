@@ -8,10 +8,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
 }
 
 // Database connection
-$conn = new mysqli('localhost', 'root', '', 'lars_db');
-if ($conn->connect_error) {
-    die('Connection failed: ' . $conn->connect_error);
-}
+include '../Database/database.php';
 
 // Get staff, teacher, student counts and names
 $staffCount = 0;
@@ -21,28 +18,25 @@ $staffNames = [];
 $teacherNames = [];
 $studentNames = [];
 
-$result = $conn->query("SELECT first_name, last_name FROM users WHERE role_id = 2");
-if ($result) {
-    $staffCount = $result->num_rows;
-    while ($row = $result->fetch_assoc()) {
-        $staffNames[] = $row['first_name'] . ' ' . $row['last_name'];
-    }
+$result = $pdo->query("SELECT first_name, last_name FROM users WHERE role_id = 2");
+$staff = $result->fetchAll(PDO::FETCH_ASSOC);
+$staffCount = count($staff);
+foreach ($staff as $row) {
+    $staffNames[] = $row['first_name'] . ' ' . $row['last_name'];
 }
 
-$result = $conn->query("SELECT first_name, last_name FROM users WHERE role_id = 3");
-if ($result) {
-    $teacherCount = $result->num_rows;
-    while ($row = $result->fetch_assoc()) {
-        $teacherNames[] = $row['first_name'] . ' ' . $row['last_name'];
-    }
+$result = $pdo->query("SELECT first_name, last_name FROM users WHERE role_id = 3");
+$teachers = $result->fetchAll(PDO::FETCH_ASSOC);
+$teacherCount = count($teachers);
+foreach ($teachers as $row) {
+    $teacherNames[] = $row['first_name'] . ' ' . $row['last_name'];
 }
 
-$result = $conn->query("SELECT first_name, last_name FROM users WHERE role_id = 4");
-if ($result) {
-    $studentCount = $result->num_rows;
-    while ($row = $result->fetch_assoc()) {
-        $studentNames[] = $row['first_name'] . ' ' . $row['last_name'];
-    }
+$result = $pdo->query("SELECT first_name, last_name FROM users WHERE role_id = 4");
+$students = $result->fetchAll(PDO::FETCH_ASSOC);
+$studentCount = count($students);
+foreach ($students as $row) {
+    $studentNames[] = $row['first_name'] . ' ' . $row['last_name'];
 }
 ?>
 <!DOCTYPE html>
@@ -159,9 +153,9 @@ if ($result) {
                       WHERE role_id = 4 
                       GROUP BY grade_level 
                       ORDER BY grade_level";
-        $gradeResult = $conn->query($gradeQuery);
+        $gradeResult = $pdo->query($gradeQuery);
         $gradeCounts = [];
-        while ($row = $gradeResult->fetch_assoc()) {
+        while ($row = $gradeResult->fetch(PDO::FETCH_ASSOC)) {
             $gradeCounts[$row['grade_level']] = $row['count'];
         }
 

@@ -2,48 +2,34 @@
 // Enhanced Student Login with Additional Security and Validation
 session_start();
 
+// Database connection
+include '../Database/database.php';
+
 // Configuration
 $max_login_attempts = 5;
 $lockout_time = 15 * 60; // 15 minutes in seconds
 
-// Redirect to dashboard if already logged in
-if (isset($_SESSION['user_id']) && isset($_SESSION['role_id']) && $_SESSION['role_id'] == 4) {
-    header('Location: student-home.php');
-    exit();
-}
-
-// Database connection
-$conn = new mysqli('localhost', 'root', '', 'lars_db');
-if ($conn->connect_error) {
-    die('Connection failed: ' . $conn->connect_error);
-}
-
 // Function to check if IP is temporarily locked
-function isIPLocked($conn, $ip) {
+function isIPLocked($pdo, $ip) {
     global $max_login_attempts, $lockout_time;
     
     $check_query = "SELECT COUNT(*) as attempts, MAX(action_timestamp) as last_attempt 
                     FROM user_logs 
                     WHERE ip_address = ? AND action = 'Failed Login' 
                     AND action_timestamp > DATE_SUB(NOW(), INTERVAL ? SECOND)";
-    $stmt = $conn->prepare($check_query);
-    $stmt->bind_param('si', $ip, $lockout_time);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $row = $result->fetch_assoc();
-    $stmt->close();
+    $stmt = $pdo->prepare($check_query);
+    $stmt->execute([$ip, $lockout_time]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
     
     return $row['attempts'] >= $max_login_attempts;
 }
 
 // Function to log login attempts
-function logLoginAttempt($conn, $user_id, $action, $ip) {
+function logLoginAttempt($pdo, $user_id, $action, $ip) {
     $log_query = "INSERT INTO user_logs (user_id, action, ip_address) VALUES (?, ?, ?)";
-    $stmt = $conn->prepare($log_query);
-    $stmt->bind_param('iss', $user_id, $action, $ip);
-    $result = $stmt->execute();
-    $stmt->close();
-    return $result;
+    $stmt = $pdo->prepare($log_query);
+    $stmt->execute([$user_id, $action, $ip]);
+    return true;
 }
 
 $error = '';
@@ -51,7 +37,7 @@ $ip = $_SERVER['REMOTE_ADDR'];
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Check if IP is temporarily locked
-    if (isIPLocked($conn, $ip)) {
+    if (isIPLocked($pdo, $ip)) {
         $error = 'Too many failed login attempts. Please try again in 15 minutes.';
     } else {
         $login_input = trim($conn->real_escape_string($_POST['email'])); // Can be email or username
@@ -69,13 +55,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $query = "SELECT user_id, password, first_name, last_name, username, created_at, grade_level 
                       FROM users 
                       WHERE (email = ? OR username = ?) AND role_id = 4";
-            $stmt = $conn->prepare($query);
-            $stmt->bind_param('ss', $login_input, $login_input);
-            $stmt->execute();
-            $result = $stmt->get_result();
+            $stmt = $pdo->prepare($query);
+            $stmt->execute([$login_input, $login_input]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
             
-            if ($result->num_rows > 0) {
-                $user = $result->fetch_assoc();
+            if ($user) {
                 // Check password (supports both plain text and hashed passwords)
                 if ($password === $user['password'] || password_verify($password, $user['password'])) {
                     // Successful login
@@ -87,42 +71,34 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     $_SESSION['login_time'] = time();
                     
                     // Log successful login
-                    logLoginAttempt($conn, $user['user_id'], 'Login', $ip);
+                    logLoginAttempt($pdo, $user['user_id'], 'Login', $ip);
                     
                     // Clear any previous failed attempts for this IP
                     $clear_query = "DELETE FROM user_logs 
                                    WHERE ip_address = ? AND action = 'Failed Login' 
                                    AND action_timestamp > DATE_SUB(NOW(), INTERVAL ? SECOND)";
-                    $clear_stmt = $conn->prepare($clear_query);
-                    $clear_stmt->bind_param('si', $ip, $lockout_time);
-                    $clear_stmt->execute();
-                    $clear_stmt->close();
-                    
-                    $stmt->close();
-                    $conn->close();
+                    $clear_stmt = $pdo->prepare($clear_query);
+                    $clear_stmt->execute([$ip, $lockout_time]);
                     
                     header("Location: student-home.php");
                     exit();
                 } else {
                     // Failed login - log attempt
                     if ($user['user_id']) {
-                        logLoginAttempt($conn, $user['user_id'], 'Failed Login', $ip);
+                        logLoginAttempt($pdo, $user['user_id'], 'Failed Login', $ip);
                     } else {
-                        logLoginAttempt($conn, 0, 'Failed Login', $ip); // Use 0 for unknown user
+                        logLoginAttempt($pdo, 0, 'Failed Login', $ip); // Use 0 for unknown user
                     }
                     $error = 'Invalid password';
                 }
             } else {
                 // User not found - log attempt with unknown user
-                logLoginAttempt($conn, 0, 'Failed Login', $ip);
+                logLoginAttempt($pdo, 0, 'Failed Login', $ip);
                 $error = 'Invalid email/username or you do not have student privileges';
             }
-            $stmt->close();
         }
     }
 }
-
-$conn->close();
 ?>
 <!DOCTYPE html>
 <html lang="en">

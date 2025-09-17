@@ -6,38 +6,37 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role_id']) && $_SESSION['rol
     exit();
 }
 
-require_once '../log_activity.php';
-
-$conn = new mysqli('localhost', 'root', '', 'lars_db');
-if ($conn->connect_error) {
-    die('Connection failed: ' . $conn->connect_error);
-}
+// Use shared PDO connection
+require_once __DIR__ . '/../Database/database.php';
+require_once __DIR__ . '/../log_activity.php';
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $email = $conn->real_escape_string($_POST['email']);
-    $password = $_POST['password'];
-    $query = "SELECT user_id, password, first_name, last_name FROM users WHERE email = ? AND role_id = 3";
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param('s', $email);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    if ($result->num_rows > 0) {
-        $user = $result->fetch_assoc();
-        if ($password === $user['password'] || password_verify($password, $user['password'])) {
-            $_SESSION['user_id'] = $user['user_id'];
-            $_SESSION['role_id'] = 3;
-            $_SESSION['name'] = $user['first_name'] . ' ' . $user['last_name'];
-            
-            // Log the login activity
-            log_activity('Login');
-            
-            header("Location: teacher-dashboard.php");
-            exit();
+    $email = $_POST['email'] ?? '';
+    $password = $_POST['password'] ?? '';
+    try {
+        $stmt = $pdo->prepare("SELECT user_id, password, first_name, last_name FROM users WHERE email = ? AND role_id = 3");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($user) {
+            if ($password === $user['password'] || password_verify($password, $user['password'])) {
+                $_SESSION['user_id'] = $user['user_id'];
+                $_SESSION['role_id'] = 3;
+                $_SESSION['name'] = $user['first_name'] . ' ' . $user['last_name'];
+
+                // Log the login activity
+                log_activity('Login');
+
+                header("Location: teacher-dashboard.php");
+                exit();
+            } else {
+                $error = 'Invalid password';
+            }
         } else {
-            $error = 'Invalid password';
+            $error = 'Email not found or you do not have teacher privileges';
         }
-    } else {
-        $error = 'Email not found or you do not have teacher privileges';
+    } catch (Exception $e) {
+        $error = 'An error occurred during login.';
+        error_log('Teacher login error: ' . $e->getMessage());
     }
 }
 ?>

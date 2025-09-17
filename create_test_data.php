@@ -1,6 +1,6 @@
 <?php
 // Add some test submissions for other grade levels to demonstrate the leaderboard system
-$pdo = new PDO("mysql:host=localhost;dbname=lars_db", "root", "");
+include 'Database/database.php';
 
 // Create a test activity for Grade 8 and add some submissions
 echo "Creating test data for Grade 8...\n";

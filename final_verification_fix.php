@@ -4,17 +4,7 @@ session_start();
 echo "<h1>FINAL VERIFICATION - Points Display Fix</h1>\n";
 
 // Database connection
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "lars_db";
-
-try {
-    $pdo = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch(PDOException $e) {
-    die("Database connection failed: " . $e->getMessage());
-}
+include 'Database/database.php';
 
 // Test Jasmine Bautista (ID: 16) who has 40 points
 $_SESSION['user_id'] = 16;

@@ -6,10 +6,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
     exit();
 }
 require_once '../log_activity.php';
-$conn = new mysqli('localhost', 'root', '', 'lars_db');
-if ($conn->connect_error) {
-    die('Connection failed: ' . $conn->connect_error);
-}
+include '../Database/database.php';
 
 $message = '';
 
@@ -26,10 +23,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Update
         $user_id = intval($_POST['edit_index']);
         if ($user_id && $role_id) {
-            $stmt = $conn->prepare("UPDATE users SET first_name=?, last_name=?, email=?, password=? WHERE user_id=? AND role_id=?");
-            $stmt->bind_param('ssssii', $firstname, $lastname, $email, $password, $user_id, $role_id);
-            $stmt->execute();
-            $stmt->close();
+            $stmt = $pdo->prepare("UPDATE users SET first_name=?, last_name=?, email=?, password=? WHERE user_id=? AND role_id=?");
+            $stmt->execute([$firstname, $lastname, $email, $password, $user_id, $role_id]);
             // Log the edit action
             log_activity('Edited ' . ($type === 'user' ? 'Staff' : 'Teacher'), $user_id);
             header('Location: admin-userman.php');
@@ -41,11 +36,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $username = strtolower($firstname . $lastname . rand(1000,9999));
             $email = $email ?: strtolower($username . '@lars.edu.ph');
             $plainPassword = $password ?: substr(str_shuffle('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'), 0, 8);
-            $stmt = $conn->prepare("INSERT INTO users (username, password, email, role_id, first_name, last_name) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param('sssiss', $username, $plainPassword, $email, $role_id, $firstname, $lastname);
-            $stmt->execute();
-            $new_user_id = $stmt->insert_id;
-            $stmt->close();
+            $stmt = $pdo->prepare("INSERT INTO users (username, password, email, role_id, first_name, last_name) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$username, $plainPassword, $email, $role_id, $firstname, $lastname]);
+            $new_user_id = $pdo->lastInsertId();
 
             // Log the add action
             log_activity(($type === 'user') ? 'Added Staff' : 'Added Teacher', $new_user_id);
@@ -63,14 +56,12 @@ if (isset($_GET['delete']) && isset($_GET['type'])) {
     $user_id = intval($_GET['delete']);
     if ($user_id && $role_id) {
         // Start transaction
-        $conn->begin_transaction();
+        $pdo->beginTransaction();
         try {
             // First delete related records from teacher_subjects if it's a teacher
             if ($role_id === 3) {
-                $stmt = $conn->prepare("DELETE FROM teacher_subjects WHERE teacher_id = ?");
-                $stmt->bind_param('i', $user_id);
-                $stmt->execute();
-                $stmt->close();
+                $stmt = $pdo->prepare("DELETE FROM teacher_subjects WHERE teacher_id = ?");
+                $stmt->execute([$user_id]);
             }
 
             // Log the delete action before deleting user_logs and user
@@ -78,30 +69,24 @@ if (isset($_GET['delete']) && isset($_GET['type'])) {
             log_activity(($type === 'user') ? 'Deleted Staff' : 'Deleted Teacher', $user_id);
 
             // Delete logs where user is user_id
-            $stmt = $conn->prepare("DELETE FROM user_logs WHERE user_id = ?");
-            $stmt->bind_param('i', $user_id);
-            $stmt->execute();
-            $stmt->close();
+            $stmt = $pdo->prepare("DELETE FROM user_logs WHERE user_id = ?");
+            $stmt->execute([$user_id]);
             
             // Delete logs where user is affected_user_id
-            $stmt = $conn->prepare("DELETE FROM user_logs WHERE affected_user_id = ?");
-            $stmt->bind_param('i', $user_id);
-            $stmt->execute();
-            $stmt->close();
+            $stmt = $pdo->prepare("DELETE FROM user_logs WHERE affected_user_id = ?");
+            $stmt->execute([$user_id]);
 
             // Finally delete the user
-            $stmt = $conn->prepare("DELETE FROM users WHERE user_id=? AND role_id=?");
-            $stmt->bind_param('ii', $user_id, $role_id);
-            $stmt->execute();
-            $stmt->close();
+            $stmt = $pdo->prepare("DELETE FROM users WHERE user_id=? AND role_id=?");
+            $stmt->execute([$user_id, $role_id]);
 
             // Commit the transaction
-            $conn->commit();
+            $pdo->commit();
             header('Location: admin-userman.php');
             exit();
         } catch (Exception $e) {
             // Rollback transaction on error
-            $conn->rollback();
+            $pdo->rollBack();
             $message = "Error: Unable to delete user. " . $e->getMessage();
         }
     }
@@ -110,14 +95,10 @@ if (isset($_GET['delete']) && isset($_GET['type'])) {
 // Fetch users and teachers
 $users = [];
 $teachers = [];
-$result = $conn->query("SELECT * FROM users WHERE role_id=2");
-while ($row = $result->fetch_assoc()) {
-    $users[] = $row;
-}
-$result = $conn->query("SELECT * FROM users WHERE role_id=3");
-while ($row = $result->fetch_assoc()) {
-    $teachers[] = $row;
-}
+$result = $pdo->query("SELECT * FROM users WHERE role_id=2");
+$users = $result->fetchAll(PDO::FETCH_ASSOC);
+$result = $pdo->query("SELECT * FROM users WHERE role_id=3");
+$teachers = $result->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="en">
