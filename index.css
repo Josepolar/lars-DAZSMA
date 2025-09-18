@@ -12,7 +12,7 @@
 body {
     margin: 0;
     padding: 0;
-    background-image: url("assets/bg.png"); /* Replace with your image filename */
+    background-image: url("assets/bgg.png"); /* Replace with your image filename */
     background-size: cover;  /* Makes the image cover the screen */
     background-position: center; /* Centers the image */
     background-repeat: no-repeat; /* Prevents tiling */
