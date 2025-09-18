@@ -121,7 +121,7 @@ if ($userStats && $userStats['total_available_activities'] > 0) {
             <button id="rewardsBtn">Achievements</button>
         </div>
 
-        <!-- Total points -->
+        <!-- Total points  testing-->
         <div class="total-points">
             <span class="label">Total Points:</span>
             <span class="points" id="totalPoints"><?php echo $userStats ? number_format($userStats['total_points'], 0) : '0'; ?></span>
