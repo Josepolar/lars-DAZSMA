@@ -298,7 +298,7 @@ hr {
 }
 
 .table_responsive th {
-    width: 50%;
+    width: 55%;
     border-bottom: 1px solid #9c9c9c;
     border-left: 1px solid #9c9c9c;
     border-right: 1px solid #9c9c9c;
@@ -355,22 +355,19 @@ hr {
     margin: 0 auto; /* Margin between each stat */
     margin-bottom: 20px;
     position: relative;
-    overflow: hidden;
+    overflow: auto;
     width: 90%;
     box-sizing: border-box;
 }
 
 .table_creds {
-    width: 100%;
     padding-left: 15px;
     padding-bottom: 15px;
 }
 
 .table_creds table {
-    width: 100%;
     border-collapse: collapse;
     text-align: center;
-    font-family: Arial, sans-serif;
 }
 
 .table_creds th, 
@@ -384,7 +381,7 @@ hr {
 /* Remove borders for inner tables */
 .inner-table th, 
 .inner-table td {
-    border: none; /* remove all borders */
+    border: none; 
     padding: 10px;
 }
 
