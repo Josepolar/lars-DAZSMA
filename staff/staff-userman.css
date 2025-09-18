@@ -680,7 +680,7 @@ hr {
 /* Container */
 .table-container {
   width: 95%;
-  margin: 0 auto 20px auto;
+  margin: 25px;
   padding: 15px;
   background: #fff;
   border-radius: 8px;
@@ -718,8 +718,19 @@ hr {
 /* Responsive inner wrapper */
 .table_responsive {
   width: 100%;
-  overflow-x: hidden;
+  overflow-x: auto;
   box-sizing: border-box;
+  max-height: 500px;
+}
+
+.table_responsive table.teacher-table {
+  width: 80%;         /* or a fixed px value like 600px */
+  margin: 0 auto;     /* center the table */
+  font-size: 0.95em;  /* slightly smaller text */
+}
+.table_responsive table.teacher-table th,
+.table_responsive table.teacher-table td {
+  padding: 6px 8px;   /* less padding for compactness */
 }
 
 /* Controls row */

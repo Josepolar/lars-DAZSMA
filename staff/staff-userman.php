@@ -13,7 +13,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="staff-userman.css">
+    <link rel="stylesheet" href="staff-userman.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .user-credential {
@@ -475,7 +475,14 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
             <h3 style="cursor: pointer;" onclick="openModal('teacherTableModal')">Registered Teachers (<?= $teacherCount ?>)</h3>
             <button class="stat-btn" onclick="openModal('teacherModal')">ADD TEACHER</button>
         </div>
-        <table style="width: 100%;">
+        <table class="teacher-table">
+              <colgroup>
+    <col style="width: 2%;">
+    <col style="width: 2%;">
+    <col style="width: 1%;">
+    <col style="width: 1%;">
+    <col style="width: 1%;">
+  </colgroup>
             <thead>
                 <tr>
                     <th>Teacher Name</th>
@@ -515,8 +522,9 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
             </tbody>
         </table>
     </div> 
-
-    <!-- Students Table -->
+    </div>
+       <div class="table-container" style="display: flex; gap: 20px;">
+ <!-- Students Table -->
     <div class="table_responsive" style="flex: 1; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
         <div class="controls">
             <h3 style="cursor: pointer;" onclick="openModal('studentTableModal')">Registered Students (<?= $studentCount ?>)</h3>
@@ -574,6 +582,8 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
         </table>
     </div>
 </div>
+       </div>
+   
 
 
         
