@@ -36,7 +36,7 @@ body {
     width: 1200px;       /* arrow size */
     position: absolute;
     top: 50%;
-    right: 300px;        /* move it to the right side */
+    right: 330px;        /* move it to the right side */
     transform: translateY(-50%);
     animation: moveRightArrow 1s infinite ease-in-out;
 }
@@ -45,7 +45,7 @@ body {
     width: 1200px;
     position: absolute;
     top: 50%;
-    left: 300px;         /* move it to the left side */
+    left: 330px;         /* move it to the left side */
     transform: translateY(-50%);
     animation: moveLeftArrow 1s infinite ease-in-out;
 }

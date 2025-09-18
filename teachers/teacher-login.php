@@ -46,11 +46,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Teacher Login</title>
-    <link rel="stylesheet" href="teacher-login.css">
+    <link rel="stylesheet" href="teacher-login.css?v=<?php echo time(); ?>">
 </head>
 <body>
     <div class="login-container">
         <div class="login-box">
+            <img src="../assets/larslogo.png" alt="LARS Logo" style="display:block;margin:0 auto 18px auto;width:80px;height:auto;">
             <h2>TEACHER</h2>
             <HR>
             <BR>
@@ -67,15 +68,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <label for="password">Password</label>
                     <div class="password-container">
                         <input type="password" id="password" name="password" placeholder="Enter your password" required>
-                        <span class="password-toggle" onclick="togglePassword()">
+                        <!-- <span class="password-toggle" onclick="togglePassword()">
                             <img src="../assets/eye.png" alt="toggle password" id="toggleIcon">
-                        </span>
+                        </span> -->
                     </div>
                 </div>
 
                 <button type="submit" class="login-btn">Login</button>
                 
-                <script>
+                <!-- <script>
                 function togglePassword() {
                     const passwordInput = document.getElementById('password');
                     if (passwordInput.type === 'password') {
@@ -84,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         passwordInput.type = 'password';
                     }
                 }
-                </script>
+                </script> -->
             </form>
         </div>
     </div>

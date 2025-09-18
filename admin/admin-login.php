@@ -39,11 +39,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Login</title>
-    <link rel="stylesheet" href="admin-login.css">
+    <link rel="stylesheet" href="admin-login.css?v=<?php echo time(); ?>">
 </head>
 <body>
     <div class="login-container">
         <div class="login-box">
+            <img src="../assets/larslogo.png" alt="LARS Logo" style="display:block;margin:0 auto 18px auto;width:80px;height:auto;">
             <h2>ADMINISTRATOR</h2>
             <HR>
             <BR>
