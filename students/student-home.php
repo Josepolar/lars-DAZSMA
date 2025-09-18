@@ -20,6 +20,17 @@ if (!$profile) {
     exit();
 }
 
+// Profile image logic for current student
+$profileImgPath = '../uploads/profile_images/student_' . $profile['user_id'] . '_*.jpg';
+$profileImgFiles = glob($profileImgPath);
+if (count($profileImgFiles) > 0) {
+    $profileImgWeb = str_replace('..', '', $profileImgFiles[0]);
+    $profileImgWeb = ltrim($profileImgWeb, '/');
+    $profileImg = '/' . $profileImgWeb . '?t=' . filemtime($profileImgFiles[0]);
+} else {
+    $profileImg = '../assets/dazsma.png';
+}
+
 // Get class leaderboard (ALL students in same grade level with points only from their grade level activities)
 $leaderboardStmt = $pdo->prepare("
     SELECT 
@@ -78,7 +89,7 @@ if ($userStats && $userStats['total_available_activities'] > 0) {
         <img src="../assets/lars.png" alt="Logo">
     </div>
         <div class="profile">
-            <img src="../assets/dazsma.png" alt="Profile Picture" class="profile-pic">
+            <img src="<?php echo htmlspecialchars($profileImg); ?>" alt="Profile Picture" class="profile-pic" style="object-fit:cover;">
             <div class="profile-info">
                 <div class="profile-name" id="profileName"><?php echo htmlspecialchars($profile['first_name'] . ' ' . $profile['last_name']); ?></div>
                 <div class="profile-status online">Online</div>
@@ -239,7 +250,19 @@ if ($userStats && $userStats['total_available_activities'] > 0) {
                 <li class="leaderboard-item <?php echo $highlightClass; ?>">
                     <div class="rank-number">#<?php echo $rank; ?></div>
                     <div class="student-avatar">
-                        <img src="../assets/dazsma.png" alt="Avatar" class="lb-pic">
+                        <?php
+                        // Show each student's own profile image if available
+                        $studentImgPath = '../uploads/profile_images/student_' . $student['user_id'] . '_*.jpg';
+                        $studentImgFiles = glob($studentImgPath);
+                        if (count($studentImgFiles) > 0) {
+                            $studentImgWeb = str_replace('..', '', $studentImgFiles[0]);
+                            $studentImgWeb = ltrim($studentImgWeb, '/');
+                            $studentImg = '/' . $studentImgWeb . '?t=' . filemtime($studentImgFiles[0]);
+                        } else {
+                            $studentImg = '../assets/dazsma.png';
+                        }
+                        echo '<img src="' . htmlspecialchars($studentImg) . '" alt="Avatar" class="lb-pic" style="object-fit:cover;">';
+                        ?>
                     </div>
                     <div class="student-details">
                         <div class="student-name">
@@ -329,5 +352,37 @@ if ($userStats && $userStats['total_available_activities'] > 0) {
         </div>
 
         <script src="student-home.js"></script>
+        <script>
+        // Inactivity timer for profile status
+        let idleTimeout;
+        const idleTime = 5 * 60 * 1000; // 5 minutes in ms
+        const statusDiv = document.querySelector('.profile-status');
+
+        function setStatusOnline() {
+            if (statusDiv) {
+                statusDiv.textContent = 'Online';
+                statusDiv.classList.remove('idle');
+                statusDiv.classList.add('online');
+            }
+        }
+        function setStatusIdle() {
+            if (statusDiv) {
+                statusDiv.textContent = 'Idle';
+                statusDiv.classList.remove('online');
+                statusDiv.classList.add('idle');
+            }
+        }
+        function resetIdleTimer() {
+            setStatusOnline();
+            clearTimeout(idleTimeout);
+            idleTimeout = setTimeout(setStatusIdle, idleTime);
+        }
+        // Listen for user activity
+        ['mousemove','keydown','mousedown','touchstart'].forEach(evt => {
+            window.addEventListener(evt, resetIdleTimer, true);
+        });
+        // Start timer on load
+        resetIdleTimer();
+        </script>
     </body>
     </html>
