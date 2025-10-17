@@ -10,7 +10,7 @@
 /* Background */
 body {
     font-family: "Poppins", sans-serif;
-    background: linear-gradient(135deg, #8B0000, #FF0000);
+    background: linear-gradient(145deg, #3949ab, #1a237e);
     height: 100vh;
     display: flex;
     justify-content: center;
@@ -38,7 +38,7 @@ body {
 /* Title */
 .login-box h2 {
     margin-bottom: 25px;
-    color: #8B0000;
+    color: #1a237e;
     font-size: 24px;
     letter-spacing: 1px;
 }
@@ -52,7 +52,7 @@ body {
 .input-group label {
     font-weight: 600;
     font-size: 14px;
-    color: #8B0000;
+    color: #3949ab;
     display: block;
     margin-bottom: 6px;
 }
@@ -69,17 +69,17 @@ body {
 }
 
 .input-group input:focus {
-    border-color: #8B0000;
+    border-color: #3949ab;
     background: #fff;
     outline: none;
-    box-shadow: 0 0 8px rgba(139, 0, 0, 0.2);
+    box-shadow: 0 0 8px rgba(57, 73, 171, 0.2);
 }
 
 /* Login button */
 .login-btn {
     width: 100%;
     padding: 12px;
-    background: linear-gradient(135deg, #8B0000, #FF0000);
+    background: linear-gradient(145deg, #3949ab, #1a237e);
     border: none;
     border-radius: 10px;
     color: white;
@@ -87,13 +87,13 @@ body {
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(139, 0, 0, 0.3);
+    box-shadow: 0 4px 12px rgba(57, 73, 171, 0.3);
 }
 
 .login-btn:hover {
-    background: linear-gradient(135deg, #6B0000, #CC0000);
+    background: linear-gradient(145deg, #1a237e, #3949ab);
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(139, 0, 0, 0.4);
+    box-shadow: 0 6px 16px rgba(57, 73, 171, 0.4);
 }
 
 .login-btn:active {
@@ -102,8 +102,8 @@ body {
 
 /* Error message */
 .error-message {
-    background: #ffe6e6;
-    color: #8B0000;
+    background: #e8eaf6;
+    color: #1a237e;
     padding: 10px;
     border-radius: 8px;
     margin-bottom: 20px;

@@ -10,6 +10,9 @@ document.addEventListener('DOMContentLoaded', function() {
     loadActivities();
     loadActivityStats();
     
+    // Initialize bulk upload form handler
+    document.getElementById('bulkUploadForm').addEventListener('submit', handleBulkUpload);
+    
     // Set minimum date for due date to today
     const now = new Date();
     const dateString = now.toISOString().slice(0, 16);
@@ -32,6 +35,63 @@ function loadTeacherSubjects() {
             console.error('Error:', error);
             showNotification('Error loading subjects', 'error');
         });
+}
+
+// Bulk Upload Modal Functions
+function showBulkUploadModal() {
+    document.getElementById('bulkUploadModal').style.display = 'block';
+}
+
+function closeBulkUploadModal() {
+    document.getElementById('bulkUploadModal').style.display = 'none';
+}
+
+// Handle bulk upload submission
+function handleBulkUpload(e) {
+    e.preventDefault();
+    
+    const formData = new FormData();
+    const fileInput = document.getElementById('csvFile');
+    
+    if (!fileInput.files[0]) {
+        showNotification('Please select a file to upload', 'error');
+        return;
+    }
+    
+    formData.append('csvFile', fileInput.files[0]);
+    formData.append('action', 'bulk_upload');
+    
+    fetch('teacher-bulk-operations.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(`Successfully processed ${data.processed} records`, 'success');
+            if (data.errors && data.errors.length > 0) {
+                showNotification(`${data.errors.length} records had errors`, 'warning');
+            }
+            closeBulkUploadModal();
+            loadActivities(); // Refresh the activities list
+        } else {
+            showNotification('Error: ' + data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error processing upload', 'error');
+    });
+}
+
+// Download template
+function downloadTemplate(type) {
+    window.location.href = `teacher-bulk-operations.php?action=download_template&type=${type}`;
+}
+
+// Export grades
+function exportGrades(activityId) {
+    window.location.href = `teacher-bulk-operations.php?action=export_grades&activity_id=${activityId}`;
 }
 
 // Populate subject select dropdown
@@ -120,6 +180,9 @@ function populateActivitiesTable() {
                 </button>
                 <button class="btn btn-small btn-secondary" onclick="viewSubmissions(${activity.activity_id})" title="View Submissions">
                     <i class="fas fa-clipboard-list"></i>
+                </button>
+                <button class="btn btn-small btn-export" onclick="exportGrades(${activity.activity_id})" title="Export Grades">
+                    <i class="fas fa-file-export"></i>
                 </button>
                 <button class="btn btn-small ${activity.is_active ? 'btn-warning' : 'btn-success'}" 
                         onclick="toggleActivityStatus(${activity.activity_id})" 

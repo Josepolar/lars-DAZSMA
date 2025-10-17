@@ -38,6 +38,40 @@ body {
     transition: var(--tran-05);
 }
 
+/* Bulk Upload Modal Styles */
+.template-download {
+    margin: 15px 0;
+    padding: 10px;
+    background: var(--light-color);
+    border-radius: 5px;
+}
+
+.template-download p {
+    margin-bottom: 10px;
+    color: var(--dark-color);
+}
+
+.template-download .btn-small {
+    padding: 5px 10px;
+    margin-right: 10px;
+    font-size: 0.9em;
+}
+
+/* Export Button Styles */
+.btn-export {
+    background-color: var(--info-color);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    margin-right: 5px;
+}
+
+.btn-export:hover {
+    background-color: #138496;
+}
+
 /* ===== Sidebar ===== */
 .sidebar {
     position: fixed;

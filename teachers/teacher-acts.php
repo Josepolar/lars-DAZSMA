@@ -99,6 +99,9 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
             <button class="btn btn-primary" onclick="showCreateActivityModal()">
                 <i class="fas fa-plus"></i> Create New Activity
             </button>
+            <button class="btn btn-secondary" onclick="showBulkUploadModal()">
+                <i class="fas fa-upload"></i> Bulk Upload
+            </button>
             <button class="btn btn-secondary" onclick="refreshActivities()">
                 <i class="fas fa-sync-alt"></i> Refresh
             </button>
@@ -246,6 +249,33 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
             <div id="activityDetailsContent">
                 <!-- Content will be loaded dynamically -->
             </div>
+        </div>
+    </div>
+
+    <!-- Bulk Upload Modal -->
+    <div id="bulkUploadModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-upload"></i> Bulk Upload Records</h2>
+                <span class="close" onclick="closeBulkUploadModal()">&times;</span>
+            </div>
+            <form id="bulkUploadForm">
+                <div class="form-section">
+                    <div class="form-group">
+                        <label for="csvFile">Select CSV File</label>
+                        <input type="file" id="csvFile" name="csvFile" accept=".csv" required>
+                    </div>
+                    <div class="template-download">
+                        <p>Download the template for: </p>
+                        <button type="button" class="btn btn-small" onclick="downloadTemplate('activities')">Activities Template</button>
+                        <button type="button" class="btn btn-small" onclick="downloadTemplate('grades')">Grades Template</button>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeBulkUploadModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Upload</button>
+                </div>
+            </form>
         </div>
     </div>
 

@@ -1,0 +1,239 @@
+/* Common Admin Styles with Enhanced UI */
+.stat, .chart-card, .table_responsive, .form-card {
+    transition: all 0.3s ease-in-out;
+    background: linear-gradient(145deg, #ffffff, #f0f0f0);
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(57,73,171,0.1);
+    overflow: hidden;
+}
+
+.stat:hover, .chart-card:hover, .table_responsive:hover, .form-card:hover {
+    transform: scale(1.02);
+    box-shadow: 0 8px 25px rgba(57,73,171,0.15);
+    background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+}
+
+/* Stats Enhancement */
+.stats-container {
+    gap: 25px;
+    padding: 20px;
+}
+
+.stat-content {
+    padding: 25px;
+    text-align: center;
+}
+
+.stat-content h1 {
+    font-size: 2.5em;
+    color: #1a237e;
+    margin-bottom: 10px;
+    transition: all 0.3s ease;
+}
+
+.stat-content h3 {
+    color: #3949ab;
+    font-size: 1.2em;
+    transition: all 0.3s ease;
+}
+
+.stat:hover .stat-content h1 {
+    transform: scale(1.1);
+}
+
+/* Button Styling */
+.action-btn, .stat-btn, .submit-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(145deg, #3949ab, #1a237e);
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(57,73,171,0.2);
+}
+
+.action-btn:hover, .stat-btn:hover, .submit-btn:hover {
+    transform: translateY(-3px) scale(1.02);
+    background: linear-gradient(145deg, #1a237e, #3949ab);
+    box-shadow: 0 6px 20px rgba(57,73,171,0.3);
+}
+
+/* Table Enhancement */
+.table_responsive {
+    margin: 20px 0;
+    padding: 20px;
+}
+
+.table_responsive table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+}
+
+.table_responsive th {
+    background: #1a237e;
+    color: white;
+    padding: 12px;
+    font-weight: 600;
+    text-align: left;
+}
+
+.table_responsive tr {
+    transition: all 0.3s ease;
+}
+
+.table_responsive tr:hover {
+    background-color: #e8eaf6;
+    transform: scale(1.01);
+}
+
+.table_responsive td {
+    padding: 12px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+/* Form Enhancement */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    color: #1a237e;
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.form-group input, .form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus, .form-group select:focus {
+    border-color: #3949ab;
+    box-shadow: 0 0 0 3px rgba(57,73,171,0.1);
+    transform: translateY(-1px);
+}
+
+/* Modal Enhancement */
+.modal {
+    animation: fadeIn 0.3s ease-out;
+}
+
+.modal-content {
+    animation: slideIn 0.3s ease-out;
+    background: linear-gradient(145deg, #ffffff, #f8f9fa);
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Chart Card Enhancement */
+.chart-card {
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.chart-card h3 {
+    color: #1a237e;
+    margin-bottom: 15px;
+    font-size: 1.2em;
+}
+
+/* Sidebar Enhancement */
+.sidebar {
+    background: linear-gradient(145deg, #1a237e, #3949ab);
+    box-shadow: 5px 0 15px rgba(0,0,0,0.1);
+}
+
+.menu-links button {
+    transition: all 0.3s ease;
+}
+
+.menu-links button:hover {
+    transform: translateX(5px);
+    background: rgba(255,255,255,0.1);
+}
+
+/* Navigation Links */
+.nav-link a {
+    transition: all 0.3s ease;
+}
+
+.nav-link:hover a {
+    color: #fff;
+    transform: translateX(5px);
+}
+
+/* Status Badges */
+.status-badge {
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 0.9em;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.status-badge:hover {
+    transform: scale(1.1);
+}
+
+/* Search Box Enhancement */
+.search-box {
+    padding: 10px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.search-box:focus {
+    border-color: #3949ab;
+    box-shadow: 0 0 0 3px rgba(57,73,171,0.1);
+    transform: translateY(-1px);
+}
+
+/* Filter Section */
+.filter-container {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 8px 15px;
+    border: 2px solid #3949ab;
+    border-radius: 20px;
+    color: #3949ab;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.filter-btn:hover, .filter-btn.active {
+    background: #3949ab;
+    color: white;
+    transform: translateY(-2px);
+}

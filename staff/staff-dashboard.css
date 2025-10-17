@@ -235,55 +235,49 @@ hr {
     border-radius: 8px; /* Rounded corners */
     padding: 20px; /* Padding for inner spacing */
     box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); /* Shadow effect */
-    transition: background 0.5s ease; /* Smooth transition for background color */
+    transition: all 0.3s ease-in-out;
     flex: 1; /* Flex-grow to take equal space */
     margin: 0 10px; /* Margin between each stat */
     position: relative;
     overflow: hidden;
     width: calc(33.33% - 10px); /* Adjust the width as needed */
+    background: linear-gradient(145deg, #ffffff, #f0f0f0);
+}
+
+.stat:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    background: linear-gradient(145deg, #f8f9fa, #e9ecef);
 }
 
 .stat-content {
     text-align: left; /* Align text to the left */
     z-index: 1; /* Keep the content on top of the gradient */
     position: relative; /* Keep content positioning relative */
-}
-
-.stat::after {
-    content: ""; /* Empty content for the overlay */
-    position: absolute;
-    top: 0;
-    left: -100%; /* Start off-screen to the left */
-    height: 100%; /* Full height of the container */
-    width: 100%; /* Full width of the container */
-    background: linear-gradient(to right, var(--accent-color), transparent); /* Gradient from color to transparent */
-    transition: left 0.5s; /* Transition effect */
-    z-index: 0; /* Behind the content */
-}
-
-.stat:hover::after {
-    left: 0; /* Move the gradient in on hover */
+    padding: 20px;
+    text-align: center;
 }
 
 .stat-content h1 {
-    font-size: 40px; /* Big font size for the count */
-    margin: 0; /* Remove default margin */
+    font-size: 3em;
+    color: #2c3e50;
+    margin-bottom: 10px;
+    transition: all 0.3s ease;
 }
 
 .stat-content h3 {
-    font-size: 18px; /* Font size for the label */
-    margin: 5px 0 0 0; /* Space above and remove bottom margin */
+    color: #7f8c8d;
+    font-size: 1.2em;
+    transition: all 0.3s ease;
 }
 
-.icons {
-    font-size: 40px; /* Adjust size of the icon */
-    color: var(--primary-color); /* Optional: Change icon color */
-}
-
-/* Change text color on hover */
-.stat:hover .stat-content h3,
 .stat:hover .stat-content h1 {
-    color: white; /* Change text color to white on hover */
+    color: #1a237e;
+    transform: scale(1.1);
+}
+
+.stat:hover .stat-content h3 {
+    color: #3949ab;
 }
 
 /* ---------------------- CHARTS */

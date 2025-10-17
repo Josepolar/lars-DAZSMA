@@ -219,61 +219,92 @@ hr {
 }
 
 .stats-container {
-    display: flex; /* Use flexbox for layout */
-    justify-content: space-between; /* Space out the items */
-    margin: 20px 20px; /* Margin for spacing */
-    
-    position: relative;
-    flex-wrap: wrap;
+    display: flex;
+    justify-content: space-between;
+    padding: 20px;
+    gap: 30px;
+    margin: 20px 20px;
 }
 
 .stat {
-    display: flex; /* Use flexbox for the stat item */
-    color: black;
-    justify-content: space-between; /* Space content between the text and icon */
-    align-items: center; /* Center items vertically */
-    background-color: #fff; /* Background color for each stat */
-    border-radius: 8px; /* Rounded corners */
-    padding: 20px; /* Padding for inner spacing */
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); /* Shadow effect */
-    transition: background 0.5s ease; /* Smooth transition for background color */
-    flex: 1; /* Flex-grow to take equal space */
-    margin: 0 10px; /* Margin between each stat */
+    flex: 1;
+    background: linear-gradient(145deg, #ffffff, #f8f9fa);
+    padding: 25px;
+    border-radius: 20px;
+    box-shadow: 0 10px 20px rgba(57,73,171,0.1);
+    text-align: center;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     position: relative;
     overflow: hidden;
-    width: calc(33.33% - 10px); /* Adjust the width as needed */
+}
+
+.stat::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(145deg, rgba(57,73,171,0.05), rgba(26,35,126,0.05));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.stat:hover {
+    transform: translateY(-15px) scale(1.02);
+    box-shadow: 0 15px 30px rgba(57,73,171,0.2);
+}
+
+.stat:hover::before {
+    opacity: 1;
+}
+
+/* Specific colors for each stat card */
+.stat:nth-child(1) {
+    border-bottom: 4px solid #3949ab;
+}
+
+.stat:nth-child(2) {
+    border-bottom: 4px solid #1e88e5;
+}
+
+.stat:nth-child(3) {
+    border-bottom: 4px solid #039be5;
 }
 
 .stat-content {
-    text-align: left; /* Align text to the left */
-    z-index: 1; /* Keep the content on top of the gradient */
-    position: relative; /* Keep content positioning relative */
-}
-
-.stat::after {
-    content: ""; /* Empty content for the overlay */
-    position: absolute;
-    top: 0;
-    left: -100%; /* Start off-screen to the left */
-    height: 100%; /* Full height of the container */
-    width: 100%; /* Full width of the container */
-    background: linear-gradient(to right, var(--accent-color), transparent); /* Gradient from color to transparent */
-    transition: left 0.5s; /* Transition effect */
-    z-index: 0; /* Behind the content */
-}
-
-.stat:hover::after {
-    left: 0; /* Move the gradient in on hover */
+    position: relative;
+    z-index: 1;
+    text-align: center;
 }
 
 .stat-content h1 {
-    font-size: 40px; /* Big font size for the count */
-    margin: 0; /* Remove default margin */
+    font-size: 3.5em;
+    font-weight: 700;
+    color: #1a237e;
+    margin-bottom: 10px;
+    transition: all 0.3s ease;
 }
 
 .stat-content h3 {
-    font-size: 18px; /* Font size for the label */
-    margin: 5px 0 0 0; /* Space above and remove bottom margin */
+    font-size: 1.2em;
+    color: #3949ab;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+}
+
+.stat:hover .stat-content h1 {
+    transform: scale(1.1);
+    background: linear-gradient(145deg, #3949ab, #1a237e);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.stat:hover .stat-content h3 {
+    color: #1a237e;
+    transform: translateY(5px);
 }
 
 .icons {

@@ -65,8 +65,8 @@ function handleListActivities($pdo, $student_id) {
     $student_grade = $gradeStmt->fetchColumn();
 
     // Build WHERE conditions - include grade level filtering
-    $where_conditions = ["a.is_active = 1", "s.grade_level = ?"];
-    $params = [$student_id, $student_grade];
+    $where_conditions = ["a.is_active = 1"];
+    $params = [$student_id];
 
     if ($status_filter !== 'all') {
         switch ($status_filter) {
@@ -94,57 +94,41 @@ function handleListActivities($pdo, $student_id) {
 
     $where_clause = implode(' AND ', $where_conditions);
 
+    // First, get all active activities
     $stmt = $pdo->prepare("
         SELECT 
-            a.activity_id,
-            a.title,
-            a.description,
-            a.activity_type,
-            a.total_points,
-            a.time_limit,
-            a.due_date,
-            a.created_at,
+            a.*,
             s.subject_name,
             s.grade_level,
             CONCAT(t.first_name, ' ', t.last_name) as teacher_name,
             COALESCE(ss.submission_status, 'not_started') as submission_status,
             ss.total_score,
-            ss.max_score,
-            ss.percentage,
-            ss.submitted_at,
-            ss.time_spent,
+            ss.submission_id,
             CASE 
                 WHEN a.due_date IS NULL THEN 'no_deadline'
                 WHEN a.due_date > NOW() THEN 'upcoming'
                 ELSE 'overdue'
-            END as deadline_status,
-            CASE 
-                WHEN a.due_date IS NOT NULL THEN TIMESTAMPDIFF(HOUR, NOW(), a.due_date)
-                ELSE NULL
-            END as hours_until_due
+            END as deadline_status
         FROM activities a
         JOIN subjects s ON a.subject_id = s.subject_id
         JOIN users t ON a.teacher_id = t.user_id
-        LEFT JOIN student_submissions ss ON a.activity_id = ss.activity_id AND ss.student_id = ?
-        WHERE $where_clause
-        ORDER BY 
-            CASE WHEN a.due_date IS NULL THEN 1 ELSE 0 END,
-            a.due_date ASC,
-            a.created_at DESC
+        LEFT JOIN student_submissions ss ON (a.activity_id = ss.activity_id AND ss.student_id = ?)
+        WHERE a.is_active = 1
+        ORDER BY a.due_date ASC, a.created_at DESC
     ");
 
     $stmt->execute($params);
     $activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Get available subjects for filtering - only show subjects for student's grade level
+    // Get available subjects for filtering
     $subjectStmt = $pdo->prepare("
-        SELECT DISTINCT s.subject_id, s.subject_name
+        SELECT DISTINCT s.subject_id, s.subject_name, s.grade_level
         FROM subjects s
         JOIN activities a ON s.subject_id = a.subject_id
-        WHERE a.is_active = 1 AND s.grade_level = ?
-        ORDER BY s.subject_name
+        WHERE a.is_active = 1
+        ORDER BY s.grade_level, s.subject_name
     ");
-    $subjectStmt->execute([$student_grade]);
+    $subjectStmt->execute();
     $subjects = $subjectStmt->fetchAll(PDO::FETCH_ASSOC);
 
     echo json_encode([
