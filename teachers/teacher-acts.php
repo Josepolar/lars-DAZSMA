@@ -14,6 +14,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="teacher-acts.css">
+    <link rel="stylesheet" href="game-activity-styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <title>Teacher Activities</title>
@@ -120,10 +121,9 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
                     </div>
                     <select id="filterType" onchange="filterActivities()">
                         <option value="">All Types</option>
-                        <option value="quiz">Quiz</option>
-                        <option value="assignment">Assignment</option>
-                        <option value="recitation">Recitation</option>
-                        <option value="exam">Exam</option>
+                        <option value="crossword">Crossword Puzzle</option>
+                        <option value="flashcards">Flash Cards</option>
+                        <option value="speed_typing">Speed Typing</option>
                     </select>
                 </div>
 
@@ -185,10 +185,10 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
                         <div class="form-group">
                             <label for="activityType">Activity Type *</label>
                             <select id="activityType" name="activity_type" required>
-                                <option value="quiz">Quiz</option>
-                                <option value="assignment">Assignment</option>
-                                <option value="recitation">Recitation</option>
-                                <option value="exam">Exam</option>
+                                <option value="">Select a game type</option>
+                                <option value="crossword">Crossword Puzzle</option>
+                                <option value="flashcards">Flash Cards</option>
+                                <option value="speed_typing">Speed Typing</option>
                             </select>
                         </div>
                     </div>
@@ -211,10 +211,17 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
                     </div>
                 </div>
 
-                <div class="form-section">
-                    <h3>Questions <button type="button" class="btn btn-small" onclick="addQuestion()"><i class="fas fa-plus"></i> Add Question</button></h3>
-                    <div id="questionsContainer">
-                        <!-- Questions will be added dynamically -->
+                <div class="form-section" id="gameSettingsSection" style="display: none;">
+                    <h3>Game Settings</h3>
+                    <div id="gameSettingsContainer">
+                        <!-- Game settings will be added dynamically -->
+                    </div>
+                </div>
+
+                <div class="form-section" id="gameContentSection" style="display: none;">
+                    <h3>Game Content</h3>
+                    <div id="gameContentContainer">
+                        <!-- Game content will be added dynamically -->
                     </div>
                 </div>
 
@@ -279,7 +286,9 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
         </div>
     </div>
 
-    <script src="teacher-acts.js"></script>
+        <script src="teacher-acts.js"></script>
+    <script src="game-activity-handler.js"></script>
+```
 
 </body>
 </html>

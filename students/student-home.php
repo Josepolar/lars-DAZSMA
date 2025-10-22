@@ -28,7 +28,7 @@ if (count($profileImgFiles) > 0) {
     $profileImgWeb = ltrim($profileImgWeb, '/');
     $profileImg = '/' . $profileImgWeb . '?t=' . filemtime($profileImgFiles[0]);
 } else {
-    $profileImg = '../assets/dazsma.png';
+    $profileImg = '../assets/avatar.jpg';
 }
 
 // Get class leaderboard (ALL students in same grade level with points only from their grade level activities)
@@ -259,9 +259,9 @@ if ($userStats && $userStats['total_available_activities'] > 0) {
                             $studentImgWeb = ltrim($studentImgWeb, '/');
                             $studentImg = '/' . $studentImgWeb . '?t=' . filemtime($studentImgFiles[0]);
                         } else {
-                            $studentImg = '../assets/dazsma.png';
+                            $studentImg = '../assets/avatar.jpg';
                         }
-                        echo '<img src="' . htmlspecialchars($studentImg) . '" alt="Avatar" class="lb-pic" style="object-fit:cover;">';
+                        echo '<img src="' . htmlspecialchars($studentImg) . '" alt="" class="lb-pic" style="object-fit:cover;">';
                         ?>
                     </div>
                     <div class="student-details">

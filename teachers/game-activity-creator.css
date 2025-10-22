@@ -1,0 +1,175 @@
+.game-activity-container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.settings-section {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #f5f5f5;
+    border-radius: 8px;
+}
+
+.settings-group {
+    margin-bottom: 15px;
+}
+
+.settings-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.settings-group input,
+.settings-group select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+/* Crossword Editor Styles */
+.crossword-editor {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.word-entry {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.word-input,
+.clue-input {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.add-word {
+    padding: 8px 15px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.word-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    background: #fff;
+    margin-bottom: 5px;
+    border-radius: 4px;
+}
+
+.remove-word {
+    background: #ff4444;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+}
+
+/* Flashcard Editor Styles */
+.flashcard-editor {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.card-entry {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.front-input,
+.back-input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    min-height: 100px;
+}
+
+.add-card {
+    padding: 10px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.card-item {
+    background: #fff;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.card-preview {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+/* Speed Typing Editor Styles */
+.typing-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.typing-text {
+    width: 100%;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.text-preview {
+    background: #fff;
+    padding: 15px;
+    border-radius: 4px;
+    min-height: 200px;
+}
+
+/* Common Button Styles */
+.action-button {
+    padding: 10px 20px;
+    background: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.action-button:hover {
+    background: #1976D2;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .crossword-editor,
+    .flashcard-editor {
+        grid-template-columns: 1fr;
+    }
+    
+    .word-entry {
+        flex-direction: column;
+    }
+}

@@ -108,7 +108,7 @@ if (count($profileImgFiles) > 0) {
         <?php endif; ?>
         <?php if (isset($_SESSION['role_id']) && $_SESSION['role_id'] == 4 && $_SESSION['user_id'] == $user['user_id']): ?>
         <div class="profile-pic">
-            <img src="/<?php echo htmlspecialchars($profileImg . $imgCacheBuster); ?>" alt="Profile Picture" id="profileImage" style="object-fit:cover;">
+            <img src="/<?php echo htmlspecialchars($profileImg . $imgCacheBuster); ?>" id="profileImage" style="object-fit:cover;">
             <form method="post" enctype="multipart/form-data" style="margin-top:10px;">
                 <input type="file" name="profile_image" id="upload" accept="image/*" style="display:none;">
                 <label for="upload" class="upload-btn">Change Photo</label>

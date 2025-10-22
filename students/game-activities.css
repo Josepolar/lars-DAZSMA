@@ -1,0 +1,147 @@
+/* Game Activity Styles */
+.game-container {
+    padding: 20px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Crossword Styles */
+.crossword-grid {
+    display: grid;
+    gap: 1px;
+    background: #333;
+    padding: 2px;
+    margin: 20px auto;
+}
+
+.crossword-cell {
+    width: 40px;
+    height: 40px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: bold;
+    position: relative;
+}
+
+.crossword-cell.empty {
+    background: #333;
+}
+
+.crossword-cell .number {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    font-size: 12px;
+    color: #666;
+}
+
+.clues-container {
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.clues-section {
+    padding: 15px;
+    background: #f5f5f5;
+    border-radius: 4px;
+}
+
+/* Flashcard Styles */
+.flashcard-container {
+    perspective: 1000px;
+    width: 300px;
+    height: 200px;
+    margin: 20px auto;
+}
+
+.flashcard {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.6s;
+    cursor: pointer;
+}
+
+.flashcard.flipped {
+    transform: rotateY(180deg);
+}
+
+.flashcard-front,
+.flashcard-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    text-align: center;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.flashcard-back {
+    transform: rotateY(180deg);
+    background: #f8f9fa;
+}
+
+/* Speed Typing Styles */
+.typing-container {
+    max-width: 800px;
+    margin: 20px auto;
+}
+
+.typing-text {
+    font-family: monospace;
+    font-size: 18px;
+    line-height: 1.6;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    white-space: pre-wrap;
+}
+
+.typing-input {
+    width: 100%;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 18px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+
+.typing-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    text-align: center;
+}
+
+.stat-box {
+    padding: 15px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.stat-box h4 {
+    margin: 0 0 10px 0;
+    color: #666;
+}
+
+.stat-box .value {
+    font-size: 24px;
+    font-weight: bold;
+    color: #2196F3;
+}

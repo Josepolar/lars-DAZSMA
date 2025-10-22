@@ -14,6 +14,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Activities - LARS</title>
     <link rel="stylesheet" href="student-activities.css">
+    <link rel="stylesheet" href="game-activities.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
@@ -47,6 +48,15 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
         <!-- FILTERS SECTION -->
         <div class="filters-section">
             <div class="filter-group">
+                <label for="typeFilter">Game Type:</label>
+                <select id="typeFilter">
+                    <option value="all">All Games</option>
+                    <option value="crossword">Crossword Puzzle</option>
+                    <option value="flashcards">Flash Cards</option>
+                    <option value="speed_typing">Speed Typing</option>
+                </select>
+            </div>
+            <div class="filter-group">
                 <label for="statusFilter">Status:</label>
                 <select id="statusFilter">
                     <option value="all">All Activities</option>
@@ -65,13 +75,13 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
             </div>
             
             <div class="filter-group">
-                <label for="typeFilter">Type:</label>
-                <select id="typeFilter">
+                <label for="activityTypeFilter">Type:</label>
+                <select id="activityTypeFilter">
                     <option value="all">All Types</option>
-                    <option value="quiz">Quiz</option>
-                    <option value="assignment">Assignment</option>
-                    <option value="recitation">Recitation</option>
-                    <option value="exam">Exam</option>
+                    <option value="regular">Regular Activities</option>
+                    <option value="crossword">Crossword Puzzles</option>
+                    <option value="flashcards">Flash Cards</option>
+                    <option value="speed_typing">Speed Typing</option>
                 </select>
             </div>
             
@@ -173,6 +183,16 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
         </div>
     </div>
 
+    <script src="secure-activity-handler.js"></script>
     <script src="student-activities.js"></script>
+    <script src="student-game-activities.js"></script>
+
+    <script>
+        // Override any existing activity start functions to use our secure handler
+        document.querySelectorAll('[onclick*="startActivity"]').forEach(element => {
+            const activityId = element.getAttribute('onclick').match(/\d+/)[0];
+            element.onclick = () => startActivity(activityId);
+        });
+    </script>
 </body>
 </html>
