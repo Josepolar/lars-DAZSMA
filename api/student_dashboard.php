@@ -3,50 +3,16 @@ session_start();
 header('Content-Type: application/json');
 
 // Check if user is logged in and is a student
-// Enable error reporting for debugging
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
-// Check session status
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['role_id'] != 4) {
     http_response_code(401);
-    echo json_encode(['error' => 'Unauthorized access. Please log in again.']);
+    echo json_encode(['error' => 'Unauthorized access']);
     exit();
 }
-
-// Enable error reporting
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
 
 // Database connection
-try {
-    include '../Database/database.php';
-    
-    // Test database connection
-    $test = $pdo->query("SELECT 1");
-    if (!$test) {
-        throw new Exception("Database connection test failed");
-    }
-    
-    $student_id = $_SESSION['user_id'];
-} catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode([
-        'error' => 'Database connection failed',
-        'details' => $e->getMessage(),
-        'debug_info' => [
-            'session_status' => session_status(),
-            'session_id' => session_id(),
-            'user_id' => $_SESSION['user_id'] ?? 'not set',
-            'role_id' => $_SESSION['role_id'] ?? 'not set'
-        ]
-    ]);
-    exit();
-}
+include '../Database/database.php';
+
+$student_id = $_SESSION['user_id'];
 
 try {
     // Get student profile information
@@ -70,28 +36,18 @@ try {
     }
 
     // Get student's total points and submission statistics
-    // Get available activities and submissions for the student's grade level
     $statsStmt = $pdo->prepare("
         SELECT 
-            (SELECT COUNT(*) FROM activities a2 
-             JOIN subjects s2 ON a2.subject_id = s2.subject_id 
-             WHERE a2.status = 'active' AND s2.grade_level = ?) as total_activities,
-            COUNT(DISTINCT CASE WHEN ss.submission_status IN ('submitted', 'graded') THEN ss.activity_id END) as completed_activities,
-            COALESCE(SUM(CASE WHEN ss.submission_status IN ('submitted', 'graded') THEN ss.total_score ELSE 0 END), 0) as total_points,
-            COALESCE(AVG(CASE WHEN ss.submission_status IN ('submitted', 'graded') THEN ss.percentage END), 0) as avg_percentage
-        FROM activities a
-        JOIN subjects s ON a.subject_id = s.subject_id
-        LEFT JOIN student_submissions ss ON a.activity_id = ss.activity_id AND ss.student_id = ?
-        WHERE a.status = 'active' AND s.grade_level = ?
+            COUNT(DISTINCT ss.submission_id) as total_submissions,
+            COUNT(DISTINCT CASE WHEN ss.submission_status = 'submitted' OR ss.submission_status = 'graded' THEN ss.submission_id END) as completed_submissions,
+            COALESCE(SUM(CASE WHEN ss.submission_status IN ('submitted', 'graded') THEN ss.total_score ELSE 0 END), 0) as total_points_earned,
+            COALESCE(SUM(CASE WHEN ss.submission_status IN ('submitted', 'graded') THEN ss.max_score ELSE 0 END), 0) as total_possible_points,
+            COALESCE(AVG(CASE WHEN ss.submission_status IN ('submitted', 'graded') AND ss.percentage IS NOT NULL THEN ss.percentage END), 0) as average_percentage
+        FROM student_submissions ss
+        WHERE ss.student_id = ?
     ");
-    $statsStmt->execute([$profile['grade_level'], $student_id, $profile['grade_level']]);
+    $statsStmt->execute([$student_id]);
     $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
-    
-    // Ensure we have numeric values even when no activities are completed
-    $stats['total_activities'] = (int)$stats['total_activities'];
-    $stats['completed_activities'] = (int)$stats['completed_activities'];
-    $stats['total_points'] = (int)$stats['total_points'];
-    $stats['avg_percentage'] = round(floatval($stats['avg_percentage']), 2);
 
     // Get recent submissions (completed or graded)
     $recentSubmissionsStmt = $pdo->prepare("

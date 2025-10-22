@@ -98,8 +98,6 @@ function handleListActivities($pdo, $student_id) {
     $stmt = $pdo->prepare("
         SELECT 
             a.*,
-            a.activity_type,
-            a.game_settings,
             s.subject_name,
             s.grade_level,
             CONCAT(t.first_name, ' ', t.last_name) as teacher_name,

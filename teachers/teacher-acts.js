@@ -224,6 +224,111 @@ function closeCreateActivityModal() {
 // Reset create activity form
 function resetCreateActivityForm() {
     document.getElementById('createActivityForm').reset();
+    document.getElementById('questionsContainer').innerHTML = '';
+    questionCount = 0;
+}
+
+// Add question to form
+function addQuestion() {
+    questionCount++;
+    const container = document.getElementById('questionsContainer');
+    
+    const questionDiv = document.createElement('div');
+    questionDiv.className = 'question-item';
+    questionDiv.id = `question_${questionCount}`;
+    
+    questionDiv.innerHTML = `
+        <div class="question-header">
+            <h4>Question ${questionCount}</h4>
+            <button type="button" class="btn btn-small btn-danger" onclick="removeQuestion(${questionCount})">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group flex-grow">
+                <label>Question Text *</label>
+                <textarea name="questions[${questionCount}][text]" rows="2" required></textarea>
+            </div>
+            <div class="form-group">
+                <label>Question Type *</label>
+                <select name="questions[${questionCount}][type]" onchange="handleQuestionTypeChange(${questionCount})" required>
+                    <option value="multiple_choice">Multiple Choice</option>
+                    <option value="true_false">True/False</option>
+                    <option value="short_answer">Short Answer</option>
+                    <option value="essay">Essay</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Points *</label>
+                <input type="number" name="questions[${questionCount}][points]" min="1" value="10" required>
+            </div>
+        </div>
+        
+        <div class="choices-container" id="choices_${questionCount}">
+            <div class="form-group">
+                <label>Answer Choices</label>
+                <div class="choices-list" id="choicesList_${questionCount}">
+                    <!-- Choices will be added here -->
+                </div>
+                <button type="button" class="btn btn-small btn-secondary" onclick="addChoice(${questionCount})">
+                    <i class="fas fa-plus"></i> Add Choice
+                </button>
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(questionDiv);
+    
+    // Add default choices for multiple choice
+    addChoice(questionCount);
+    addChoice(questionCount);
+}
+
+// Remove question
+function removeQuestion(questionId) {
+    const questionDiv = document.getElementById(`question_${questionId}`);
+    if (questionDiv) {
+        questionDiv.remove();
+    }
+}
+
+// Handle question type change
+function handleQuestionTypeChange(questionId) {
+    const select = document.querySelector(`select[name="questions[${questionId}][type]"]`);
+    const choicesContainer = document.getElementById(`choices_${questionId}`);
+    
+    if (select.value === 'multiple_choice') {
+        choicesContainer.style.display = 'block';
+    } else {
+        choicesContainer.style.display = 'none';
+    }
+}
+
+// Add choice to question
+function addChoice(questionId) {
+    const choicesList = document.getElementById(`choicesList_${questionId}`);
+    const choiceCount = choicesList.children.length;
+    
+    const choiceDiv = document.createElement('div');
+    choiceDiv.className = 'choice-item';
+    
+    choiceDiv.innerHTML = `
+        <div class="choice-input">
+            <input type="radio" name="questions[${questionId}][correct_choice]" value="${choiceCount}">
+            <input type="text" name="questions[${questionId}][choices][${choiceCount}][text]" placeholder="Choice ${choiceCount + 1}" required>
+            <button type="button" class="btn btn-small btn-danger" onclick="removeChoice(this)">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+    
+    choicesList.appendChild(choiceDiv);
+}
+
+// Remove choice
+function removeChoice(button) {
+    button.closest('.choice-item').remove();
 }
 
 // Create activity form submission
@@ -232,6 +337,40 @@ document.getElementById('createActivityForm').addEventListener('submit', functio
     
     const formData = new FormData(this);
     formData.append('action', 'create_activity');
+    
+    // Process questions
+    const questions = [];
+    const questionElements = document.querySelectorAll('.question-item');
+    
+    questionElements.forEach((questionElement, index) => {
+        const questionData = {
+            text: questionElement.querySelector('textarea').value,
+            type: questionElement.querySelector('select').value,
+            points: parseInt(questionElement.querySelector('input[type="number"]').value)
+        };
+        
+        // Add choices for multiple choice questions
+        if (questionData.type === 'multiple_choice') {
+            const choices = [];
+            const choiceInputs = questionElement.querySelectorAll('.choice-item input[type="text"]');
+            const correctChoiceRadio = questionElement.querySelector('input[type="radio"]:checked');
+            
+            choiceInputs.forEach((input, choiceIndex) => {
+                if (input.value.trim()) {
+                    choices.push({
+                        text: input.value.trim(),
+                        is_correct: correctChoiceRadio && correctChoiceRadio.value == choiceIndex
+                    });
+                }
+            });
+            
+            questionData.choices = choices;
+        }
+        
+        questions.push(questionData);
+    });
+    
+    formData.append('questions', JSON.stringify(questions));
     
     fetch('teacher-activities-backend.php', {
         method: 'POST',

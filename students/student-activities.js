@@ -1,16 +1,3 @@
-// Format date helper function
-function formatDate(dateString) {
-    if (!dateString) return 'No due date';
-    const date = new Date(dateString);
-    return date.toLocaleString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-}
-
 // Global variables
 let activitiesData = null;
 let currentFilters = {
@@ -99,25 +86,6 @@ async function loadUserProfile() {
         
     } catch (error) {
         console.error('Error loading profile:', error);
-    }
-}
-
-// Function to start an activity
-function startActivity(activityId) {
-    // Open activity in a new window with specific features
-    const activityWindow = window.open(
-        `take-activity.php?id=${activityId}`,
-        '_blank',
-        'width=' + screen.width + 
-        ',height=' + screen.height + 
-        ',fullscreen=yes,channelmode=yes,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes'
-    );
-
-    if (activityWindow) {
-        activityWindow.moveTo(0, 0); // Move to top-left corner
-        activityWindow.focus();
-    } else {
-        alert('Please enable pop-ups to take the activity. They are required for secure activity taking.');
     }
 }
 
@@ -226,38 +194,10 @@ function updateActivitiesGrid(activities) {
 // Create activity card element
 function createActivityCard(activity) {
     const card = document.createElement('div');
-    card.className = `activity-card ${getStatusClass(activity.status)}`;
+    card.className = `activity-card ${getStatusClass(activity.submission_status)}`;
     card.setAttribute('data-activity-id', activity.activity_id);
     
-    const isGameActivity = ['crossword', 'flashcards', 'speed_typing'].includes(activity.activity_type);
-    const activityTypeDisplay = isGameActivity ? 
-        activity.activity_type.replace('_', ' ').toUpperCase() :
-        activity.activity_type.toUpperCase();
-    
-    card.innerHTML = `
-        <div class="activity-type">${activityTypeDisplay}</div>
-        <div class="activity-title">${activity.title}</div>
-        <div class="activity-details">
-            <div>Subject: ${activity.subject_name}</div>
-            <div>Points: ${activity.total_points}</div>
-            <div>Due: ${formatDate(activity.due_date)}</div>
-        </div>
-        <div class="activity-actions">
-            <button onclick="showActivityDetails(${activity.activity_id})" class="btn btn-secondary">
-                <i class="fas fa-info-circle"></i> Details
-            </button>
-            ${activity.status !== 'completed' ? 
-                `<button onclick="startActivity(${activity.activity_id})" class="btn btn-primary">
-                    <i class="fas fa-play"></i> Take
-                </button>` : 
-                `<button class="btn btn-success" disabled>
-                    <i class="fas fa-check"></i> Completed
-                </button>`
-            }
-        </div>
-    `;
-    
-    return card;
+    const dueDate = activity.due_date ? new Date(activity.due_date) : null;
     const isOverdue = dueDate && dueDate < new Date();
     const dueDateText = dueDate ? dueDate.toLocaleDateString() : 'No deadline';
     
@@ -343,14 +283,7 @@ async function showActivityDetails(activityId) {
         }
         
         modalTitle.textContent = data.activity.title;
-        
-        // Check if it's a game activity
-        const isGameActivity = ['crossword', 'flashcards', 'speed_typing'].includes(data.activity.activity_type);
-        if (isGameActivity) {
-            modalContent.innerHTML = createGameActivityDetailsContent(data);
-        } else {
-            modalContent.innerHTML = createActivityDetailsContent(data);
-        }
+        modalContent.innerHTML = createActivityDetailsContent(data);
         
     } catch (error) {
         console.error('Error loading activity details:', error);
@@ -364,105 +297,6 @@ async function showActivityDetails(activityId) {
 }
 
 // Create activity details content
-function createGameActivityDetailsContent(data) {
-    const activity = data.activity;
-    const gameContent = activity.content_data ? JSON.parse(activity.content_data) : null;
-    const gameSettings = activity.settings ? JSON.parse(activity.settings) : null;
-    
-    let gameSpecificContent = '';
-    switch (activity.activity_type) {
-        case 'flashcards':
-            const cards = gameContent?.cards || [];
-            gameSpecificContent = `
-                <div class="game-content">
-                    <h5>Flashcards</h5>
-                    <p>Number of Cards: ${cards.length}</p>
-                    ${cards.length > 0 ? `
-                        <div class="flashcard-preview">
-                            <h6>Preview:</h6>
-                            <div class="card-list">
-                                ${cards.slice(0, 3).map((card, index) => `
-                                    <div class="preview-card">
-                                        <strong>Card ${index + 1}:</strong>
-                                        <p>Question: ${card.question}</p>
-                                    </div>
-                                `).join('')}
-                                ${cards.length > 3 ? '<div class="more-cards">...and ' + (cards.length - 3) + ' more cards</div>' : ''}
-                            </div>
-                        </div>
-                    ` : '<p>No cards available yet.</p>'}
-                </div>
-            `;
-            break;
-            
-        case 'crossword':
-            const words = gameContent?.words || [];
-            gameSpecificContent = `
-                <div class="game-content">
-                    <h5>Crossword Puzzle</h5>
-                    <p>Number of Words: ${words.length}</p>
-                    ${words.length > 0 ? `
-                        <div class="crossword-preview">
-                            <h6>Grid Size: ${gameContent.gridSize || 'Not set'}</h6>
-                            <p>Contains ${words.length} words to find</p>
-                        </div>
-                    ` : '<p>No words available yet.</p>'}
-                </div>
-            `;
-            break;
-            
-        case 'speed_typing':
-            gameSpecificContent = `
-                <div class="game-content">
-                    <h5>Speed Typing Test</h5>
-                    ${gameContent?.text ? `
-                        <div class="typing-preview">
-                            <h6>Text Preview:</h6>
-                            <p>${gameContent.text.slice(0, 100)}...</p>
-                            <p>Total length: ${gameContent.text.length} characters</p>
-                        </div>
-                    ` : '<p>No text available yet.</p>'}
-                </div>
-            `;
-            break;
-    }
-    
-    return `
-        <div class="modal-body">
-            <div class="activity-header">
-                <h4>${activity.subject_name}</h4>
-                <p><strong>Teacher:</strong> ${activity.teacher_name}</p>
-                <p><strong>Type:</strong> ${activity.activity_type.replace('_', ' ').toUpperCase()}</p>
-                <p><strong>Points:</strong> ${activity.total_points}</p>
-                <p><strong>Due Date:</strong> ${activity.due_date ? new Date(activity.due_date).toLocaleString() : 'No deadline'}</p>
-                <p><strong>Time Limit:</strong> ${activity.time_limit || 'No'} minutes</p>
-                ${activity.description ? `
-                    <div class="description">
-                        <h5>Description</h5>
-                        <p>${activity.description}</p>
-                    </div>
-                ` : ''}
-            </div>
-            
-            ${gameSpecificContent}
-            
-            <div class="activity-actions" style="margin-top: 20px;">
-                ${activity.submission_status !== 'completed' ? `
-                    <button onclick="startActivity(${activity.activity_id})" class="btn btn-primary">
-                        <i class="fas fa-play"></i> Start Activity
-                    </button>
-                ` : `
-                    <div class="completion-info">
-                        <i class="fas fa-check-circle"></i>
-                        <span>Completed on ${new Date(activity.completed_at).toLocaleString()}</span>
-                        <div class="score">Score: ${activity.score || 0}%</div>
-                    </div>
-                `}
-            </div>
-        </div>
-    `;
-}
-
 function createActivityDetailsContent(data) {
     const activity = data.activity;
     const questions = data.questions;

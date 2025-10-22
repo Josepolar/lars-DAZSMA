@@ -64,23 +64,15 @@ async function loadDashboardData() {
         showLoadingState();
         
         const response = await fetch('../api/student_dashboard.php');
-        const data = await response.json();
-        
-        console.log('Dashboard response:', {
-            status: response.status,
-            data: data
-        });
-        
         if (!response.ok) {
-            throw new Error(data.error || `HTTP error! status: ${response.status}`);
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
+        
+        const data = await response.json();
+        console.log('Dashboard data loaded:', data);
         
         if (data.error) {
-            throw new Error(typeof data.error === 'object' ? JSON.stringify(data.error) : data.error);
-        }
-        
-        if (!data || typeof data !== 'object') {
-            throw new Error('Invalid data received from server');
+            throw new Error(data.error);
         }
         
         dashboardData = data;
@@ -89,8 +81,7 @@ async function loadDashboardData() {
         
     } catch (error) {
         console.error('Error loading dashboard data:', error);
-        const errorMessage = error.message || 'Failed to load dashboard data';
-        showErrorState(errorMessage);
+        showErrorState('Failed to load dashboard data. Please refresh the page.');
     }
 }
 
