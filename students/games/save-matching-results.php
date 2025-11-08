@@ -28,8 +28,13 @@ $completed = $data['completed'];
 $responses = isset($data['responses']) ? $data['responses'] : [];
 
 try {
-    // Verify session belongs to this student
-    $verify = $pdo->prepare("SELECT * FROM matching_sessions WHERE session_id = ? AND student_id = ?");
+    // Verify session belongs to this student and get game info
+    $verify = $pdo->prepare("
+        SELECT ms.*, mg.points_per_pair 
+        FROM matching_sessions ms
+        JOIN matching_games mg ON ms.matching_game_id = mg.matching_game_id
+        WHERE ms.session_id = ? AND ms.student_id = ?
+    ");
     $verify->execute([$session_id, $student_id]);
     $session = $verify->fetch(PDO::FETCH_ASSOC);
     
@@ -37,6 +42,8 @@ try {
         echo json_encode(['success' => false, 'error' => 'Invalid session']);
         exit();
     }
+    
+    $points_per_pair = $session['points_per_pair'] ?? 100;
     
     // Update session
     $update = "UPDATE matching_sessions 
@@ -52,7 +59,7 @@ try {
         $stmtResponse = $pdo->prepare($insertResponse);
         
         foreach ($responses as $response) {
-            $points = $response['is_correct'] ? 100 : 0;
+            $points = $response['is_correct'] ? $points_per_pair : 0;
             $stmtResponse->execute([
                 $session_id,
                 $response['pair_id'],

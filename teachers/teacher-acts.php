@@ -268,6 +268,15 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
                         </div>
                     </div>
                     
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="defaultPointsPerQuestion">Default Points per Question *</label>
+                            <input type="number" id="defaultPointsPerQuestion" name="default_points" 
+                                   min="10" max="10000" value="100" step="10" required>
+                            <div class="help-text">Default points awarded for each correct answer</div>
+                        </div>
+                    </div>
+                    
                     <div class="form-group">
                         <div class="checkbox-group">
                             <input type="checkbox" id="showLeaderboard" name="show_leaderboard" value="1" checked>
@@ -342,8 +351,9 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
                             </div>
                             
                             <div class="form-group">
-                                <label for="questionPoints">Points</label>
-                                <input type="number" id="questionPoints" name="points" value="1000" min="100" max="5000" step="100">
+                                <label for="questionPoints">Points *</label>
+                                <input type="number" id="questionPoints" name="points" value="100" min="10" max="10000" step="10" required>
+                                <div class="help-text">Points awarded for answering correctly</div>
                             </div>
                         </div>
                         
@@ -386,8 +396,8 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
                     <div id="matchingGameFormError" class="error-message" style="display: none;"></div>
                     <div id="matchingGameFormSuccess" class="success-message" style="display: none;"></div>
                     
-                    <input type="hidden" name="game_subject_id" id="matchingGameSubjectId">
-                    <input type="hidden" name="game_show_leaderboard" id="matchingGameShowLeaderboard">
+                    <input type="hidden" id="matchingGameSubjectId">
+                    <input type="hidden" id="matchingGameShowLeaderboard">
                     
                     <div class="form-group">
                         <label for="matchingGameTitle">Game Title *</label>
@@ -417,16 +427,25 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
                         <div class="help-text">Recommended: 180-600 seconds (3-10 minutes)</div>
                     </div>
                     
-                    <div class="form-group">
-                        <label for="matchingGameType">Matching Type *</label>
-                        <select id="matchingGameType" name="game_type" required onchange="updateMatchingGameTypePreview(this.value)">
-                            <option value="">Select matching type</option>
-                            <option value="image-to-text">🖼️ Image to Text (Match pictures with words)</option>
-                            <option value="text-to-text">📝 Text to Text (Match related words/concepts)</option>
-                            <option value="image-to-image">🎨 Image to Image (Match related pictures)</option>
-                            <option value="number-to-text">🔢 Number to Text (Match numbers with words)</option>
-                        </select>
-                        <div class="help-text">Choose how students will match items</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="matchingGameType">Matching Type *</label>
+                            <select id="matchingGameType" name="game_type" required onchange="updateMatchingGameTypePreview(this.value)">
+                                <option value="">Select matching type</option>
+                                <option value="image-to-text">🖼️ Image to Text (Match pictures with words)</option>
+                                <option value="text-to-text">📝 Text to Text (Match related words/concepts)</option>
+                                <option value="image-to-image">🎨 Image to Image (Match related pictures)</option>
+                                <option value="number-to-text">🔢 Number to Text (Match numbers with words)</option>
+                            </select>
+                            <div class="help-text">Choose how students will match items</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="matchingGamePointsPerPair">Points per Pair *</label>
+                            <input type="number" id="matchingGamePointsPerPair" name="points_per_pair" 
+                                   min="10" max="1000" value="100" step="10" required>
+                            <div class="help-text">Points awarded for each correct match</div>
+                        </div>
                     </div>
                     
                     <div id="matching-game-type-preview" style="display: none;">

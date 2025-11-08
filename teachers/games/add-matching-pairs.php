@@ -43,8 +43,8 @@ $pairs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['add_pair'])) {
-        $left_text = trim($_POST['left_text']);
-        $right_text = trim($_POST['right_text']);
+        $left_text = isset($_POST['left_text']) ? trim($_POST['left_text']) : '';
+        $right_text = isset($_POST['right_text']) ? trim($_POST['right_text']) : '';
         $pair_order = count($pairs) + 1;
         
         // Handle image uploads

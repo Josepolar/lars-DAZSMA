@@ -275,8 +275,20 @@ function populateActivitiesTable() {
 function loadActivityStats() {
     const totalActivities = activities.length;
     const totalSubmissions = activities.reduce((sum, activity) => sum + (activity.total_submissions || 0), 0);
-    const avgScore = activities.length > 0 ? 
-        activities.reduce((sum, activity) => sum + (activity.avg_score || 0), 0) / activities.length : 0;
+    
+    // Calculate average score properly - only include activities with valid scores
+    let totalScore = 0;
+    let activitiesWithScores = 0;
+    
+    activities.forEach(activity => {
+        const score = parseFloat(activity.avg_score);
+        if (!isNaN(score) && score !== null) {
+            totalScore += score;
+            activitiesWithScores++;
+        }
+    });
+    
+    const avgScore = activitiesWithScores > 0 ? (totalScore / activitiesWithScores) : 0;
     
     document.getElementById('totalActivities').textContent = totalActivities;
     document.getElementById('totalSubmissions').textContent = totalSubmissions;
@@ -972,6 +984,7 @@ document.getElementById('createGameForm').addEventListener('submit', function(e)
     
     const formData = new FormData(this);
     const gameType = formData.get('game_type');
+    const defaultPoints = formData.get('default_points') || 100;
     
     // Hide previous messages
     document.getElementById('gameFormError').style.display = 'none';
@@ -984,6 +997,7 @@ document.getElementById('createGameForm').addEventListener('submit', function(e)
         const subjectId = formData.get('subject_id');
         const timeLimit = formData.get('time_limit');
         const showLeaderboard = formData.get('show_leaderboard') ? 1 : 0;
+        const pointsPerPair = defaultPoints;
         
         // Get subject name
         const subjectSelect = document.getElementById('gameSubject');
@@ -991,7 +1005,7 @@ document.getElementById('createGameForm').addEventListener('submit', function(e)
         
         // Close create game modal and open matching game modal
         closeCreateGameModal();
-        openCreateMatchingGameModal(subjectId, subjectName, title, description, timeLimit, showLeaderboard);
+        openCreateMatchingGameModal(subjectId, subjectName, title, description, timeLimit, showLeaderboard, pointsPerPair);
         return;
     }
     
@@ -1007,8 +1021,8 @@ document.getElementById('createGameForm').addEventListener('submit', function(e)
         if (data.success) {
             showNotification('Game created successfully!', 'success');
             closeCreateGameModal();
-            // Open add questions modal instead of redirecting
-            openAddQuestionsModal(data.game_id, data.game_title, data.subject_name, data.time_limit);
+            // Open add questions modal with default points
+            openAddQuestionsModal(data.game_id, data.game_title, data.subject_name, data.time_limit, defaultPoints);
         } else {
             const errorDiv = document.getElementById('gameFormError');
             errorDiv.textContent = data.message || 'Failed to create game';
@@ -1026,18 +1040,20 @@ document.getElementById('createGameForm').addEventListener('submit', function(e)
 // Add Questions Modal Functions
 let currentGameData = {};
 
-function openAddQuestionsModal(gameId, gameTitle, subjectName, timeLimit) {
+function openAddQuestionsModal(gameId, gameTitle, subjectName, timeLimit, defaultPoints = 100) {
     currentGameData = {
         game_id: gameId,
         title: gameTitle,
         subject_name: subjectName,
-        time_limit: timeLimit
+        time_limit: timeLimit,
+        default_points: defaultPoints
     };
     
     document.getElementById('gameTitle').textContent = gameTitle;
     document.getElementById('gameSubjectName').textContent = subjectName;
     document.getElementById('currentGameId').value = gameId;
     document.getElementById('questionTimeLimit').value = timeLimit;
+    document.getElementById('questionPoints').value = defaultPoints; // Set default points
     
     // Reset form
     resetAddQuestionForm();
@@ -1239,13 +1255,14 @@ function finishAddingQuestions() {
 let currentMatchingGameData = {};
 
 // Open create matching game modal with pre-filled data
-function openCreateMatchingGameModal(subjectId, subjectName, title, description, timeLimit, showLeaderboard) {
+function openCreateMatchingGameModal(subjectId, subjectName, title, description, timeLimit, showLeaderboard, pointsPerPair = 100) {
     document.getElementById('matchingGameSubjectId').value = subjectId;
     document.getElementById('matchingGameSubjectName').textContent = subjectName;
     document.getElementById('matchingGameTitle').value = title || '';
     document.getElementById('matchingGameDescription').value = description || '';
     document.getElementById('matchingGameTimeLimit').value = timeLimit || 300;
     document.getElementById('matchingGameShowLeaderboard').value = showLeaderboard || 1;
+    document.getElementById('matchingGamePointsPerPair').value = pointsPerPair;
     document.getElementById('matchingGameType').value = '';
     document.getElementById('matching-game-type-preview').style.display = 'none';
     
