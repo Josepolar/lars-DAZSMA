@@ -25,6 +25,14 @@ switch ($action) {
         export_grades($teacher_id);
         break;
         
+    case 'export_game_results':
+        export_game_results($teacher_id);
+        break;
+        
+    case 'bulk_export_grades':
+        bulk_export_grades($teacher_id);
+        break;
+        
     case 'download_template':
         provide_template();
         break;
@@ -237,8 +245,8 @@ function export_grades($teacher_id) {
             $submission['student_id'],
             $submission['last_name'],
             $submission['first_name'],
-            $submission['score'],
-            $submission['total_points'],
+            (int)round($submission['score']),
+            (int)round($submission['total_points']),
             $submission['percentage'] . '%',
             $submission['submission_date']
         ]);
@@ -272,6 +280,217 @@ function provide_template() {
     
     $output = fopen('php://output', 'w');
     fputcsv($output, $headers);
+    fclose($output);
+    exit();
+}
+
+function export_game_results($teacher_id) {
+    global $pdo;
+    
+    $game_id = $_GET['game_id'] ?? 0;
+    
+    // Verify game ownership
+    $stmt = $pdo->prepare("SELECT * FROM game_activities WHERE game_id = ? AND teacher_id = ?");
+    $stmt->execute([$game_id, $teacher_id]);
+    if (!$stmt->fetch()) {
+        echo json_encode(['success' => false, 'message' => 'Unauthorized access to game']);
+        exit();
+    }
+    
+    // Get game results with student information
+    $stmt = $pdo->prepare("
+        SELECT 
+            u.user_id as student_id,
+            u.last_name,
+            u.first_name,
+            gs.total_score,
+            gs.total_correct,
+            gs.total_questions,
+            ROUND((gs.total_correct / gs.total_questions * 100), 1) as accuracy,
+            gs.completed_at
+        FROM game_sessions gs
+        JOIN users u ON gs.student_id = u.user_id
+        WHERE gs.game_id = ? AND gs.completed_at IS NOT NULL
+        ORDER BY gs.total_score DESC, u.last_name, u.first_name
+    ");
+    
+    $stmt->execute([$game_id]);
+    $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Generate CSV
+    header('Content-Type: text/csv');
+    header('Content-Disposition: attachment; filename="game_results_' . $game_id . '.csv"');
+    
+    $output = fopen('php://output', 'w');
+    
+    // Add headers
+    fputcsv($output, ['Rank', 'Student ID', 'Last Name', 'First Name', 'Total Score', 'Correct Answers', 'Total Questions', 'Accuracy %', 'Completed Date']);
+    
+    // Add data
+    $rank = 1;
+    foreach ($results as $result) {
+        fputcsv($output, [
+            $rank++,
+            $result['student_id'],
+            $result['last_name'],
+            $result['first_name'],
+            (int)round($result['total_score']),
+            $result['total_correct'],
+            $result['total_questions'],
+            $result['accuracy'] . '%',
+            $result['completed_at']
+        ]);
+    }
+    
+    fclose($output);
+    exit();
+}
+
+function bulk_export_grades($teacher_id) {
+    global $pdo;
+    
+    $grade_level = $_GET['grade_level'] ?? '';
+    
+    if (empty($grade_level)) {
+        echo json_encode(['success' => false, 'message' => 'Grade level is required']);
+        exit();
+    }
+    
+    try {
+        // Query to get all students in the specified grade level with their total points
+        // and average grade from activities and matching games taught by this teacher
+        $query = "SELECT 
+                  u.user_id,
+                  u.first_name,
+                  u.last_name,
+                  u.grade_level,
+                  (
+                    COALESCE(
+                        (SELECT SUM(ss.total_score)
+                         FROM student_submissions ss
+                         JOIN activities a ON ss.activity_id = a.activity_id
+                         WHERE ss.student_id = u.user_id
+                         AND ss.submission_status = 'graded'
+                         AND a.teacher_id = ?), 0
+                    ) +
+                    COALESCE(
+                        (SELECT SUM(ms.total_score)
+                         FROM matching_sessions ms
+                         JOIN matching_games mg ON ms.matching_game_id = mg.matching_game_id
+                         WHERE ms.student_id = u.user_id
+                         AND ms.completed_at IS NOT NULL
+                         AND mg.teacher_id = ?), 0
+                    )
+                  ) as total_points,
+                  COALESCE(
+                      (SELECT AVG(ss.percentage)
+                       FROM student_submissions ss
+                       JOIN activities a ON ss.activity_id = a.activity_id
+                       WHERE ss.student_id = u.user_id
+                       AND ss.submission_status = 'graded'
+                       AND a.teacher_id = ?), 0
+                  ) as avg_grade
+                  FROM users u
+                  WHERE u.role_id = 4 
+                  AND u.grade_level = ?
+                  ORDER BY u.last_name, u.first_name";
+        
+        $stmt = $pdo->prepare($query);
+        $stmt->execute([$teacher_id, $teacher_id, $teacher_id, $grade_level]);
+        $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Check if we need to use PHPSpreadsheet or simple CSV
+        // For .xlsx, we'll need PHPSpreadsheet library
+        // Let's check if it's available
+        if (class_exists('PhpOffice\PhpSpreadsheet\Spreadsheet')) {
+            generate_xlsx_export($students, $grade_level);
+        } else {
+            // Fallback to CSV if PHPSpreadsheet is not available
+            generate_csv_export($students, $grade_level);
+        }
+        
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        exit();
+    }
+}
+
+function generate_xlsx_export($students, $grade_level) {
+    require_once __DIR__ . '/../vendor/autoload.php';
+    
+    $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+    $sheet = $spreadsheet->getActiveSheet();
+    
+    // Set headers
+    $sheet->setCellValue('A1', 'Student Name');
+    $sheet->setCellValue('B1', 'Grade Level');
+    $sheet->setCellValue('C1', 'Total Points');
+    $sheet->setCellValue('D1', 'Average Grade (%)');
+    
+    // Style headers
+    $headerStyle = [
+        'font' => [
+            'bold' => true, 
+            'size' => 12,
+            'color' => ['rgb' => 'FFFFFF']
+        ],
+        'fill' => [
+            'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+            'startColor' => ['rgb' => '004b9c']
+        ]
+    ];
+    $sheet->getStyle('A1:D1')->applyFromArray($headerStyle);
+    
+    // Auto-size columns
+    $sheet->getColumnDimension('A')->setAutoSize(true);
+    $sheet->getColumnDimension('B')->setAutoSize(true);
+    $sheet->getColumnDimension('C')->setAutoSize(true);
+    $sheet->getColumnDimension('D')->setAutoSize(true);
+    
+    // Add data
+    $row = 2;
+    foreach ($students as $student) {
+        $sheet->setCellValue('A' . $row, $student['first_name'] . ' ' . $student['last_name']);
+        $sheet->setCellValue('B' . $row, 'Grade ' . $student['grade_level']);
+        $sheet->setCellValue('C' . $row, (int)round($student['total_points']));
+        $sheet->setCellValue('D' . $row, round($student['avg_grade'], 1) . '%');
+        $row++;
+    }
+    
+    // Set headers for download
+    $filename = 'Grade_' . $grade_level . '_Class_Record_' . date('Y-m-d') . '.xlsx';
+    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    header('Content-Disposition: attachment;filename="' . $filename . '"');
+    header('Cache-Control: max-age=0');
+    
+    $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+    $writer->save('php://output');
+    exit();
+}
+
+function generate_csv_export($students, $grade_level) {
+    // Fallback to CSV if XLSX library is not available
+    $filename = 'Grade_' . $grade_level . '_Class_Record_' . date('Y-m-d') . '.csv';
+    
+    header('Content-Type: text/csv');
+    header('Content-Disposition: attachment;filename="' . $filename . '"');
+    header('Cache-Control: max-age=0');
+    
+    $output = fopen('php://output', 'w');
+    
+    // Add headers
+    fputcsv($output, ['Student Name', 'Grade Level', 'Total Points', 'Average Grade (%)']);
+    
+    // Add data
+    foreach ($students as $student) {
+        fputcsv($output, [
+            $student['first_name'] . ' ' . $student['last_name'],
+            'Grade ' . $student['grade_level'],
+            (int)round($student['total_points']),
+            round($student['avg_grade'], 1) . '%'
+        ]);
+    }
+    
     fclose($output);
     exit();
 }

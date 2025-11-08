@@ -35,21 +35,24 @@ try {
         throw new Exception('Student profile not found');
     }
 
-    // Get student's total points and submission statistics
+    // Get student's total points and submission statistics (including game scores)
     $statsStmt = $pdo->prepare("
         SELECT 
             COUNT(DISTINCT ss.submission_id) as total_submissions,
             COUNT(DISTINCT CASE WHEN ss.submission_status = 'submitted' OR ss.submission_status = 'graded' THEN ss.submission_id END) as completed_submissions,
-            COALESCE(SUM(CASE WHEN ss.submission_status IN ('submitted', 'graded') THEN ss.total_score ELSE 0 END), 0) as total_points_earned,
+            (
+                COALESCE(SUM(CASE WHEN ss.submission_status IN ('submitted', 'graded') THEN ss.total_score ELSE 0 END), 0) +
+                COALESCE((SELECT SUM(gs.total_score) FROM game_sessions gs WHERE gs.student_id = ? AND gs.completed_at IS NOT NULL), 0)
+            ) as total_points_earned,
             COALESCE(SUM(CASE WHEN ss.submission_status IN ('submitted', 'graded') THEN ss.max_score ELSE 0 END), 0) as total_possible_points,
             COALESCE(AVG(CASE WHEN ss.submission_status IN ('submitted', 'graded') AND ss.percentage IS NOT NULL THEN ss.percentage END), 0) as average_percentage
         FROM student_submissions ss
         WHERE ss.student_id = ?
     ");
-    $statsStmt->execute([$student_id]);
+    $statsStmt->execute([$student_id, $student_id]);
     $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
 
-    // Get recent submissions (completed or graded)
+    // Get recent submissions (completed or graded activities AND completed games)
     $recentSubmissionsStmt = $pdo->prepare("
         SELECT 
             a.title as activity_title,
@@ -60,17 +63,73 @@ try {
             ss.percentage,
             ss.submitted_at,
             ss.submission_status,
-            CONCAT(t.first_name, ' ', t.last_name) as teacher_name
+            CONCAT(t.first_name, ' ', t.last_name) as teacher_name,
+            NULL as game_id,
+            NULL as matching_game_id,
+            'activity' as item_type
         FROM student_submissions ss
         JOIN activities a ON ss.activity_id = a.activity_id
         JOIN subjects s ON a.subject_id = s.subject_id
         JOIN users t ON a.teacher_id = t.user_id
         WHERE ss.student_id = ? 
         AND (ss.submission_status = 'submitted' OR ss.submission_status = 'graded')
-        ORDER BY ss.submitted_at DESC
-        LIMIT 5
+        
+        UNION ALL
+        
+        SELECT 
+            ga.title as activity_title,
+            s.subject_name,
+            'game' as activity_type,
+            gs.total_score,
+            (SELECT SUM(points) FROM game_questions WHERE game_id = ga.game_id) as max_score,
+            CASE 
+                WHEN (SELECT SUM(points) FROM game_questions WHERE game_id = ga.game_id) > 0 
+                THEN (gs.total_score / (SELECT SUM(points) FROM game_questions WHERE game_id = ga.game_id)) * 100 
+                ELSE 0 
+            END as percentage,
+            gs.completed_at as submitted_at,
+            'completed' as submission_status,
+            CONCAT(t.first_name, ' ', t.last_name) as teacher_name,
+            gs.game_id,
+            NULL as matching_game_id,
+            'game' as item_type
+        FROM game_sessions gs
+        JOIN game_activities ga ON gs.game_id = ga.game_id
+        JOIN subjects s ON ga.subject_id = s.subject_id
+        JOIN users t ON ga.teacher_id = t.user_id
+        WHERE gs.student_id = ? 
+        AND gs.completed_at IS NOT NULL
+        
+        UNION ALL
+        
+        SELECT 
+            mg.title as activity_title,
+            s.subject_name,
+            'matching' as activity_type,
+            ms.total_score,
+            ms.total_pairs * 100 as max_score,
+            CASE 
+                WHEN ms.total_pairs > 0 
+                THEN (ms.total_correct / ms.total_pairs) * 100 
+                ELSE 0 
+            END as percentage,
+            ms.completed_at as submitted_at,
+            'completed' as submission_status,
+            CONCAT(t.first_name, ' ', t.last_name) as teacher_name,
+            NULL as game_id,
+            ms.matching_game_id,
+            'matching_game' as item_type
+        FROM matching_sessions ms
+        JOIN matching_games mg ON ms.matching_game_id = mg.matching_game_id
+        JOIN subjects s ON mg.subject_id = s.subject_id
+        JOIN users t ON mg.teacher_id = t.user_id
+        WHERE ms.student_id = ? 
+        AND ms.completed_at IS NOT NULL
+        
+        ORDER BY submitted_at DESC
+        LIMIT 10
     ");
-    $recentSubmissionsStmt->execute([$student_id]);
+    $recentSubmissionsStmt->execute([$student_id, $student_id, $student_id]);
     $recentSubmissions = $recentSubmissionsStmt->fetchAll(PDO::FETCH_ASSOC);
 
     // Get pending activities (not started or in progress) - filtered by student's grade level
@@ -149,20 +208,88 @@ try {
     $subjectsStmt->execute([$student_id, $profile['grade_level']]);
     $subjects = $subjectsStmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Get class leaderboard (ALL students in same grade level with points only from their grade level activities)
+    // Get active games matching student's grade level (only games not yet played)
+    $gamesStmt = $pdo->prepare("
+        SELECT 
+            ga.game_id,
+            ga.title as game_title,
+            ga.description,
+            ga.time_limit,
+            ga.show_leaderboard,
+            ga.status,
+            s.subject_name,
+            s.grade_level,
+            CONCAT(u.first_name, ' ', u.last_name) as teacher_name,
+            (SELECT COUNT(*) FROM game_questions WHERE game_id = ga.game_id) as question_count,
+            (SELECT COUNT(*) FROM game_sessions WHERE game_id = ga.game_id AND student_id = ? AND completed_at IS NOT NULL) as times_played,
+            (SELECT total_score FROM game_sessions WHERE game_id = ga.game_id AND student_id = ? AND completed_at IS NOT NULL ORDER BY total_score DESC LIMIT 1) as best_score,
+            'quiz' as game_type_flag
+        FROM game_activities ga
+        INNER JOIN subjects s ON ga.subject_id = s.subject_id
+        INNER JOIN users u ON ga.teacher_id = u.user_id
+        WHERE s.grade_level = ? 
+        AND ga.status = 'active'
+        AND NOT EXISTS (
+            SELECT 1 FROM game_sessions gs 
+            WHERE gs.game_id = ga.game_id 
+            AND gs.student_id = ? 
+            AND gs.completed_at IS NOT NULL
+        )
+        
+        UNION ALL
+        
+        SELECT 
+            mg.matching_game_id as game_id,
+            mg.title as game_title,
+            mg.description,
+            mg.time_limit,
+            mg.show_leaderboard,
+            mg.status,
+            s.subject_name,
+            s.grade_level,
+            CONCAT(u.first_name, ' ', u.last_name) as teacher_name,
+            (SELECT COUNT(*) FROM matching_pairs WHERE matching_game_id = mg.matching_game_id) as question_count,
+            (SELECT COUNT(*) FROM matching_sessions WHERE matching_game_id = mg.matching_game_id AND student_id = ? AND completed_at IS NOT NULL) as times_played,
+            (SELECT total_score FROM matching_sessions WHERE matching_game_id = mg.matching_game_id AND student_id = ? AND completed_at IS NOT NULL ORDER BY total_score DESC LIMIT 1) as best_score,
+            'matching' as game_type_flag
+        FROM matching_games mg
+        INNER JOIN subjects s ON mg.subject_id = s.subject_id
+        INNER JOIN users u ON mg.teacher_id = u.user_id
+        WHERE s.grade_level = ? 
+        AND mg.status = 'active'
+        AND NOT EXISTS (
+            SELECT 1 FROM matching_sessions ms 
+            WHERE ms.matching_game_id = mg.matching_game_id 
+            AND ms.student_id = ? 
+            AND ms.completed_at IS NOT NULL
+        )
+        
+        ORDER BY game_title
+    ");
+    $gamesStmt->execute([$student_id, $student_id, $profile['grade_level'], $student_id, $student_id, $student_id, $profile['grade_level'], $student_id]);
+    $activeGames = $gamesStmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Get class leaderboard (ALL students in same grade level with points from activities AND games)
     $leaderboardStmt = $pdo->prepare("
         SELECT 
             u.user_id,
             CONCAT(u.first_name, ' ', u.last_name) as full_name,
             u.first_name,
             u.last_name,
-            COALESCE(SUM(CASE WHEN ss.submission_status IN ('submitted', 'graded') AND s.grade_level = u.grade_level THEN ss.total_score ELSE 0 END), 0) as total_points,
+            (
+                COALESCE(SUM(CASE WHEN ss.submission_status IN ('submitted', 'graded') AND s.grade_level = u.grade_level THEN ss.total_score ELSE 0 END), 0) +
+                COALESCE(SUM(CASE WHEN gs.completed_at IS NOT NULL AND subj.grade_level = u.grade_level THEN gs.total_score ELSE 0 END), 0)
+            ) as total_points,
             COUNT(CASE WHEN ss.submission_status IN ('submitted', 'graded') AND s.grade_level = u.grade_level THEN 1 END) as completed_activities,
+            COUNT(CASE WHEN gs.completed_at IS NOT NULL AND subj.grade_level = u.grade_level THEN 1 END) as completed_games,
             COALESCE(AVG(CASE WHEN ss.submission_status IN ('submitted', 'graded') AND s.grade_level = u.grade_level AND ss.percentage IS NOT NULL THEN ss.percentage END), 0) as avg_percentage
         FROM users u
         LEFT JOIN student_submissions ss ON u.user_id = ss.student_id
         LEFT JOIN activities a ON ss.activity_id = a.activity_id
         LEFT JOIN subjects s ON a.subject_id = s.subject_id
+        LEFT JOIN game_sessions gs ON u.user_id = gs.student_id
+        LEFT JOIN game_activities ga ON gs.game_id = ga.game_id
+        LEFT JOIN subjects subj ON ga.subject_id = subj.subject_id
         WHERE u.role_id = 4 AND u.grade_level = ?
         GROUP BY u.user_id, u.first_name, u.last_name
         ORDER BY total_points DESC, avg_percentage DESC
@@ -191,6 +318,7 @@ try {
         'pending_activities' => $pendingActivities,
         'activity_of_day' => $activityOfDay,
         'subjects' => $subjects,
+        'active_games' => $activeGames,
         'leaderboard' => $leaderboard,
         'timestamp' => date('Y-m-d H:i:s')
     ];

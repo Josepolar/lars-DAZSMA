@@ -1,4 +1,5 @@
 
+
 <?php
 session_start();
 // Redirect to login if session is missing or expired
@@ -42,7 +43,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
 
                     <li class="nav-link">
                         <button class="tablinks active"><a href="teacher-acts.php" class="tablinks">Activities</a></button>
-                    </li>        
+                    </li>
                     
                     <li class="nav-link">
                         <button class="tablinks"><a href="teacher-studs.php" class="tablinks">Students</a></button>
@@ -96,8 +97,12 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
 
         <!-- Action Buttons -->
         <div class="action-buttons">
-            <button class="btn btn-primary" onclick="showCreateActivityModal()">
-                <i class="fas fa-plus"></i> Create New Activity
+            </button>
+            <button class="btn btn-primary" onclick="showCreateGameModal()" style="background: #ff6b6b;">
+                <i class="fas fa-gamepad"></i> Create Game Activity
+            </button>
+            <button class="btn btn-primary" onclick="window.location.href='games/manage-games.php'" style="background: #e67e22;">
+                <i class="fas fa-cog"></i> Manage Games
             </button>
             <button class="btn btn-secondary" onclick="showBulkUploadModal()">
                 <i class="fas fa-upload"></i> Bulk Upload
@@ -124,6 +129,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
                         <option value="assignment">Assignment</option>
                         <option value="recitation">Recitation</option>
                         <option value="exam">Exam</option>
+                        <option value="game">Game</option>
                     </select>
                 </div>
 
@@ -153,78 +159,6 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
         </div>
 
     </section>
-
-    <!-- Create Activity Modal -->
-    <div id="createActivityModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-plus-circle"></i> Create New Activity</h2>
-                <span class="close" onclick="closeCreateActivityModal()">&times;</span>
-            </div>
-            <form id="createActivityForm">
-                <div class="form-section">
-                    <h3>Basic Information</h3>
-                    <div class="form-group">
-                        <label for="activityTitle">Activity Title *</label>
-                        <input type="text" id="activityTitle" name="title" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="activityDescription">Description</label>
-                        <textarea id="activityDescription" name="description" rows="3"></textarea>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="activitySubject">Subject *</label>
-                            <select id="activitySubject" name="subject_id" required>
-                                <option value="">Select Subject</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="activityType">Activity Type *</label>
-                            <select id="activityType" name="activity_type" required>
-                                <option value="quiz">Quiz</option>
-                                <option value="assignment">Assignment</option>
-                                <option value="recitation">Recitation</option>
-                                <option value="exam">Exam</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="totalPoints">Total Points *</label>
-                            <input type="number" id="totalPoints" name="total_points" min="1" value="100" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="timeLimit">Time Limit (minutes)</label>
-                            <input type="number" id="timeLimit" name="time_limit" min="1">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="dueDate">Due Date</label>
-                            <input type="datetime-local" id="dueDate" name="due_date">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-section">
-                    <h3>Questions <button type="button" class="btn btn-small" onclick="addQuestion()"><i class="fas fa-plus"></i> Add Question</button></h3>
-                    <div id="questionsContainer">
-                        <!-- Questions will be added dynamically -->
-                    </div>
-                </div>
-
-                <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeCreateActivityModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Create Activity</button>
-                </div>
-            </form>
-        </div>
-    </div>
 
     <!-- View Submissions Modal -->
     <div id="viewSubmissionsModal" class="modal">
@@ -279,7 +213,327 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
         </div>
     </div>
 
+    <!-- Create Game Modal -->
+    <div id="createGameModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-gamepad"></i> Create New Game Activity</h2>
+                <span class="close" onclick="closeCreateGameModal()">&times;</span>
+            </div>
+            <form id="createGameForm">
+                <div class="form-section">
+                    <p style="color: #666; margin-bottom: 20px;">Create an engaging quiz or matching game for your students</p>
+                    
+                    <div id="gameFormError" class="error-message" style="display: none;"></div>
+                    <div id="gameFormSuccess" class="success-message" style="display: none;"></div>
+                    
+                    <div class="form-group">
+                        <label for="gameType">Game Type *</label>
+                        <select id="gameType" name="game_type" required onchange="updateGameTypeInfo(this.value)">
+                            <option value="quiz">🎯 Quiz Game (Multiple Choice Questions)</option>
+                            <option value="matching">🧩 Matching Game (Match Items/Images)</option>
+                        </select>
+                        <div class="help-text" id="game-type-help">
+                            Quiz games test knowledge with multiple-choice questions
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="gameTitle">Game Title *</label>
+                        <input type="text" id="gameTitle" name="title" required 
+                               placeholder="e.g., Chapter 1 Quiz - Introduction to Programming">
+                        <div class="help-text">Choose a clear, descriptive title for your game</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="gameDescription">Description</label>
+                        <textarea id="gameDescription" name="description" rows="3"
+                                  placeholder="Describe what this game covers..."></textarea>
+                        <div class="help-text">Optional: Add details about topics covered or learning objectives</div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="gameSubject">Subject *</label>
+                            <select id="gameSubject" name="subject_id" required>
+                                <option value="">Select a subject</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="gameTimeLimit" id="gameTimeLimitLabel">Time per Question (seconds) *</label>
+                            <input type="number" id="gameTimeLimit" name="time_limit" 
+                                   min="10" max="600" value="30" required>
+                            <div class="help-text" id="gameTimeLimitHelp">Recommended: 20-60 seconds</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="showLeaderboard" name="show_leaderboard" value="1" checked>
+                            <label for="showLeaderboard">Show leaderboard to students</label>
+                        </div>
+                        <div class="help-text">Students will see their ranking after completing the game</div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeCreateGameModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Game & Add Questions/Pairs</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Questions Modal -->
+    <div id="addQuestionsModal" class="modal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2><i class="fas fa-question-circle"></i> Add Questions - <span id="gameTitle"></span></h2>
+                <span class="close" onclick="closeAddQuestionsModal()">&times;</span>
+            </div>
+            <div class="modal-body" style="padding: 30px;">
+                <div class="game-info-bar" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 25px;">
+                    <p style="margin: 5px 0;"><strong>Subject:</strong> <span id="gameSubjectName"></span></p>
+                    <p style="margin: 5px 0;"><strong>Questions Added:</strong> <span id="questionCount">0</span></p>
+                </div>
+                
+                <div class="add-question-section" style="background: white; padding: 25px; border: 2px solid #e0e0e0; border-radius: 12px; margin-bottom: 25px;">
+                    <h3 style="color: var(--primary-color); margin-bottom: 20px;">Add New Question</h3>
+                    
+                    <div id="questionFormError" class="error-message" style="display: none;"></div>
+                    <div id="questionFormSuccess" class="success-message" style="display: none;"></div>
+                    
+                    <form id="addQuestionForm">
+                        <input type="hidden" id="currentGameId" name="game_id">
+                        
+                        <div class="form-group">
+                            <label for="questionText">Question *</label>
+                            <textarea id="questionText" name="question_text" rows="3" required 
+                                      placeholder="Enter your question here..."></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Answer Options * (Select the correct answer)</label>
+                            <div class="options-grid">
+                                <div class="option-input option-red">
+                                    <input type="radio" name="correct_option" value="0" required>
+                                    <input type="text" name="options[]" placeholder="Option 1" required>
+                                </div>
+                                <div class="option-input option-blue">
+                                    <input type="radio" name="correct_option" value="1" required>
+                                    <input type="text" name="options[]" placeholder="Option 2" required>
+                                </div>
+                                <div class="option-input option-yellow">
+                                    <input type="radio" name="correct_option" value="2">
+                                    <input type="text" name="options[]" placeholder="Option 3">
+                                </div>
+                                <div class="option-input option-green">
+                                    <input type="radio" name="correct_option" value="3">
+                                    <input type="text" name="options[]" placeholder="Option 4">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="questionTimeLimit">Time Limit (seconds)</label>
+                                <input type="number" id="questionTimeLimit" name="time_limit" value="30" min="10" max="300">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="questionPoints">Points</label>
+                                <input type="number" id="questionPoints" name="points" value="1000" min="100" max="5000" step="100">
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Add Question
+                        </button>
+                    </form>
+                </div>
+                
+                <div class="questions-list-section" id="questionsListSection" style="display: none;">
+                    <h3 style="color: var(--primary-color); margin-bottom: 15px;">
+                        Questions (<span id="questionsListCount">0</span>)
+                    </h3>
+                    <div id="questionsList">
+                        <!-- Questions will be loaded here -->
+                    </div>
+                </div>
+                
+                <div class="form-actions" style="margin-top: 25px; padding-top: 20px; border-top: 2px solid #e0e0e0;">
+                    <button type="button" class="btn btn-secondary" onclick="closeAddQuestionsModal()">Cancel</button>
+                    <button type="button" class="btn btn-success" onclick="finishAddingQuestions()">
+                        <i class="fas fa-check"></i> Done Adding Questions
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Matching Game Modal -->
+    <div id="createMatchingGameModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-puzzle-piece"></i> Create Matching Game</h2>
+                <span class="close" onclick="closeCreateMatchingGameModal()">&times;</span>
+            </div>
+            <form id="createMatchingGameForm">
+                <div class="form-section">
+                    <p style="color: #666; margin-bottom: 20px;">Create an interactive matching game where students connect related items</p>
+                    
+                    <div id="matchingGameFormError" class="error-message" style="display: none;"></div>
+                    <div id="matchingGameFormSuccess" class="success-message" style="display: none;"></div>
+                    
+                    <input type="hidden" name="game_subject_id" id="matchingGameSubjectId">
+                    <input type="hidden" name="game_show_leaderboard" id="matchingGameShowLeaderboard">
+                    
+                    <div class="form-group">
+                        <label for="matchingGameTitle">Game Title *</label>
+                        <input type="text" id="matchingGameTitle" name="title" required 
+                               placeholder="e.g., Match Animals to Their Habitats">
+                        <div class="help-text">Choose a clear, descriptive title for your matching game</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="matchingGameDescription">Description</label>
+                        <textarea id="matchingGameDescription" name="description" rows="3"
+                                  placeholder="Describe what students will match..."></textarea>
+                        <div class="help-text">Optional: Add details about the matching activity</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Subject</label>
+                        <div style="padding: 12px; background: #f8f9fa; border-radius: 6px; color: #333;">
+                            <strong id="matchingGameSubjectName">-</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="matchingGameTimeLimit">Total Game Time (seconds) *</label>
+                        <input type="number" id="matchingGameTimeLimit" name="time_limit" 
+                               min="60" max="1800" value="300" required>
+                        <div class="help-text">Recommended: 180-600 seconds (3-10 minutes)</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="matchingGameType">Matching Type *</label>
+                        <select id="matchingGameType" name="game_type" required onchange="updateMatchingGameTypePreview(this.value)">
+                            <option value="">Select matching type</option>
+                            <option value="image-to-text">🖼️ Image to Text (Match pictures with words)</option>
+                            <option value="text-to-text">📝 Text to Text (Match related words/concepts)</option>
+                            <option value="image-to-image">🎨 Image to Image (Match related pictures)</option>
+                            <option value="number-to-text">🔢 Number to Text (Match numbers with words)</option>
+                        </select>
+                        <div class="help-text">Choose how students will match items</div>
+                    </div>
+                    
+                    <div id="matching-game-type-preview" style="display: none;">
+                        <!-- Preview will be populated by JavaScript -->
+                    </div>
+                    
+                    <div class="form-group">
+                        <div style="padding: 12px; background: #f0f9ff; border-radius: 6px; border-left: 4px solid #0ea5e9;">
+                            <p style="margin: 0; color: #0c4a6e; font-size: 13px;">
+                                <i class="fas fa-info-circle"></i> <strong>Next step:</strong> After creating the game, you'll add matching pairs (items that students will match together)
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeCreateMatchingGameModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Game & Add Pairs</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Matching Pairs Modal -->
+    <div id="addMatchingPairsModal" class="modal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2><i class="fas fa-puzzle-piece"></i> Add Matching Pairs - <span id="matchingGameTitleDisplay"></span></h2>
+                <span class="close" onclick="closeAddMatchingPairsModal()">&times;</span>
+            </div>
+            <div class="modal-body" style="padding: 30px;">
+                <div class="game-info-bar" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 25px;">
+                    <p style="margin: 5px 0;"><strong>Subject:</strong> <span id="matchingGameSubjectDisplay"></span></p>
+                    <p style="margin: 5px 0;"><strong>Game Type:</strong> <span id="matchingGameTypeDisplay"></span></p>
+                    <p style="margin: 5px 0;"><strong>Pairs Added:</strong> <span id="pairCount">0</span></p>
+                </div>
+                
+                <div class="add-pair-section" style="background: white; padding: 25px; border: 2px solid #e0e0e0; border-radius: 12px; margin-bottom: 25px;">
+                    <h3 style="color: var(--primary-color); margin-bottom: 20px;">Add New Pair</h3>
+                    
+                    <div id="pairFormError" class="error-message" style="display: none;"></div>
+                    <div id="pairFormSuccess" class="success-message" style="display: none;"></div>
+                    
+                    <form id="addPairForm" enctype="multipart/form-data">
+                        <input type="hidden" id="currentMatchingGameId" name="matching_game_id">
+                        <input type="hidden" id="currentGameType" name="game_type">
+                        
+                        <div class="form-row">
+                            <div class="form-group" id="leftItemGroup">
+                                <label id="leftItemLabel">Left Item *</label>
+                                <input type="text" id="leftItemText" name="left_item" 
+                                       placeholder="Enter text for left side">
+                                <input type="file" id="leftItemImage" name="left_image" 
+                                       accept="image/*" style="display: none;">
+                                <div class="help-text" id="leftItemHelp">Text that appears on the left side</div>
+                            </div>
+                            
+                            <div class="form-group" id="rightItemGroup">
+                                <label id="rightItemLabel">Right Item *</label>
+                                <input type="text" id="rightItemText" name="right_item" required
+                                       placeholder="Enter text for right side">
+                                <input type="file" id="rightItemImage" name="right_image" 
+                                       accept="image/*" style="display: none;">
+                                <div class="help-text" id="rightItemHelp">Text that matches with the left item</div>
+                            </div>
+                        </div>
+                        
+                        <div id="imagePreviewContainer" style="display: none; margin-top: 15px;">
+                            <div class="form-row">
+                                <div id="leftImagePreview" style="display: none;">
+                                    <p style="font-weight: bold; margin-bottom: 5px;">Left Image Preview:</p>
+                                    <img id="leftPreviewImg" style="max-width: 200px; max-height: 150px; border-radius: 8px;">
+                                </div>
+                                <div id="rightImagePreview" style="display: none;">
+                                    <p style="font-weight: bold; margin-bottom: 5px;">Right Image Preview:</p>
+                                    <img id="rightPreviewImg" style="max-width: 200px; max-height: 150px; border-radius: 8px;">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary" style="margin-top: 15px;">
+                            <i class="fas fa-plus"></i> Add Pair
+                        </button>
+                    </form>
+                </div>
+                
+                <div class="pairs-list-section" id="pairsListSection" style="display: none;">
+                    <h3 style="color: var(--primary-color); margin-bottom: 15px;">
+                        Matching Pairs (<span id="pairsListCount">0</span>)
+                    </h3>
+                    <div id="pairsList">
+                        <!-- Pairs will be loaded here -->
+                    </div>
+                </div>
+                
+                <div class="form-actions" style="margin-top: 25px; padding-top: 20px; border-top: 2px solid #e0e0e0;">
+                    <button type="button" class="btn btn-secondary" onclick="closeAddMatchingPairsModal()">Cancel</button>
+                    <button type="button" class="btn btn-success" onclick="finishAddingPairs()">
+                        <i class="fas fa-check"></i> Done Adding Pairs
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="teacher-acts.js"></script>
 
 </body>
 </html>
+

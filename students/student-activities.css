@@ -693,3 +693,44 @@ body {
         flex-wrap: wrap;
     }
 }
+/* ============================================
+   ENHANCED RESPONSIVE DESIGN - Additional Breakpoints
+   ============================================ */
+
+/* Mobile Phones (up to 575px) */
+@media (max-width: 575px) {
+    .navbar {
+        padding: 10px;
+    }
+    
+    .logo img {
+        height: 28px;
+    }
+    
+    .profile-pic {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .page-title {
+        font-size: 22px;
+    }
+    
+    .stats-section {
+        grid-template-columns: 1fr;
+    }
+    
+    .activity-actions button {
+        flex: 1;
+        min-width: 120px;
+        font-size: 13px;
+    }
+}
+
+/* Touch Device Optimizations */
+@media (hover: none) and (pointer: coarse) {
+    button, select, input {
+        min-height: 44px;
+        padding: 12px 16px;
+    }
+}

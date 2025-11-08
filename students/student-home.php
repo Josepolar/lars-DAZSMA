@@ -31,20 +31,32 @@ if (count($profileImgFiles) > 0) {
     $profileImg = '../assets/dazsma.png';
 }
 
-// Get class leaderboard (ALL students in same grade level with points only from their grade level activities)
+// Get class leaderboard (ALL students in same grade level with points from activities AND games)
 $leaderboardStmt = $pdo->prepare("
     SELECT 
         u.user_id,
         CONCAT(u.first_name, ' ', u.last_name) as full_name,
         u.first_name,
         u.last_name,
-        COALESCE(SUM(CASE WHEN ss.submission_status IN ('submitted', 'graded') AND s.grade_level = u.grade_level THEN ss.total_score ELSE 0 END), 0) as total_points,
+        (
+            COALESCE(SUM(CASE WHEN ss.submission_status IN ('submitted', 'graded') AND s.grade_level = u.grade_level THEN ss.total_score ELSE 0 END), 0) +
+            COALESCE(SUM(CASE WHEN gs.completed_at IS NOT NULL AND subj.grade_level = u.grade_level THEN gs.total_score ELSE 0 END), 0) +
+            COALESCE(SUM(CASE WHEN ms.completed_at IS NOT NULL AND msubj.grade_level = u.grade_level THEN ms.total_score ELSE 0 END), 0)
+        ) as total_points,
         COUNT(CASE WHEN ss.submission_status IN ('submitted', 'graded') AND s.grade_level = u.grade_level THEN 1 END) as completed_activities,
+        COUNT(CASE WHEN gs.completed_at IS NOT NULL AND subj.grade_level = u.grade_level THEN 1 END) as completed_games,
+        COUNT(CASE WHEN ms.completed_at IS NOT NULL AND msubj.grade_level = u.grade_level THEN 1 END) as completed_matching_games,
         COALESCE(AVG(CASE WHEN ss.submission_status IN ('submitted', 'graded') AND s.grade_level = u.grade_level AND ss.percentage IS NOT NULL THEN ss.percentage END), 0) as avg_percentage
     FROM users u
     LEFT JOIN student_submissions ss ON u.user_id = ss.student_id
     LEFT JOIN activities a ON ss.activity_id = a.activity_id
     LEFT JOIN subjects s ON a.subject_id = s.subject_id
+    LEFT JOIN game_sessions gs ON u.user_id = gs.student_id
+    LEFT JOIN game_activities ga ON gs.game_id = ga.game_id
+    LEFT JOIN subjects subj ON ga.subject_id = subj.subject_id
+    LEFT JOIN matching_sessions ms ON u.user_id = ms.student_id
+    LEFT JOIN matching_games mg ON ms.matching_game_id = mg.matching_game_id
+    LEFT JOIN subjects msubj ON mg.subject_id = msubj.subject_id
     WHERE u.role_id = 4 AND u.grade_level = ?
     GROUP BY u.user_id, u.first_name, u.last_name
     ORDER BY total_points DESC, avg_percentage DESC
@@ -52,10 +64,20 @@ $leaderboardStmt = $pdo->prepare("
 $leaderboardStmt->execute([$profile['grade_level']]);
 $leaderboard = $leaderboardStmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Get current user's detailed statistics
+// Get current user's detailed statistics (including game scores)
 $userStatsStmt = $pdo->prepare("
     SELECT 
-        COALESCE(SUM(CASE WHEN ss.submission_status IN ('submitted', 'graded') AND s.grade_level = ? THEN ss.total_score ELSE 0 END), 0) as total_points,
+        (
+            COALESCE(SUM(CASE WHEN ss.submission_status IN ('submitted', 'graded') AND s.grade_level = ? THEN ss.total_score ELSE 0 END), 0) +
+            COALESCE((SELECT SUM(gs.total_score) FROM game_sessions gs 
+                      INNER JOIN game_activities ga ON gs.game_id = ga.game_id 
+                      INNER JOIN subjects subj ON ga.subject_id = subj.subject_id 
+                      WHERE gs.student_id = ? AND gs.completed_at IS NOT NULL AND subj.grade_level = ?), 0) +
+            COALESCE((SELECT SUM(ms.total_score) FROM matching_sessions ms 
+                      INNER JOIN matching_games mg ON ms.matching_game_id = mg.matching_game_id 
+                      INNER JOIN subjects msubj ON mg.subject_id = msubj.subject_id 
+                      WHERE ms.student_id = ? AND ms.completed_at IS NOT NULL AND msubj.grade_level = ?), 0)
+        ) as total_points,
         COUNT(CASE WHEN ss.submission_status IN ('submitted', 'graded') AND s.grade_level = ? THEN 1 END) as completed_activities,
         COUNT(CASE WHEN a.activity_id IS NOT NULL AND s.grade_level = ? THEN 1 END) as total_available_activities,
         COALESCE(AVG(CASE WHEN ss.submission_status IN ('submitted', 'graded') AND s.grade_level = ? AND ss.percentage IS NOT NULL THEN ss.percentage END), 0) as avg_percentage
@@ -64,7 +86,17 @@ $userStatsStmt = $pdo->prepare("
     JOIN subjects s ON a.subject_id = s.subject_id
     WHERE ss.student_id = ?
 ");
-$userStatsStmt->execute([$profile['grade_level'], $profile['grade_level'], $profile['grade_level'], $profile['grade_level'], $_SESSION['user_id']]);
+$userStatsStmt->execute([
+    $profile['grade_level'], 
+    $_SESSION['user_id'], 
+    $profile['grade_level'], 
+    $_SESSION['user_id'], 
+    $profile['grade_level'], 
+    $profile['grade_level'], 
+    $profile['grade_level'], 
+    $profile['grade_level'], 
+    $_SESSION['user_id']
+]);
 $userStats = $userStatsStmt->fetch(PDO::FETCH_ASSOC);
 
 // Calculate completion rate
@@ -99,7 +131,7 @@ if ($userStats && $userStats['total_available_activities'] > 0) {
                     <button class="dropbtn">☰</button>
                     <div class="dropdown-content">
                         <a href="student-viewprof.php">View Profile</a>
-                        <a href="student-activities.php">Activities</a>
+                        <a href="games/available-games.php">Game Activities</a>
                         <a href="../logout.php">Logout</a>
                     </div>
                 </div>
@@ -144,24 +176,24 @@ if ($userStats && $userStats['total_available_activities'] > 0) {
         <br>
         <div id="achievementsList">
             <div class="achievement-item">
-                <i class="fas fa-trophy" style="color: gold;"></i>
+                <i class="fas fa-trophy" style="color: gold; font-size: 24px;"></i>
                 <span>First Activity Completed</span>
-                <span class="status" id="firstActivityStatus">Not Yet Earned</span>
+                <span class="status not-claimed" id="firstActivityStatus">Not Yet Earned</span>
             </div>
             <div class="achievement-item">
-                <i class="fas fa-star" style="color: silver;"></i>
+                <i class="fas fa-star" style="color: silver; font-size: 24px;"></i>
                 <span>Perfect Score Achievement</span>
-                <span class="status" id="perfectScoreStatus">Not Yet Earned</span>
+                <span class="status not-claimed" id="perfectScoreStatus">Not Yet Earned</span>
             </div>
             <div class="achievement-item">
-                <i class="fas fa-medal" style="color: bronze;"></i>
+                <i class="fas fa-medal" style="color: #cd7f32; font-size: 24px;"></i>
                 <span>Active Learner (5+ Activities)</span>
-                <span class="status" id="activeLearnerStatus">Not Yet Earned</span>
+                <span class="status not-claimed" id="activeLearnerStatus">0/5 Completed</span>
             </div>
             <div class="achievement-item">
-                <i class="fas fa-fire" style="color: orange;"></i>
+                <i class="fas fa-fire" style="color: orange; font-size: 24px;"></i>
                 <span>Streak Master (3 in a row)</span>
-                <span class="status" id="streakMasterStatus">Not Yet Earned</span>
+                <span class="status not-claimed" id="streakMasterStatus">Not Yet Earned</span>
             </div>
         </div>
     </div>
@@ -173,12 +205,12 @@ if ($userStats && $userStats['total_available_activities'] > 0) {
 <!-- ======== LIST OF SUBJECTS AND THEIR ACTIVE RECITS ======== -->
 <div class="box scrollable" id="box2">
     <div class="active-recits">
-        <h3 class="active-recits">Active Activities</h3>
+        <h3 class="active-recits">Active Games</h3>
         <div id="loadingSubjects" class="loading-indicator">
-            <i class="fas fa-spinner fa-spin"></i> Loading subjects...
+            <i class="fas fa-spinner fa-spin"></i> Loading games...
         </div>
         <ul class="subject-list" id="subjectsList" style="display: none;">
-            <!-- Subjects will be populated dynamically -->
+            <!-- Games will be populated dynamically -->
         </ul>
     </div>
 </div>
@@ -210,7 +242,7 @@ if ($userStats && $userStats['total_available_activities'] > 0) {
         </div>
         <div id="activityOfDayContent" style="display: none;">
             <h3 class="recit-subject" id="activitySubject">No Activity</h3>
-            <p class="recit-recitation" id="activityTitle">No active activities</p>
+            <p class="recit-recitation" id="activityTitle">No Activity</p>
             <p class="activity-details" id="activityDetails">Check back later</p>
             <button class="take-now-btn" id="takeActivityBtn" style="display: none;">Take Now</button>
         </div>
@@ -259,7 +291,7 @@ if ($userStats && $userStats['total_available_activities'] > 0) {
                             $studentImgWeb = ltrim($studentImgWeb, '/');
                             $studentImg = '/' . $studentImgWeb . '?t=' . filemtime($studentImgFiles[0]);
                         } else {
-                            $studentImg = '../assets/dazsma.png';
+                            $studentImg = '../assets/avatar.jpg';
                         }
                         echo '<img src="' . htmlspecialchars($studentImg) . '" alt="Avatar" class="lb-pic" style="object-fit:cover;">';
                         ?>
@@ -328,23 +360,7 @@ if ($userStats && $userStats['total_available_activities'] > 0) {
     </div>
 </div>
 
-<!-- ======== LIST OF PENDING ACTIVITIES ======== -->
-<div class="box scrollable" id="box5">
-    <div class="not-submitted-recits">
-        <h3>Pending</h3>
-        <div class="notsubmitted-total-points">
-            <span class="label">Total:</span>
-            <span class="points" id="pendingCount">0</span>
-        </div>
-        <hr>
-        <div id="loadingPending" class="loading-indicator">
-            <i class="fas fa-spinner fa-spin"></i> Loading...
-        </div>
-        <ul class="notsubmitted-list" id="pendingList" style="display: none;">
-            <!-- Pending activities will be populated dynamically -->
-        </ul>
-    </div>
-</div>
+
 
 
             </div><!-- right-column END DIV -->

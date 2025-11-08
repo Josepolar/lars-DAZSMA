@@ -22,6 +22,7 @@ function setupEventListeners() {
     const span = modal.querySelector(".close");
 
     btn.onclick = function() {
+        console.log('Opening achievements modal...');
         updateAchievements();
         modal.style.display = "block";
     }
@@ -92,8 +93,8 @@ function updateDashboardUI(data) {
 
     // Update statistics
     updateStatistics(data.stats);
-    // Update subjects list
-    updateSubjectsList(data.subjects);
+    // Update active games list
+    updateActiveGamesList(data.active_games || []);
     // Update activity of the day
     updateActivityOfDay(data.activity_of_day);
     // Update recent activities
@@ -137,7 +138,58 @@ function updateStatistics(stats) {
     }
 }
 
-// Update subjects list
+// Update active games list
+function updateActiveGamesList(games) {
+    console.log('Updating games list with:', games);
+    
+    const loadingSubjects = document.getElementById('loadingSubjects');
+    const subjectsList = document.getElementById('subjectsList');
+    
+    if (loadingSubjects) loadingSubjects.style.display = 'none';
+    if (subjectsList) subjectsList.style.display = 'block';
+    
+    if (!subjectsList) return;
+    
+    subjectsList.innerHTML = '';
+    
+    if (games.length === 0) {
+        subjectsList.innerHTML = '<li style="text-align: center; color: #666; padding: 20px;">No Active Games</li>';
+        return;
+    }
+    
+    games.forEach(game => {
+        console.log('Adding game:', game);
+        const li = document.createElement('li');
+        
+        const isMatchingGame = game.game_type_flag === 'matching';
+        const gameIcon = isMatchingGame ? 'fa-puzzle-piece' : 'fa-gamepad';
+        const iconColor = isMatchingGame ? '#26890D' : '#ff6b6b';
+        const playUrl = isMatchingGame ? 
+            `games/play-matching-game.php?matching_game_id=${game.game_id}` :
+            `games/play-game.php?game_id=${game.game_id}`;
+        const itemLabel = isMatchingGame ? 'pairs' : 'questions';
+        
+        li.innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div style="flex: 1;">
+                    <div style="font-weight: 600; color: #333;">
+                        <i class="fas ${gameIcon}" style="color: ${iconColor}; margin-right: 5px;"></i>
+                        ${game.game_title}
+                    </div>
+                    <div style="font-size: 11px; color: #666; margin-top: 3px;">
+                        ${game.subject_name} • ${game.question_count} ${itemLabel}
+                    </div>
+                </div>
+                <button class="eye-btn" onclick="window.location.href='${playUrl}'" title="Play Game">
+                    <i class="fas fa-play"></i>
+                </button>
+            </div>
+        `;
+        subjectsList.appendChild(li);
+    });
+}
+
+// Update subjects list (kept for backwards compatibility)
 function updateSubjectsList(subjects) {
     console.log('Updating subjects list with:', subjects);
     
@@ -292,10 +344,13 @@ function updateRecentActivities(pendingActivities) {
     
     if (pendingActivities.length === 0) {
         detailedActivities.innerHTML = `
-            <div class="box recit-box" style="display: flex; align-items: center; justify-content: center; flex-direction: column;">
-                <i class="fas fa-inbox" style="font-size: 48px; color: #ccc; margin-bottom: 16px;"></i>
-                <h3 style="color: #666;">No Pending Activities</h3>
-                <p style="color: #999;">All caught up! Check back later.</p>
+            <div id="loadingDetailedActivities" class="loading-indicator" style="display: none;">
+                <i class="fas fa-spinner fa-spin"></i> Loading recent activities...
+            </div>
+            <div class="box recit-box" style="display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 60px 20px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <i class="fas fa-inbox" style="font-size: 64px; color: #ddd; margin-bottom: 20px;"></i>
+                <h2 style="color: #999; font-size: 24px; margin: 0 0 10px 0; font-weight: 600;">No Pending Activities</h2>
+                <p style="color: #bbb; margin: 0; font-size: 14px;">All caught up! Check back later.</p>
             </div>
         `;
         return;
@@ -405,13 +460,43 @@ function updateSubmittedList(recentSubmissions) {
     
     recentSubmissions.forEach(submission => {
         const li = document.createElement('li');
+        const isGame = submission.item_type === 'game';
+        const isMatchingGame = submission.item_type === 'matching_game';
+        const icon = isGame ? '<i class="fas fa-gamepad" style="color: #ff6b6b; margin-right: 5px; font-size: 12px;"></i>' : 
+                     isMatchingGame ? '<i class="fas fa-puzzle-piece" style="color: #9c27b0; margin-right: 5px; font-size: 12px;"></i>' : '';
+        
         li.innerHTML = `
             <div>
-                <span class="recit-name">${submission.activity_title}</span>
+                <span class="recit-name">${icon}${submission.activity_title}</span>
                 <span class="recit-subject">${submission.subject_name}</span>
                 ${submission.total_score !== null ? `<div style="font-size: 12px; color: #28a745;">${submission.total_score}/${submission.max_score} (${Math.round(submission.percentage)}%)</div>` : ''}
             </div>
         `;
+        
+        // Make clickable for games
+        if (isGame && submission.game_id) {
+            li.style.cursor = 'pointer';
+            li.style.transition = 'background-color 0.2s';
+            li.addEventListener('mouseenter', () => li.style.backgroundColor = '#f0f0f0');
+            li.addEventListener('mouseleave', () => li.style.backgroundColor = '');
+            li.addEventListener('click', () => {
+                window.location.href = `games/game-results.php?game_id=${submission.game_id}`;
+            });
+            li.title = 'Click to view game results';
+        }
+        
+        // Make clickable for matching games
+        if (isMatchingGame && submission.matching_game_id) {
+            li.style.cursor = 'pointer';
+            li.style.transition = 'background-color 0.2s';
+            li.addEventListener('mouseenter', () => li.style.backgroundColor = '#f0f0f0');
+            li.addEventListener('mouseleave', () => li.style.backgroundColor = '');
+            li.addEventListener('click', () => {
+                window.location.href = `view-matching-results.php?matching_game_id=${submission.matching_game_id}`;
+            });
+            li.title = 'Click to view matching game results';
+        }
+        
         submittedList.appendChild(li);
     });
 }
@@ -432,7 +517,7 @@ function updatePendingList(pendingActivities) {
     if (pendingCount) pendingCount.textContent = pendingActivities.length;
     
     if (pendingActivities.length === 0) {
-        pendingList.innerHTML = '<li style="text-align: center; color: #666;">All activities completed!</li>';
+        pendingList.innerHTML = '<li style="text-align: center; color: #666;">No Pending Activities</li>';
         return;
     }
     
@@ -458,9 +543,14 @@ function updatePendingList(pendingActivities) {
 
 // Update achievements based on student progress
 function updateAchievements() {
-    if (!dashboardData) return;
+    if (!dashboardData || !dashboardData.stats) {
+        console.log('No dashboard data available for achievements');
+        return;
+    }
     
     const stats = dashboardData.stats;
+    console.log('Updating achievements with stats:', stats);
+    
     const firstActivityStatus = document.getElementById('firstActivityStatus');
     const perfectScoreStatus = document.getElementById('perfectScoreStatus');
     const activeLearnerStatus = document.getElementById('activeLearnerStatus');
@@ -469,7 +559,7 @@ function updateAchievements() {
     // First Activity Completed
     if (firstActivityStatus) {
         if (stats.completed_submissions > 0) {
-            firstActivityStatus.textContent = 'Earned';
+            firstActivityStatus.textContent = '✓ Earned';
             firstActivityStatus.className = 'status claimed';
         } else {
             firstActivityStatus.textContent = 'Not Yet Earned';
@@ -480,32 +570,35 @@ function updateAchievements() {
     // Perfect Score Achievement (90% or higher average)
     if (perfectScoreStatus) {
         if (stats.average_percentage >= 90) {
-            perfectScoreStatus.textContent = 'Earned';
+            perfectScoreStatus.textContent = '✓ Earned';
             perfectScoreStatus.className = 'status claimed';
         } else {
-            perfectScoreStatus.textContent = 'Not Yet Earned';
+            const currentAvg = Math.round(stats.average_percentage);
+            perfectScoreStatus.textContent = `${currentAvg}% (Need 90%)`;
             perfectScoreStatus.className = 'status not-claimed';
         }
     }
     
     // Active Learner (5+ activities completed)
     if (activeLearnerStatus) {
-        if (stats.completed_submissions >= 5) {
-            activeLearnerStatus.textContent = 'Earned';
+        const completed = stats.completed_submissions || 0;
+        if (completed >= 5) {
+            activeLearnerStatus.textContent = '✓ Earned';
             activeLearnerStatus.className = 'status claimed';
         } else {
-            activeLearnerStatus.textContent = `${stats.completed_submissions}/5 Completed`;
+            activeLearnerStatus.textContent = `${completed}/5 Completed`;
             activeLearnerStatus.className = 'status not-claimed';
         }
     }
     
     // Streak Master (80% completion rate)
     if (streakMasterStatus) {
-        if (stats.completion_rate >= 80) {
-            streakMasterStatus.textContent = 'Earned';
+        const completionRate = stats.completion_rate || 0;
+        if (completionRate >= 80) {
+            streakMasterStatus.textContent = '✓ Earned';
             streakMasterStatus.className = 'status claimed';
         } else {
-            streakMasterStatus.textContent = 'Not Yet Earned';
+            streakMasterStatus.textContent = `${Math.round(completionRate)}% (Need 80%)`;
             streakMasterStatus.className = 'status not-claimed';
         }
     }

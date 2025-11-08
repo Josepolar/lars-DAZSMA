@@ -26,14 +26,16 @@ function loadTeacherSubjects() {
         .then(data => {
             if (data.success) {
                 subjects = data.subjects;
-                populateSubjectSelect();
+                populateSubjectSelect(); // This will silently skip if element doesn't exist
             } else {
-                showNotification('Error loading subjects: ' + data.message, 'error');
+                console.error('Error loading subjects:', data.message);
+                // Only show notification if there's actually an error that affects functionality
+                // Since Create Activity was removed, we don't show this error anymore
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            showNotification('Error loading subjects', 'error');
+            // Only log to console - games can still be created even if this fails
         });
 }
 
@@ -97,6 +99,12 @@ function exportGrades(activityId) {
 // Populate subject select dropdown
 function populateSubjectSelect() {
     const select = document.getElementById('activitySubject');
+    // Check if element exists (it was removed when Create Activity feature was removed)
+    if (!select) {
+        console.log('Activity subject select not found - skipping (feature removed)');
+        return;
+    }
+    
     select.innerHTML = '<option value="">Select Subject</option>';
     
     subjects.forEach(subject => {
@@ -161,37 +169,102 @@ function populateActivitiesTable() {
     
     activities.forEach(activity => {
         const row = document.createElement('tr');
+        
+        // Check if this is a game activity
+        const isGame = activity.is_game || activity.activity_type === 'game';
+        const activityId = isGame ? activity.game_id : activity.activity_id;
+        const status = isGame ? activity.status : (activity.is_active ? 'active' : 'inactive');
+        const statusLabel = isGame ? activity.status.charAt(0).toUpperCase() + activity.status.slice(1) : (activity.is_active ? 'Active' : 'Inactive');
+        const isMatchingGame = isGame && activity.game_type_flag === 'matching';
+        
+        // Different actions for games vs regular activities
+        let actionsHTML = '';
+        if (isGame) {
+            if (isMatchingGame) {
+                // Matching game actions
+                actionsHTML = `
+                    <button class="btn btn-small btn-info" onclick="window.location.href='games/add-matching-pairs.php?matching_game_id=${activityId}'" title="Manage Pairs">
+                        <i class="fas fa-puzzle-piece"></i>
+                    </button>
+                    <button class="btn btn-small btn-secondary" onclick="window.location.href='games/matching-game-results.php?matching_game_id=${activityId}'" title="View Results">
+                        <i class="fas fa-trophy"></i>
+                    </button>
+                    <button class="btn btn-small ${status === 'active' ? 'btn-warning' : 'btn-success'}" 
+                            onclick="toggleMatchingGameStatus(${activityId}, '${status}')" 
+                            title="${status === 'active' ? 'Deactivate' : 'Activate'}">
+                        <i class="fas ${status === 'active' ? 'fa-pause' : 'fa-play'}"></i>
+                    </button>
+                    <button class="btn btn-small btn-danger" onclick="deleteMatchingGame(${activityId})" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                `;
+            } else {
+                // Quiz game actions
+                actionsHTML = `
+                    <button class="btn btn-small btn-info" onclick="window.location.href='games/add-questions.php?game_id=${activityId}'" title="Manage Questions">
+                        <i class="fas fa-question-circle"></i>
+                    </button>
+                    <button class="btn btn-small btn-secondary" onclick="window.location.href='games/game-results.php?game_id=${activityId}'" title="View Results">
+                        <i class="fas fa-trophy"></i>
+                    </button>
+                    <button class="btn btn-small btn-export" onclick="exportGameResults(${activityId})" title="Export Results">
+                        <i class="fas fa-file-export"></i>
+                    </button>
+                    <button class="btn btn-small ${status === 'active' ? 'btn-warning' : 'btn-success'}" 
+                            onclick="toggleGameStatus(${activityId}, '${status}')" 
+                            title="${status === 'active' ? 'Deactivate' : 'Activate'}">
+                        <i class="fas ${status === 'active' ? 'fa-pause' : 'fa-play'}"></i>
+                    </button>
+                    <button class="btn btn-small btn-danger" onclick="deleteGame(${activityId})" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                `;
+            }
+        } else {
+            actionsHTML = `
+                <button class="btn btn-small btn-info" onclick="viewActivityDetails(${activityId})" title="View Details">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn btn-small btn-secondary" onclick="viewSubmissions(${activityId})" title="View Submissions">
+                    <i class="fas fa-clipboard-list"></i>
+                </button>
+                <button class="btn btn-small btn-export" onclick="exportGrades(${activityId})" title="Export Grades">
+                    <i class="fas fa-file-export"></i>
+                </button>
+                <button class="btn btn-small ${activity.is_active ? 'btn-warning' : 'btn-success'}" 
+                        onclick="toggleActivityStatus(${activityId})" 
+                        title="${activity.is_active ? 'Deactivate' : 'Activate'}">
+                    <i class="fas ${activity.is_active ? 'fa-pause' : 'fa-play'}"></i>
+                </button>
+                <button class="btn btn-small btn-danger" onclick="deleteActivity(${activityId})" title="Delete">
+                    <i class="fas fa-trash"></i>
+                </button>
+            `;
+        }
+        
+        // Add game type icon
+        let gameIcon = '';
+        if (isGame) {
+            gameIcon = isMatchingGame ? 
+                ' <i class="fas fa-puzzle-piece" style="color: #26890D;" title="Matching Game"></i>' :
+                ' <i class="fas fa-gamepad" style="color: #ff6b6b;" title="Quiz Game"></i>';
+        }
+        
         row.innerHTML = `
-            <td class="activity-title">${activity.title}</td>
+            <td class="activity-title">${activity.title}${gameIcon}</td>
             <td>${activity.subject_name}</td>
             <td><span class="activity-type ${activity.activity_type}">${activity.activity_type}</span></td>
-            <td>${activity.total_points}</td>
+            <td>${activity.total_points || 0}</td>
             <td>${formatDate(activity.due_date)}</td>
             <td class="submissions-count">${activity.total_submissions || 0}</td>
             <td class="avg-score">${activity.avg_score ? Math.round(activity.avg_score) + '%' : 'N/A'}</td>
             <td>
-                <span class="status-badge ${activity.is_active ? 'active' : 'inactive'}">
-                    ${activity.is_active ? 'Active' : 'Inactive'}
+                <span class="status-badge ${status}">
+                    ${statusLabel}
                 </span>
             </td>
             <td class="actions">
-                <button class="btn btn-small btn-info" onclick="viewActivityDetails(${activity.activity_id})" title="View Details">
-                    <i class="fas fa-eye"></i>
-                </button>
-                <button class="btn btn-small btn-secondary" onclick="viewSubmissions(${activity.activity_id})" title="View Submissions">
-                    <i class="fas fa-clipboard-list"></i>
-                </button>
-                <button class="btn btn-small btn-export" onclick="exportGrades(${activity.activity_id})" title="Export Grades">
-                    <i class="fas fa-file-export"></i>
-                </button>
-                <button class="btn btn-small ${activity.is_active ? 'btn-warning' : 'btn-success'}" 
-                        onclick="toggleActivityStatus(${activity.activity_id})" 
-                        title="${activity.is_active ? 'Deactivate' : 'Activate'}">
-                    <i class="fas ${activity.is_active ? 'fa-pause' : 'fa-play'}"></i>
-                </button>
-                <button class="btn btn-small btn-danger" onclick="deleteActivity(${activity.activity_id})" title="Delete">
-                    <i class="fas fa-trash"></i>
-                </button>
+                ${actionsHTML}
             </td>
         `;
         tableBody.appendChild(row);
@@ -692,4 +765,903 @@ window.onclick = function(event) {
             modal.style.display = 'none';
         }
     });
+}
+
+// Game Activity Functions
+function toggleGameStatus(gameId, currentStatus) {
+    const newStatus = currentStatus === 'active' ? 'draft' : 'active';
+    const confirmMsg = newStatus === 'active' ? 
+        'Activate this game for students?' : 
+        'Deactivate this game?';
+    
+    if (!confirm(confirmMsg)) return;
+    
+    // Call backend API to change game status
+    const formData = new FormData();
+    formData.append('action', 'toggle_game_status');
+    formData.append('game_id', gameId);
+    formData.append('new_status', newStatus);
+    
+    fetch('teacher-activities-backend.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message || 'Game status updated successfully!', 'success');
+            loadActivities(); // Reload the activities list
+        } else {
+            showNotification(data.message || 'Failed to update game status', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error updating game status', 'error');
+    });
+}
+
+function deleteGame(gameId) {
+    if (!confirm('Delete this game? This action cannot be undone and will delete all questions and student responses!')) {
+        return;
+    }
+    
+    // Call backend API to delete game
+    const formData = new FormData();
+    formData.append('action', 'delete_game');
+    formData.append('game_id', gameId);
+    
+    fetch('teacher-activities-backend.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message || 'Game deleted successfully!', 'success');
+            loadActivities(); // Reload the activities list
+        } else {
+            showNotification(data.message || 'Failed to delete game', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error deleting game', 'error');
+    });
+}
+
+function exportGameResults(gameId) {
+    // Create a form to export game results as CSV
+    fetch(`teacher-bulk-operations.php?action=export_game_results&game_id=${gameId}`)
+        .then(response => response.blob())
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `game_${gameId}_results.csv`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+            showNotification('Game results exported successfully!', 'success');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error exporting game results', 'error');
+        });
+}
+
+// Matching Game Functions
+function toggleMatchingGameStatus(gameId, currentStatus) {
+    const newStatus = currentStatus === 'active' ? 'draft' : 'active';
+    const confirmMsg = newStatus === 'active' ? 
+        'Activate this matching game for students?' : 
+        'Deactivate this matching game?';
+    
+    if (!confirm(confirmMsg)) return;
+    
+    const formData = new FormData();
+    formData.append('action', 'toggle_matching_game_status');
+    formData.append('matching_game_id', gameId);
+    formData.append('new_status', newStatus);
+    
+    fetch('teacher-activities-backend.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message || 'Matching game status updated successfully!', 'success');
+            loadActivities();
+        } else {
+            showNotification(data.message || 'Failed to update matching game status', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error updating matching game status', 'error');
+    });
+}
+
+function deleteMatchingGame(gameId) {
+    if (!confirm('Delete this matching game? This action cannot be undone and will delete all pairs and student responses!')) {
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('action', 'delete_matching_game');
+    formData.append('matching_game_id', gameId);
+    
+    fetch('teacher-activities-backend.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message || 'Matching game deleted successfully!', 'success');
+            loadActivities();
+        } else {
+            showNotification(data.message || 'Failed to delete matching game', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error deleting matching game', 'error');
+    });
+}
+
+// Create Game Modal Functions
+function showCreateGameModal() {
+    document.getElementById('createGameModal').style.display = 'block';
+    resetCreateGameForm();
+    loadGameSubjects();
+}
+
+function closeCreateGameModal() {
+    document.getElementById('createGameModal').style.display = 'none';
+}
+
+function resetCreateGameForm() {
+    document.getElementById('createGameForm').reset();
+    document.getElementById('gameFormError').style.display = 'none';
+    document.getElementById('gameFormSuccess').style.display = 'none';
+    document.getElementById('gameTimeLimit').value = 30;
+    document.getElementById('showLeaderboard').checked = true;
+}
+
+function loadGameSubjects() {
+    const select = document.getElementById('gameSubject');
+    select.innerHTML = '<option value="">Select a subject</option>';
+    
+    // Use the subjects already loaded
+    subjects.forEach(subject => {
+        const option = document.createElement('option');
+        option.value = subject.subject_id;
+        option.textContent = subject.subject_name;
+        select.appendChild(option);
+    });
+}
+
+// Update game type info dynamically
+function updateGameTypeInfo(gameType) {
+    const helpText = document.getElementById('game-type-help');
+    const timeLimitLabel = document.getElementById('gameTimeLimitLabel');
+    const timeLimitHelp = document.getElementById('gameTimeLimitHelp');
+    const timeLimitInput = document.getElementById('gameTimeLimit');
+    
+    if (gameType === 'matching') {
+        helpText.textContent = 'Matching games let students connect related items, images, or words';
+        timeLimitLabel.textContent = 'Total Game Time (seconds) *';
+        timeLimitHelp.textContent = 'Recommended: 180-600 seconds (3-10 minutes)';
+        timeLimitInput.value = 300;
+        timeLimitInput.max = 1800;
+    } else {
+        helpText.textContent = 'Quiz games test knowledge with multiple-choice questions';
+        timeLimitLabel.textContent = 'Time per Question (seconds) *';
+        timeLimitHelp.textContent = 'Recommended: 20-60 seconds';
+        timeLimitInput.value = 30;
+        timeLimitInput.max = 300;
+    }
+}
+
+// Handle game creation form submission
+document.getElementById('createGameForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const gameType = formData.get('game_type');
+    
+    // Hide previous messages
+    document.getElementById('gameFormError').style.display = 'none';
+    document.getElementById('gameFormSuccess').style.display = 'none';
+    
+    // If it's a matching game, show matching game modal
+    if (gameType === 'matching') {
+        const title = formData.get('title');
+        const description = formData.get('description');
+        const subjectId = formData.get('subject_id');
+        const timeLimit = formData.get('time_limit');
+        const showLeaderboard = formData.get('show_leaderboard') ? 1 : 0;
+        
+        // Get subject name
+        const subjectSelect = document.getElementById('gameSubject');
+        const subjectName = subjectSelect.options[subjectSelect.selectedIndex].text;
+        
+        // Close create game modal and open matching game modal
+        closeCreateGameModal();
+        openCreateMatchingGameModal(subjectId, subjectName, title, description, timeLimit, showLeaderboard);
+        return;
+    }
+    
+    // Otherwise, create a quiz game via AJAX
+    formData.append('action', 'create_game');
+    
+    fetch('teacher-activities-backend.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Game created successfully!', 'success');
+            closeCreateGameModal();
+            // Open add questions modal instead of redirecting
+            openAddQuestionsModal(data.game_id, data.game_title, data.subject_name, data.time_limit);
+        } else {
+            const errorDiv = document.getElementById('gameFormError');
+            errorDiv.textContent = data.message || 'Failed to create game';
+            errorDiv.style.display = 'block';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        const errorDiv = document.getElementById('gameFormError');
+        errorDiv.textContent = 'An error occurred while creating the game';
+        errorDiv.style.display = 'block';
+    });
+});
+
+// Add Questions Modal Functions
+let currentGameData = {};
+
+function openAddQuestionsModal(gameId, gameTitle, subjectName, timeLimit) {
+    currentGameData = {
+        game_id: gameId,
+        title: gameTitle,
+        subject_name: subjectName,
+        time_limit: timeLimit
+    };
+    
+    document.getElementById('gameTitle').textContent = gameTitle;
+    document.getElementById('gameSubjectName').textContent = subjectName;
+    document.getElementById('currentGameId').value = gameId;
+    document.getElementById('questionTimeLimit').value = timeLimit;
+    
+    // Reset form
+    resetAddQuestionForm();
+    
+    // Load existing questions
+    loadGameQuestions(gameId);
+    
+    document.getElementById('addQuestionsModal').style.display = 'block';
+}
+
+function closeAddQuestionsModal() {
+    document.getElementById('addQuestionsModal').style.display = 'none';
+    // Reload activities to show the new game
+    loadActivities();
+}
+
+function resetAddQuestionForm() {
+    document.getElementById('addQuestionForm').reset();
+    document.getElementById('questionFormError').style.display = 'none';
+    document.getElementById('questionFormSuccess').style.display = 'none';
+    // Reset time limit to game default
+    if (currentGameData.time_limit) {
+        document.getElementById('questionTimeLimit').value = currentGameData.time_limit;
+    }
+}
+
+function loadGameQuestions(gameId) {
+    fetch(`teacher-activities-backend.php?action=get_game_questions&game_id=${gameId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayGameQuestions(data.questions);
+                updateQuestionCount(data.questions.length);
+            } else {
+                console.error('Failed to load questions:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading questions:', error);
+        });
+}
+
+function displayGameQuestions(questions) {
+    const questionsList = document.getElementById('questionsList');
+    const questionsSection = document.getElementById('questionsListSection');
+    
+    if (questions.length === 0) {
+        questionsSection.style.display = 'none';
+        return;
+    }
+    
+    questionsSection.style.display = 'block';
+    
+    const questionsHtml = questions.map((question, index) => `
+        <div class="question-item-display">
+            <div class="question-header-display">
+                <div class="question-text-display">
+                    ${index + 1}. ${escapeHtml(question.question_text)}
+                </div>
+                <div class="question-actions-display">
+                    <button class="btn-delete-question" onclick="deleteQuestion(${question.question_id})" title="Delete question">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </div>
+            </div>
+            <div class="question-meta">
+                ⏱️ ${question.time_limit}s | 🎯 ${question.points} points | 📝 ${question.option_count} options
+            </div>
+        </div>
+    `).join('');
+    
+    questionsList.innerHTML = questionsHtml;
+}
+
+function updateQuestionCount(count) {
+    document.getElementById('questionCount').textContent = count;
+    document.getElementById('questionsListCount').textContent = count;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Handle add question form submission
+document.getElementById('addQuestionForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    formData.append('action', 'add_question');
+    
+    // Hide previous messages
+    document.getElementById('questionFormError').style.display = 'none';
+    document.getElementById('questionFormSuccess').style.display = 'none';
+    
+    fetch('teacher-activities-backend.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Question added successfully!', 'success');
+            resetAddQuestionForm();
+            // Reload questions list
+            loadGameQuestions(currentGameData.game_id);
+        } else {
+            const errorDiv = document.getElementById('questionFormError');
+            errorDiv.textContent = data.message || 'Failed to add question';
+            errorDiv.style.display = 'block';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        const errorDiv = document.getElementById('questionFormError');
+        errorDiv.textContent = 'An error occurred while adding the question';
+        errorDiv.style.display = 'block';
+    });
+});
+
+function deleteQuestion(questionId) {
+    if (!confirm('Delete this question? This action cannot be undone.')) {
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('action', 'delete_question');
+    formData.append('question_id', questionId);
+    formData.append('game_id', currentGameData.game_id);
+    
+    fetch('teacher-activities-backend.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Question deleted successfully!', 'success');
+            loadGameQuestions(currentGameData.game_id);
+        } else {
+            showNotification(data.message || 'Failed to delete question', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error deleting question', 'error');
+    });
+}
+
+function finishAddingQuestions() {
+    const questionCount = parseInt(document.getElementById('questionCount').textContent);
+    
+    if (questionCount === 0) {
+        if (!confirm('You haven\'t added any questions yet. Are you sure you want to finish?')) {
+            return;
+        }
+    }
+    
+    // Ask teacher if they want to activate the game for students
+    const activateGame = confirm(`Game "${currentGameData.title}" created with ${questionCount} question(s)!\n\nDo you want to activate this game now so students can play it?`);
+    
+    if (activateGame && currentGameData.game_id) {
+        // Activate the game
+        const formData = new FormData();
+        formData.append('action', 'toggle_game_status');
+        formData.append('game_id', currentGameData.game_id);
+        formData.append('new_status', 'active');
+        
+        fetch('teacher-activities-backend.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                closeAddQuestionsModal();
+                showNotification(`Game "${currentGameData.title}" is now active and available to students!`, 'success');
+            } else {
+                closeAddQuestionsModal();
+                showNotification(`Game created, but failed to activate: ${data.message}`, 'warning');
+            }
+        })
+        .catch(error => {
+            console.error('Error activating game:', error);
+            closeAddQuestionsModal();
+            showNotification(`Game created, but failed to activate. You can activate it manually from the activities list.`, 'warning');
+        });
+    } else {
+        closeAddQuestionsModal();
+        showNotification(`Game "${currentGameData.title}" created! Don't forget to activate it when you're ready for students to play.`, 'info');
+    }
+}
+
+// ========================================
+// Matching Game Modal Functions
+// ========================================
+
+let currentMatchingGameData = {};
+
+// Open create matching game modal with pre-filled data
+function openCreateMatchingGameModal(subjectId, subjectName, title, description, timeLimit, showLeaderboard) {
+    document.getElementById('matchingGameSubjectId').value = subjectId;
+    document.getElementById('matchingGameSubjectName').textContent = subjectName;
+    document.getElementById('matchingGameTitle').value = title || '';
+    document.getElementById('matchingGameDescription').value = description || '';
+    document.getElementById('matchingGameTimeLimit').value = timeLimit || 300;
+    document.getElementById('matchingGameShowLeaderboard').value = showLeaderboard || 1;
+    document.getElementById('matchingGameType').value = '';
+    document.getElementById('matching-game-type-preview').style.display = 'none';
+    
+    // Clear any previous messages
+    document.getElementById('matchingGameFormError').style.display = 'none';
+    document.getElementById('matchingGameFormSuccess').style.display = 'none';
+    
+    document.getElementById('createMatchingGameModal').style.display = 'block';
+}
+
+// Close matching game modal
+function closeCreateMatchingGameModal() {
+    document.getElementById('createMatchingGameModal').style.display = 'none';
+    document.getElementById('createMatchingGameForm').reset();
+}
+
+// Update matching game type preview
+function updateMatchingGameTypePreview(gameType) {
+    const previewDiv = document.getElementById('matching-game-type-preview');
+    
+    if (!gameType) {
+        previewDiv.style.display = 'none';
+        return;
+    }
+    
+    const previews = {
+        'image-to-text': {
+            title: '🖼️ Image to Text Matching',
+            description: 'Students will match images on the left with corresponding text/words on the right.',
+            example: 'Example: Match animal pictures with their names, or flag images with country names.'
+        },
+        'text-to-text': {
+            title: '📝 Text to Text Matching',
+            description: 'Students will match related words, definitions, or concepts.',
+            example: 'Example: Match vocabulary words with definitions, or capital cities with countries.'
+        },
+        'image-to-image': {
+            title: '🎨 Image to Image Matching',
+            description: 'Students will match related images together.',
+            example: 'Example: Match baby animal pictures with adult animals, or tools with their uses.'
+        },
+        'number-to-text': {
+            title: '🔢 Number to Text Matching',
+            description: 'Students will match numbers with their written forms or related concepts.',
+            example: 'Example: Match "5" with "five", or math problems with their answers.'
+        }
+    };
+    
+    const preview = previews[gameType];
+    if (preview) {
+        previewDiv.innerHTML = `
+            <div class="game-type-preview">
+                <h3>${preview.title}</h3>
+                <p>${preview.description}</p>
+                <div class="type-example">
+                    <strong>📌 ${preview.example}</strong>
+                </div>
+            </div>
+        `;
+        previewDiv.style.display = 'block';
+    }
+}
+
+// Handle matching game creation form submission
+document.getElementById('createMatchingGameForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    formData.append('action', 'create_matching_game');
+    formData.append('subject_id', document.getElementById('matchingGameSubjectId').value);
+    formData.append('show_leaderboard', document.getElementById('matchingGameShowLeaderboard').value);
+    
+    // Hide previous messages
+    document.getElementById('matchingGameFormError').style.display = 'none';
+    document.getElementById('matchingGameFormSuccess').style.display = 'none';
+    
+    fetch('teacher-activities-backend.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Matching game created successfully!', 'success');
+            closeCreateMatchingGameModal();
+            // Open add pairs modal
+            openAddMatchingPairsModal(
+                data.matching_game_id,
+                data.game_title,
+                data.subject_name,
+                data.game_type
+            );
+        } else {
+            const errorDiv = document.getElementById('matchingGameFormError');
+            errorDiv.textContent = data.message || 'Failed to create matching game';
+            errorDiv.style.display = 'block';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        const errorDiv = document.getElementById('matchingGameFormError');
+        errorDiv.textContent = 'An error occurred while creating the matching game';
+        errorDiv.style.display = 'block';
+    });
+});
+
+// Open add matching pairs modal
+function openAddMatchingPairsModal(matchingGameId, gameTitle, subjectName, gameType) {
+    currentMatchingGameData = {
+        matching_game_id: matchingGameId,
+        title: gameTitle,
+        subject_name: subjectName,
+        game_type: gameType
+    };
+    
+    document.getElementById('matchingGameTitleDisplay').textContent = gameTitle;
+    document.getElementById('matchingGameSubjectDisplay').textContent = subjectName;
+    document.getElementById('matchingGameTypeDisplay').textContent = formatGameType(gameType);
+    document.getElementById('currentMatchingGameId').value = matchingGameId;
+    document.getElementById('currentGameType').value = gameType;
+    document.getElementById('pairCount').textContent = '0';
+    
+    // Configure form based on game type
+    configureAddPairForm(gameType);
+    
+    // Clear form
+    document.getElementById('addPairForm').reset();
+    document.getElementById('currentMatchingGameId').value = matchingGameId;
+    document.getElementById('currentGameType').value = gameType;
+    
+    // Clear messages
+    document.getElementById('pairFormError').style.display = 'none';
+    document.getElementById('pairFormSuccess').style.display = 'none';
+    
+    // Load existing pairs
+    loadMatchingPairs(matchingGameId);
+    
+    document.getElementById('addMatchingPairsModal').style.display = 'block';
+}
+
+// Close add matching pairs modal
+function closeAddMatchingPairsModal() {
+    document.getElementById('addMatchingPairsModal').style.display = 'none';
+    document.getElementById('addPairForm').reset();
+}
+
+// Format game type for display
+function formatGameType(gameType) {
+    const types = {
+        'image-to-text': '🖼️ Image to Text',
+        'text-to-text': '📝 Text to Text',
+        'image-to-image': '🎨 Image to Image',
+        'number-to-text': '🔢 Number to Text'
+    };
+    return types[gameType] || gameType;
+}
+
+// Configure add pair form based on game type
+function configureAddPairForm(gameType) {
+    const leftItemText = document.getElementById('leftItemText');
+    const leftItemImage = document.getElementById('leftItemImage');
+    const rightItemText = document.getElementById('rightItemText');
+    const rightItemImage = document.getElementById('rightItemImage');
+    const leftItemLabel = document.getElementById('leftItemLabel');
+    const rightItemLabel = document.getElementById('rightItemLabel');
+    const leftItemHelp = document.getElementById('leftItemHelp');
+    const rightItemHelp = document.getElementById('rightItemHelp');
+    
+    // Reset all
+    leftItemText.style.display = 'none';
+    leftItemImage.style.display = 'none';
+    rightItemText.style.display = 'none';
+    rightItemImage.style.display = 'none';
+    leftItemText.required = false;
+    leftItemImage.required = false;
+    rightItemText.required = false;
+    rightItemImage.required = false;
+    
+    if (gameType === 'image-to-text') {
+        leftItemLabel.textContent = 'Left Image *';
+        rightItemLabel.textContent = 'Right Text *';
+        leftItemImage.style.display = 'block';
+        rightItemText.style.display = 'block';
+        leftItemImage.required = true;
+        rightItemText.required = true;
+        leftItemHelp.textContent = 'Upload an image for the left side';
+        rightItemHelp.textContent = 'Enter text that matches the image';
+    } else if (gameType === 'text-to-text') {
+        leftItemLabel.textContent = 'Left Text *';
+        rightItemLabel.textContent = 'Right Text *';
+        leftItemText.style.display = 'block';
+        rightItemText.style.display = 'block';
+        leftItemText.required = true;
+        rightItemText.required = true;
+        leftItemHelp.textContent = 'Enter text for the left side';
+        rightItemHelp.textContent = 'Enter text that matches';
+    } else if (gameType === 'image-to-image') {
+        leftItemLabel.textContent = 'Left Image *';
+        rightItemLabel.textContent = 'Right Image *';
+        leftItemImage.style.display = 'block';
+        rightItemImage.style.display = 'block';
+        leftItemImage.required = true;
+        rightItemImage.required = true;
+        leftItemHelp.textContent = 'Upload an image for the left side';
+        rightItemHelp.textContent = 'Upload a matching image';
+    } else if (gameType === 'number-to-text') {
+        leftItemLabel.textContent = 'Number *';
+        rightItemLabel.textContent = 'Text *';
+        leftItemText.style.display = 'block';
+        rightItemText.style.display = 'block';
+        leftItemText.required = true;
+        rightItemText.required = true;
+        leftItemHelp.textContent = 'Enter a number';
+        rightItemHelp.textContent = 'Enter the matching text';
+    }
+    
+    // Add preview listeners for images
+    leftItemImage.onchange = function() {
+        previewImage(this, 'leftPreviewImg', 'leftImagePreview');
+    };
+    rightItemImage.onchange = function() {
+        previewImage(this, 'rightPreviewImg', 'rightImagePreview');
+    };
+}
+
+// Preview uploaded image
+function previewImage(input, previewId, containerId) {
+    const container = document.getElementById(containerId);
+    const preview = document.getElementById(previewId);
+    const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+    
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            container.style.display = 'block';
+            imagePreviewContainer.style.display = 'block';
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// Handle add pair form submission
+document.getElementById('addPairForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    formData.append('action', 'add_matching_pair');
+    
+    // Hide previous messages
+    document.getElementById('pairFormError').style.display = 'none';
+    document.getElementById('pairFormSuccess').style.display = 'none';
+    
+    fetch('teacher-activities-backend.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const successDiv = document.getElementById('pairFormSuccess');
+            successDiv.textContent = 'Pair added successfully!';
+            successDiv.style.display = 'block';
+            
+            // Reset form but keep game ID and type
+            const matchingGameId = document.getElementById('currentMatchingGameId').value;
+            const gameType = document.getElementById('currentGameType').value;
+            document.getElementById('addPairForm').reset();
+            document.getElementById('currentMatchingGameId').value = matchingGameId;
+            document.getElementById('currentGameType').value = gameType;
+            
+            // Hide image previews
+            document.getElementById('imagePreviewContainer').style.display = 'none';
+            document.getElementById('leftImagePreview').style.display = 'none';
+            document.getElementById('rightImagePreview').style.display = 'none';
+            
+            // Reload pairs list
+            loadMatchingPairs(matchingGameId);
+            
+            // Hide success message after 3 seconds
+            setTimeout(() => {
+                successDiv.style.display = 'none';
+            }, 3000);
+        } else {
+            const errorDiv = document.getElementById('pairFormError');
+            errorDiv.textContent = data.message || 'Failed to add pair';
+            errorDiv.style.display = 'block';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        const errorDiv = document.getElementById('pairFormError');
+        errorDiv.textContent = 'An error occurred while adding the pair';
+        errorDiv.style.display = 'block';
+    });
+});
+
+// Load matching pairs
+function loadMatchingPairs(matchingGameId) {
+    fetch(`teacher-activities-backend.php?action=get_matching_pairs&matching_game_id=${matchingGameId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayMatchingPairs(data.pairs);
+                document.getElementById('pairCount').textContent = data.pairs.length;
+                document.getElementById('pairsListCount').textContent = data.pairs.length;
+                
+                if (data.pairs.length > 0) {
+                    document.getElementById('pairsListSection').style.display = 'block';
+                } else {
+                    document.getElementById('pairsListSection').style.display = 'none';
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error loading pairs:', error);
+        });
+}
+
+// Display matching pairs
+function displayMatchingPairs(pairs) {
+    const pairsList = document.getElementById('pairsList');
+    
+    if (pairs.length === 0) {
+        pairsList.innerHTML = '<p style="text-align: center; color: #888;">No pairs added yet</p>';
+        return;
+    }
+    
+    pairsList.innerHTML = pairs.map((pair, index) => `
+        <div class="pair-item">
+            <div class="pair-content">
+                <div class="pair-left">
+                    ${pair.left_item_image ? `<img src="../${pair.left_item_image}" class="pair-image" alt="Left">` : ''}
+                    <span class="pair-text">${pair.left_item_text || ''}</span>
+                </div>
+                <div class="pair-connector">⟷</div>
+                <div class="pair-right">
+                    ${pair.right_item_image ? `<img src="../${pair.right_item_image}" class="pair-image" alt="Right">` : ''}
+                    <span class="pair-text">${pair.right_item_text || ''}</span>
+                </div>
+            </div>
+            <div class="pair-actions">
+                <button class="btn-delete-pair" onclick="deleteMatchingPair(${pair.pair_id})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Delete matching pair
+function deleteMatchingPair(pairId) {
+    if (!confirm('Are you sure you want to delete this pair?')) {
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('action', 'delete_matching_pair');
+    formData.append('pair_id', pairId);
+    
+    fetch('teacher-activities-backend.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Pair deleted successfully', 'success');
+            loadMatchingPairs(currentMatchingGameData.matching_game_id);
+        } else {
+            showNotification('Failed to delete pair: ' + data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('An error occurred while deleting the pair', 'error');
+    });
+}
+
+// Finish adding pairs
+function finishAddingPairs() {
+    const pairCount = parseInt(document.getElementById('pairCount').textContent);
+    
+    if (pairCount < 3) {
+        alert('Please add at least 3 pairs before finishing. Matching games need a minimum of 3 pairs to be playable.');
+        return;
+    }
+    
+    if (confirm('Are you done adding pairs? The game will be set to active and students can play it.')) {
+        // Activate the matching game
+        const formData = new FormData();
+        formData.append('action', 'activate_matching_game');
+        formData.append('matching_game_id', currentMatchingGameData.matching_game_id);
+        
+        fetch('teacher-activities-backend.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                closeAddMatchingPairsModal();
+                showNotification(`Matching game "${currentMatchingGameData.title}" created and activated!`, 'success');
+                refreshActivities();
+            } else {
+                closeAddMatchingPairsModal();
+                showNotification(`Game created, but failed to activate: ${data.message}`, 'warning');
+            }
+        })
+        .catch(error => {
+            console.error('Error activating game:', error);
+            closeAddMatchingPairsModal();
+            showNotification(`Game created, but failed to activate. You can activate it manually from the games list.`, 'warning');
+        });
+    } else {
+        closeAddMatchingPairsModal();
+        showNotification(`Matching game "${currentMatchingGameData.title}" created! Don't forget to activate it when you're ready for students to play.`, 'info');
+    }
 }

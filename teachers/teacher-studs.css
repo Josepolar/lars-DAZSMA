@@ -551,6 +551,9 @@ button {
 .subject-filters {
   margin-bottom: 15px;
   margin-left: 15px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
 }
 
 .subject-filters label {
@@ -567,4 +570,40 @@ button {
   color: #004b9c;
   background-color: #f9f9f9;
   cursor: pointer;
+}
+
+.bulk-export-btn {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bulk-export-btn:hover {
+  background: #218838;
+  transform: scale(1.05);
+}
+
+.cancel-btn {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s ease, transform 0.2s ease;
+  margin-right: 10px;
+}
+
+.cancel-btn:hover {
+  background: #5a6268;
+  transform: scale(1.05);
 }

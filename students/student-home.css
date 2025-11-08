@@ -235,7 +235,7 @@ body::before {
 }
 
 #box4 {
-    height: 410px;
+    height: 840px;
     width: 350px; 
     overflow-y: auto;    /* enable vertical scrolling */
     scrollbar-width: none; /* Firefox - hide scrollbar */
@@ -358,9 +358,18 @@ body::before {
 .achievement-item {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px 0;
+    gap: 15px;
+    padding: 15px;
     border-bottom: 1px solid #eee;
+    background: #f9f9f9;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    transition: all 0.3s ease;
+}
+
+.achievement-item:hover {
+    background: #f0f0f0;
+    transform: translateX(5px);
 }
 
 .achievement-item:last-child {
@@ -368,14 +377,46 @@ body::before {
 }
 
 .achievement-item i {
-    font-size: 18px;
-    width: 24px;
+    font-size: 24px;
+    width: 32px;
     text-align: center;
+    flex-shrink: 0;
 }
 
 .achievement-item span:nth-child(2) {
     flex: 1;
     font-weight: 500;
+    color: #333;
+}
+
+.status {
+    font-weight: bold;
+    padding: 5px 12px;
+    border-radius: 5px;
+    font-size: 14px;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+}
+
+.claimed {
+    color: #fff;
+    background: linear-gradient(135deg, #28a745, #20c997);
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+.not-claimed {
+    color: #fff;
+    background: #6c757d;
 }
 
 /* Activity status indicators */
@@ -423,16 +464,32 @@ body::before {
 
 .modal-content {
     background-color: #fff;
-    margin: 10% auto;
-    padding: 20px;
-    border-radius: 10px;
-    width: 400px;
+    margin: 5% auto;
+    padding: 30px;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 550px;
     color: #000;
-    box-shadow: 0px 4px 8px rgba(0,0,0,0.3);
+    box-shadow: 0px 10px 30px rgba(0,0,0,0.3);
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }
 
 .modal-content h3 {
-    margin-bottom: 15px;
+    margin-bottom: 20px;
+    color: #333;
+    font-size: 24px;
+    text-align: center;
 }
 
 .rewards-list {
@@ -445,18 +502,6 @@ body::before {
     justify-content: space-between;
     padding: 8px 0;
     border-bottom: 1px solid #ddd;
-}
-
-.status {
-    font-weight: bold;
-}
-
-.claimed {
-    color: green;
-}
-
-.not-claimed {
-    color: red;
 }
 
 .close {
@@ -1078,4 +1123,282 @@ body::before {
 }
 .rank-3 .lb-pic {
     border-color: #cd7f32;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN - Mobile, Tablet, Laptop, PC
+   ============================================ */
+
+/* Extra Small Devices (Phones, less than 576px) */
+@media (max-width: 575px) {
+    .navbar {
+        padding: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .logo img {
+        height: 25px;
+    }
+    
+    .profile {
+        gap: 10px;
+        margin-right: 10px;
+    }
+    
+    .profile-pic {
+        width: 30px;
+        height: 30px;
+    }
+    
+    .profile-name {
+        font-size: 12px;
+    }
+    
+    .profile-status {
+        font-size: 10px;
+    }
+    
+    .dashboard {
+        flex-direction: column;
+        margin: 10px;
+        gap: 10px;
+    }
+    
+    .left-column,
+    .center-column,
+    .right-column {
+        margin: 0;
+        width: 100%;
+    }
+    
+    #box1, #box2, #box3, #box4, #box5 {
+        width: 100%;
+        height: auto;
+        min-height: 200px;
+    }
+    
+    #box9 {
+        width: 100%;
+        height: auto;
+        min-height: 400px;
+    }
+    
+    .detailed-recits {
+        width: 100%;
+        height: auto;
+    }
+    
+    #recit-box {
+        width: 100%;
+        height: auto;
+        min-height: 250px;
+    }
+    
+    .profile-stats .student-name {
+        font-size: 18px;
+    }
+    
+    .profile-stats .student-section {
+        font-size: 12px;
+    }
+    
+    .leaderboard-item {
+        padding: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .lb-pic {
+        width: 35px;
+        height: 35px;
+    }
+    
+    .rank-number {
+        min-width: 25px;
+        font-size: 12px;
+        padding: 5px;
+    }
+    
+    .student-name {
+        font-size: 13px;
+    }
+    
+    .points-value {
+        font-size: 16px;
+    }
+    
+    .modal-content {
+        width: 90%;
+        margin: 20% auto;
+        padding: 15px;
+    }
+}
+
+/* Small Devices (Tablets in portrait, 576px and up) */
+@media (min-width: 576px) and (max-width: 767px) {
+    .navbar {
+        padding: 12px 15px;
+    }
+    
+    .logo img {
+        height: 30px;
+    }
+    
+    .profile {
+        gap: 15px;
+        margin-right: 15px;
+    }
+    
+    .dashboard {
+        flex-direction: column;
+        margin: 15px;
+        gap: 15px;
+    }
+    
+    .left-column,
+    .center-column,
+    .right-column {
+        margin: 0;
+        width: 100%;
+    }
+    
+    #box1, #box2, #box3 {
+        width: 100%;
+    }
+    
+    #box4, #box5 {
+        width: 100%;
+        height: auto;
+        min-height: 300px;
+    }
+    
+    #box9 {
+        width: 100%;
+        height: auto;
+    }
+    
+    .detailed-recits {
+        width: 100%;
+    }
+    
+    #recit-box {
+        width: 100%;
+    }
+}
+
+/* Medium Devices (Tablets in landscape, 768px and up) */
+@media (min-width: 768px) and (max-width: 991px) {
+    .dashboard {
+        flex-direction: column;
+        margin: 20px;
+        gap: 15px;
+    }
+    
+    .left-column,
+    .right-column {
+        flex-direction: row;
+        gap: 15px;
+        margin: 0;
+        width: 100%;
+    }
+    
+    .center-column {
+        width: 100%;
+        margin: 0;
+    }
+    
+    #box1, #box2, #box3 {
+        width: calc(33.33% - 10px);
+        flex: 1;
+    }
+    
+    #box4, #box5 {
+        width: calc(50% - 10px);
+        flex: 1;
+    }
+    
+    #box9 {
+        width: 100%;
+    }
+    
+    .detailed-recits {
+        width: 100%;
+    }
+}
+
+/* Large Devices (Laptops/Desktops, 992px and up) */
+@media (min-width: 992px) and (max-width: 1199px) {
+    .dashboard {
+        margin: 20px;
+    }
+    
+    .left-column,
+    .right-column {
+        margin-left: 15px;
+        margin-right: 15px;
+    }
+    
+    #box1, #box2, #box3 {
+        width: 300px;
+    }
+    
+    #box4 {
+        width: 300px;
+        height: 700px;
+    }
+    
+    #box5 {
+        width: 300px;
+    }
+    
+    #box9 {
+        width: 950px;
+    }
+    
+    .detailed-recits {
+        width: 900px;
+    }
+}
+
+/* Extra Large Devices (Large Desktops, 1200px and up) */
+@media (min-width: 1200px) {
+    /* Default styles already optimized for large screens */
+    .dashboard {
+        max-width: 1800px;
+        margin: 0 auto;
+    }
+}
+
+/* Orientation-specific adjustments */
+@media (orientation: landscape) and (max-height: 600px) {
+    .navbar {
+        padding: 8px 15px;
+    }
+    
+    .logo img {
+        height: 25px;
+    }
+    
+    #box1, #box2, #box3, #box4, #box5 {
+        min-height: 150px;
+    }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+    .btn,
+    .take-now-btn,
+    .eye-btn,
+    .dropbtn {
+        min-height: 44px;
+        min-width: 44px;
+        padding: 12px 20px;
+    }
+    
+    .leaderboard-item:hover {
+        transform: none;
+    }
+    
+    .option-btn:hover:not(:disabled) {
+        transform: none;
+    }
 }

@@ -40,7 +40,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
 
                     <li class="nav-link">
                         <button class="tablinks"><a href="teacher-acts.php" class="tablinks">Activities</a></button>
-                    </li>        
+                    </li>
                     
                     <li class="nav-link">
                         <button class="tablinks"><a href="teacher-studs.php" class="tablinks">Students</a></button>

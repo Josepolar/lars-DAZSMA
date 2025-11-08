@@ -1,0 +1,4 @@
+# Ignore uploaded game images
+*
+!.gitignore
+# Keep directory structure but ignore all uploaded files

@@ -501,6 +501,12 @@ table tbody tr:hover {
     color: #f57c00;
 }
 
+.activity-type.game {
+    background: #ffebee;
+    color: #c62828;
+    font-weight: 600;
+}
+
 .status-badge {
     padding: 4px 12px;
     border-radius: 20px;
@@ -961,6 +967,291 @@ form {
     
     .action-buttons {
         flex-direction: column;
+    }
+}
+
+/* ===== Create Game Modal Styles ===== */
+.help-text {
+    font-size: 12px;
+    color: #888;
+    margin-top: 5px;
+    font-style: italic;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    margin: 0;
+}
+
+.checkbox-group label {
+    margin: 0;
+    cursor: pointer;
+    font-weight: normal;
+}
+
+.error-message {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    border: 1px solid #f5c6cb;
+}
+
+.success-message {
+    background: #d4edda;
+    color: #155724;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    border: 1px solid #c3e6cb;
+}
+
+/* ===== Add Questions Modal Styles ===== */
+.options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.option-input {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    transition: all 0.2s;
+    background: white;
+}
+
+.option-input:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.option-input input[type="radio"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    margin: 0;
+}
+
+.option-input input[type="text"] {
+    flex: 1;
+    border: none;
+    padding: 8px;
+    font-size: 14px;
+    background: transparent;
+}
+
+.option-input input[type="text"]:focus {
+    outline: none;
+}
+
+.option-red { 
+    border-color: #e21b3c;
+    background: #fff5f7;
+}
+
+.option-blue { 
+    border-color: #1368ce;
+    background: #f0f7ff;
+}
+
+.option-yellow { 
+    border-color: #ffa602;
+    background: #fffaf0;
+}
+
+.option-green { 
+    border-color: #26890D;
+    background: #f0fff4;
+}
+
+.question-item-display {
+    padding: 20px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    background: white;
+    transition: all 0.2s;
+}
+
+.question-item-display:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.question-header-display {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 10px;
+}
+
+.question-text-display {
+    font-weight: 600;
+    color: #333;
+    flex: 1;
+    font-size: 15px;
+}
+
+.question-meta {
+    font-size: 12px;
+    color: #888;
+    margin-top: 10px;
+}
+
+.question-actions-display {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-delete-question {
+    background: var(--danger-color);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s;
+}
+
+.btn-delete-question:hover {
+    background: #a71d2a;
+    transform: translateY(-1px);
+}
+
+.modal-body {
+    max-height: calc(90vh - 100px);
+    overflow-y: auto;
+}
+
+/* Matching Game Styles */
+.game-type-preview {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 15px;
+    border-left: 4px solid #26890D;
+}
+
+.game-type-preview h3 {
+    color: #26890D;
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.game-type-preview p {
+    color: #666;
+    font-size: 13px;
+    line-height: 1.6;
+    margin-bottom: 10px;
+}
+
+.type-example {
+    background: white;
+    padding: 15px;
+    border-radius: 6px;
+    margin-top: 10px;
+    font-size: 13px;
+}
+
+.type-example strong {
+    color: #333;
+}
+
+.pairs-list-section {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.pair-item {
+    background: white;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-left: 4px solid #26890D;
+}
+
+.pair-content {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 15px;
+    align-items: center;
+}
+
+.pair-left, .pair-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.pair-image {
+    max-width: 80px;
+    max-height: 60px;
+    border-radius: 6px;
+    object-fit: cover;
+}
+
+.pair-text {
+    color: #333;
+    font-weight: 500;
+}
+
+.pair-connector {
+    color: #26890D;
+    font-size: 18px;
+}
+
+.pair-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.btn-delete-pair {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.btn-delete-pair:hover {
+    background: #a71d2a;
+}
+
+@media (max-width: 768px) {
+    .options-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .pair-content {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .pair-connector {
+        transform: rotate(90deg);
     }
 }
 
