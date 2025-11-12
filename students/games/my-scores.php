@@ -10,29 +10,60 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role_id'] != 4) {
 
 $student_id = $_SESSION['user_id'];
 
-// Get all completed game sessions for this student
-$query = "SELECT gs.*, ga.title, s.subject_name,
-          ROUND((gs.total_correct / gs.total_questions * 100), 1) as accuracy
+// Get all completed game sessions for this student (including both quiz games and matching games)
+$query = "SELECT gs.session_id, gs.game_id, NULL as matching_game_id, ga.title, s.subject_name, 
+          gs.total_score, gs.total_correct, gs.total_questions, gs.completed_at,
+          ROUND((gs.total_correct / gs.total_questions * 100), 1) as accuracy,
+          (SELECT SUM(points) FROM game_questions WHERE game_id = ga.game_id) as max_score,
+          'quiz' as game_type
           FROM game_sessions gs
           INNER JOIN game_activities ga ON gs.game_id = ga.game_id
           INNER JOIN subjects s ON ga.subject_id = s.subject_id
           WHERE gs.student_id = ? AND gs.completed_at IS NOT NULL
-          ORDER BY gs.completed_at DESC";
+          
+          UNION ALL
+          
+          SELECT ms.session_id, NULL as game_id, ms.matching_game_id, mg.title, s.subject_name,
+          ms.total_score, ms.total_correct, ms.total_pairs as total_questions, ms.completed_at,
+          ROUND((ms.total_correct / ms.total_pairs * 100), 1) as accuracy,
+          (ms.total_pairs * mg.points_per_pair) as max_score,
+          'matching' as game_type
+          FROM matching_sessions ms
+          INNER JOIN matching_games mg ON ms.matching_game_id = mg.matching_game_id
+          INNER JOIN subjects s ON mg.subject_id = s.subject_id
+          WHERE ms.student_id = ? AND ms.completed_at IS NOT NULL
+          
+          ORDER BY completed_at DESC";
 $stmt = $pdo->prepare($query);
-$stmt->execute([$student_id]);
+$stmt->execute([$student_id, $student_id]);
 $sessions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Get overall stats
+// Get overall stats (including both quiz games and matching games)
 $stats_query = "SELECT 
-                COUNT(*) as total_games,
-                SUM(total_score) as total_points,
-                AVG(total_score) as avg_score,
-                SUM(total_correct) as total_correct,
-                SUM(total_questions) as total_questions
-                FROM game_sessions
-                WHERE student_id = ? AND completed_at IS NOT NULL";
+                (SELECT COUNT(*) FROM game_sessions WHERE student_id = ? AND completed_at IS NOT NULL) +
+                (SELECT COUNT(*) FROM matching_sessions WHERE student_id = ? AND completed_at IS NOT NULL) as total_games,
+                
+                (SELECT COALESCE(SUM(total_score), 0) FROM game_sessions WHERE student_id = ? AND completed_at IS NOT NULL) +
+                (SELECT COALESCE(SUM(total_score), 0) FROM matching_sessions WHERE student_id = ? AND completed_at IS NOT NULL) as total_points,
+                
+                ((SELECT COALESCE(SUM(total_score), 0) FROM game_sessions WHERE student_id = ? AND completed_at IS NOT NULL) +
+                (SELECT COALESCE(SUM(total_score), 0) FROM matching_sessions WHERE student_id = ? AND completed_at IS NOT NULL)) / 
+                NULLIF((SELECT COUNT(*) FROM game_sessions WHERE student_id = ? AND completed_at IS NOT NULL) +
+                (SELECT COUNT(*) FROM matching_sessions WHERE student_id = ? AND completed_at IS NOT NULL), 0) as avg_score,
+                
+                (SELECT COALESCE(SUM(total_correct), 0) FROM game_sessions WHERE student_id = ? AND completed_at IS NOT NULL) +
+                (SELECT COALESCE(SUM(total_correct), 0) FROM matching_sessions WHERE student_id = ? AND completed_at IS NOT NULL) as total_correct,
+                
+                (SELECT COALESCE(SUM(total_questions), 0) FROM game_sessions WHERE student_id = ? AND completed_at IS NOT NULL) +
+                (SELECT COALESCE(SUM(total_pairs), 0) FROM matching_sessions WHERE student_id = ? AND completed_at IS NOT NULL) as total_questions";
 $stmt = $pdo->prepare($stats_query);
-$stmt->execute([$student_id]);
+$stmt->execute([
+    $student_id, $student_id,  // total_games
+    $student_id, $student_id,  // total_points
+    $student_id, $student_id, $student_id, $student_id,  // avg_score
+    $student_id, $student_id,  // total_correct
+    $student_id, $student_id   // total_questions
+]);
 $stats = $stmt->fetch(PDO::FETCH_ASSOC);
 
 $overall_accuracy = $stats['total_questions'] > 0 ? round(($stats['total_correct'] / $stats['total_questions']) * 100, 1) : 0;
@@ -59,6 +90,16 @@ $overall_accuracy = $stats['total_questions'] > 0 ? round(($stats['total_correct
             margin-bottom: 30px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             text-align: center;
+        }
+        
+        .page-header h1 {
+            color: #333;
+            margin: 0 0 10px 0;
+        }
+        
+        .page-header p {
+            color: #666;
+            margin: 0;
         }
         
         .stats-grid {
@@ -117,10 +158,19 @@ $overall_accuracy = $stats['total_questions'] > 0 ? round(($stats['total_correct
         table td {
             padding: 12px;
             border-bottom: 1px solid #dee2e6;
+            color: #333;
         }
         
         table tr:hover {
             background: #f8f9fa;
+        }
+        
+        table tbody tr td {
+            color: #333 !important;
+        }
+        
+        table tbody tr td strong {
+            color: #000 !important;
         }
         
         .score-badge {
@@ -241,7 +291,9 @@ $overall_accuracy = $stats['total_questions'] > 0 ? round(($stats['total_correct
                                 <td><strong><?php echo htmlspecialchars($session['title']); ?></strong></td>
                                 <td><?php echo htmlspecialchars($session['subject_name']); ?></td>
                                 <td>
-                                    <span class="score-badge"><?php echo $session['total_score']; ?> pts</span>
+                                    <span class="score-badge">
+                                        <?php echo $session['total_score']; ?> / <?php echo $session['max_score'] ?? 'N/A'; ?>
+                                    </span>
                                 </td>
                                 <td><?php echo $session['total_correct']; ?> / <?php echo $session['total_questions']; ?></td>
                                 <td>

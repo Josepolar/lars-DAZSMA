@@ -275,6 +275,12 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
                                    min="10" max="10000" value="100" step="10" required>
                             <div class="help-text">Default points awarded for each correct answer</div>
                         </div>
+                        
+                        <div class="form-group">
+                            <label for="gameDueDate">Due Date</label>
+                            <input type="datetime-local" id="gameDueDate" name="due_date">
+                            <div class="help-text">Optional: Set a deadline for this game</div>
+                        </div>
                     </div>
                     
                     <div class="form-group">
@@ -446,6 +452,12 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
                                    min="10" max="1000" value="100" step="10" required>
                             <div class="help-text">Points awarded for each correct match</div>
                         </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="matchingGameDueDate">Due Date</label>
+                        <input type="datetime-local" id="matchingGameDueDate" name="due_date">
+                        <div class="help-text">Optional: Set a deadline for this game</div>
                     </div>
                     
                     <div id="matching-game-type-preview" style="display: none;">

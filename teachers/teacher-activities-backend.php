@@ -856,6 +856,7 @@ function create_game($teacher_id) {
         $time_limit = (int)($_POST['time_limit'] ?? 30);
         $show_leaderboard = isset($_POST['show_leaderboard']) ? 1 : 0;
         $default_points = (int)($_POST['default_points'] ?? 100);
+        $due_date = !empty($_POST['due_date']) ? $_POST['due_date'] : null;
         
         // Validation
         if (empty($title)) {
@@ -878,10 +879,10 @@ function create_game($teacher_id) {
         }
         
         // Insert game activity
-        $query = "INSERT INTO game_activities (subject_id, teacher_id, title, description, time_limit, default_points, show_leaderboard, status, created_at) 
-                  VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', NOW())";
+        $query = "INSERT INTO game_activities (subject_id, teacher_id, title, description, time_limit, default_points, due_date, show_leaderboard, status, created_at) 
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft', NOW())";
         $stmt = $pdo->prepare($query);
-        $stmt->execute([$subject_id, $teacher_id, $title, $description, $time_limit, $default_points, $show_leaderboard]);
+        $stmt->execute([$subject_id, $teacher_id, $title, $description, $time_limit, $default_points, $due_date, $show_leaderboard]);
         
         $game_id = $pdo->lastInsertId();
         
@@ -1065,6 +1066,7 @@ function create_matching_game($teacher_id) {
         $time_limit = (int)$_POST['time_limit'];
         $show_leaderboard = (int)($_POST['show_leaderboard'] ?? 1);
         $points_per_pair = (int)($_POST['points_per_pair'] ?? 100);
+        $due_date = !empty($_POST['due_date']) ? $_POST['due_date'] : null;
         
         // Validate teacher teaches this subject
         $verify = $pdo->prepare("SELECT 1 FROM teacher_subjects WHERE teacher_id = ? AND subject_id = ?");
@@ -1080,10 +1082,10 @@ function create_matching_game($teacher_id) {
         $subject = $subject_stmt->fetch(PDO::FETCH_ASSOC);
         
         // Insert matching game
-        $query = "INSERT INTO matching_games (subject_id, teacher_id, title, description, game_type, time_limit, show_leaderboard, points_per_pair, status) 
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft')";
+        $query = "INSERT INTO matching_games (subject_id, teacher_id, title, description, game_type, time_limit, show_leaderboard, points_per_pair, due_date, status) 
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')";
         $stmt = $pdo->prepare($query);
-        $stmt->execute([$subject_id, $teacher_id, $title, $description, $game_type, $time_limit, $show_leaderboard, $points_per_pair]);
+        $stmt->execute([$subject_id, $teacher_id, $title, $description, $game_type, $time_limit, $show_leaderboard, $points_per_pair, $due_date]);
         
         $matching_game_id = $pdo->lastInsertId();
         

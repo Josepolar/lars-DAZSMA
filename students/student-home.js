@@ -549,16 +549,21 @@ function updateAchievements() {
     }
     
     const stats = dashboardData.stats;
+    const recentSubmissions = dashboardData.recent_submissions || [];
     console.log('Updating achievements with stats:', stats);
+    console.log('Recent submissions:', recentSubmissions);
     
     const firstActivityStatus = document.getElementById('firstActivityStatus');
     const perfectScoreStatus = document.getElementById('perfectScoreStatus');
     const activeLearnerStatus = document.getElementById('activeLearnerStatus');
     const streakMasterStatus = document.getElementById('streakMasterStatus');
     
-    // First Activity Completed
+    // Count total completed activities (including games and matching games)
+    const totalCompleted = recentSubmissions.length;
+    
+    // First Activity Completed (includes any type: activities, games, matching games)
     if (firstActivityStatus) {
-        if (stats.completed_submissions > 0) {
+        if (totalCompleted > 0) {
             firstActivityStatus.textContent = '✓ Earned';
             firstActivityStatus.className = 'status claimed';
         } else {
@@ -579,9 +584,9 @@ function updateAchievements() {
         }
     }
     
-    // Active Learner (5+ activities completed)
+    // Active Learner (5+ activities completed - includes all types)
     if (activeLearnerStatus) {
-        const completed = stats.completed_submissions || 0;
+        const completed = totalCompleted;
         if (completed >= 5) {
             activeLearnerStatus.textContent = '✓ Earned';
             activeLearnerStatus.className = 'status claimed';

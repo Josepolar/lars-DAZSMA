@@ -986,6 +986,8 @@ document.getElementById('createGameForm').addEventListener('submit', function(e)
     const gameType = formData.get('game_type');
     const defaultPoints = formData.get('default_points') || 100;
     
+    console.log('Creating game with form data:', Object.fromEntries(formData));
+    
     // Hide previous messages
     document.getElementById('gameFormError').style.display = 'none';
     document.getElementById('gameFormSuccess').style.display = 'none';
@@ -998,6 +1000,7 @@ document.getElementById('createGameForm').addEventListener('submit', function(e)
         const timeLimit = formData.get('time_limit');
         const showLeaderboard = formData.get('show_leaderboard') ? 1 : 0;
         const pointsPerPair = defaultPoints;
+        const dueDate = formData.get('due_date');
         
         // Get subject name
         const subjectSelect = document.getElementById('gameSubject');
@@ -1012,12 +1015,18 @@ document.getElementById('createGameForm').addEventListener('submit', function(e)
     // Otherwise, create a quiz game via AJAX
     formData.append('action', 'create_game');
     
+    console.log('Sending quiz game creation request...');
+    
     fetch('teacher-activities-backend.php', {
         method: 'POST',
         body: formData
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.json();
+    })
     .then(data => {
+        console.log('Response data:', data);
         if (data.success) {
             showNotification('Game created successfully!', 'success');
             closeCreateGameModal();
@@ -1027,12 +1036,13 @@ document.getElementById('createGameForm').addEventListener('submit', function(e)
             const errorDiv = document.getElementById('gameFormError');
             errorDiv.textContent = data.message || 'Failed to create game';
             errorDiv.style.display = 'block';
+            console.error('Game creation failed:', data.message);
         }
     })
     .catch(error => {
-        console.error('Error:', error);
+        console.error('Error creating game:', error);
         const errorDiv = document.getElementById('gameFormError');
-        errorDiv.textContent = 'An error occurred while creating the game';
+        errorDiv.textContent = 'An error occurred while creating the game: ' + error.message;
         errorDiv.style.display = 'block';
     });
 });
