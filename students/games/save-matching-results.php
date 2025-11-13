@@ -30,7 +30,7 @@ $responses = isset($data['responses']) ? $data['responses'] : [];
 try {
     // Verify session belongs to this student and get game info
     $verify = $pdo->prepare("
-        SELECT ms.*, mg.points_per_pair 
+        SELECT ms.*, mg.matching_game_id, mg.title
         FROM matching_sessions ms
         JOIN matching_games mg ON ms.matching_game_id = mg.matching_game_id
         WHERE ms.session_id = ? AND ms.student_id = ?
@@ -43,7 +43,16 @@ try {
         exit();
     }
     
-    $points_per_pair = $session['points_per_pair'] ?? 100;
+    // Try to get points_per_pair, use default if column doesn't exist
+    try {
+        $pointsQuery = $pdo->prepare("SELECT points_per_pair FROM matching_games WHERE matching_game_id = ?");
+        $pointsQuery->execute([$session['matching_game_id']]);
+        $gameData = $pointsQuery->fetch(PDO::FETCH_ASSOC);
+        $points_per_pair = isset($gameData['points_per_pair']) ? $gameData['points_per_pair'] : 100;
+    } catch (Exception $e) {
+        // Column doesn't exist, use default
+        $points_per_pair = 100;
+    }
     
     // Update session
     $update = "UPDATE matching_sessions 

@@ -15,6 +15,9 @@ include '../Database/database.php';
 $student_id = $_SESSION['user_id'];
 
 try {
+    // Set PDO error mode to exception for better error handling
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    
     // Get student profile information
     $profileStmt = $pdo->prepare("
         SELECT 
@@ -35,21 +38,22 @@ try {
         throw new Exception('Student profile not found');
     }
 
-    // Get student's total points and submission statistics (including game scores)
+    // Get student's total points and submission statistics (including game scores and matching game scores)
     $statsStmt = $pdo->prepare("
         SELECT 
             COUNT(DISTINCT ss.submission_id) as total_submissions,
             COUNT(DISTINCT CASE WHEN ss.submission_status = 'submitted' OR ss.submission_status = 'graded' THEN ss.submission_id END) as completed_submissions,
             (
                 COALESCE(SUM(CASE WHEN ss.submission_status IN ('submitted', 'graded') THEN ss.total_score ELSE 0 END), 0) +
-                COALESCE((SELECT SUM(gs.total_score) FROM game_sessions gs WHERE gs.student_id = ? AND gs.completed_at IS NOT NULL), 0)
+                COALESCE((SELECT SUM(gs.total_score) FROM game_sessions gs WHERE gs.student_id = ? AND gs.completed_at IS NOT NULL), 0) +
+                COALESCE((SELECT SUM(ms.total_score) FROM matching_sessions ms WHERE ms.student_id = ? AND ms.completed_at IS NOT NULL), 0)
             ) as total_points_earned,
             COALESCE(SUM(CASE WHEN ss.submission_status IN ('submitted', 'graded') THEN ss.max_score ELSE 0 END), 0) as total_possible_points,
             COALESCE(AVG(CASE WHEN ss.submission_status IN ('submitted', 'graded') AND ss.percentage IS NOT NULL THEN ss.percentage END), 0) as average_percentage
         FROM student_submissions ss
         WHERE ss.student_id = ?
     ");
-    $statsStmt->execute([$student_id, $student_id]);
+    $statsStmt->execute([$student_id, $student_id, $student_id]);
     $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
 
     // Get recent submissions (completed or graded activities AND completed games)
@@ -107,7 +111,7 @@ try {
             s.subject_name,
             'matching' as activity_type,
             ms.total_score,
-            ms.total_pairs * 100 as max_score,
+            COALESCE((SELECT COUNT(*) FROM matching_pairs WHERE matching_game_id = mg.matching_game_id), 0) * 100 as max_score,
             CASE 
                 WHEN ms.total_pairs > 0 
                 THEN (ms.total_correct / ms.total_pairs) * 100 
@@ -269,7 +273,7 @@ try {
     $gamesStmt->execute([$student_id, $student_id, $profile['grade_level'], $student_id, $student_id, $student_id, $profile['grade_level'], $student_id]);
     $activeGames = $gamesStmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Get class leaderboard (ALL students in same grade level with points from activities AND games)
+    // Get class leaderboard (ALL students in same grade level with points from activities, games, AND matching games)
     $leaderboardStmt = $pdo->prepare("
         SELECT 
             u.user_id,
@@ -278,10 +282,12 @@ try {
             u.last_name,
             (
                 COALESCE(SUM(CASE WHEN ss.submission_status IN ('submitted', 'graded') AND s.grade_level = u.grade_level THEN ss.total_score ELSE 0 END), 0) +
-                COALESCE(SUM(CASE WHEN gs.completed_at IS NOT NULL AND subj.grade_level = u.grade_level THEN gs.total_score ELSE 0 END), 0)
+                COALESCE(SUM(CASE WHEN gs.completed_at IS NOT NULL AND subj.grade_level = u.grade_level THEN gs.total_score ELSE 0 END), 0) +
+                COALESCE(SUM(CASE WHEN ms.completed_at IS NOT NULL AND msubj.grade_level = u.grade_level THEN ms.total_score ELSE 0 END), 0)
             ) as total_points,
             COUNT(CASE WHEN ss.submission_status IN ('submitted', 'graded') AND s.grade_level = u.grade_level THEN 1 END) as completed_activities,
             COUNT(CASE WHEN gs.completed_at IS NOT NULL AND subj.grade_level = u.grade_level THEN 1 END) as completed_games,
+            COUNT(CASE WHEN ms.completed_at IS NOT NULL AND msubj.grade_level = u.grade_level THEN 1 END) as completed_matching_games,
             COALESCE(AVG(CASE WHEN ss.submission_status IN ('submitted', 'graded') AND s.grade_level = u.grade_level AND ss.percentage IS NOT NULL THEN ss.percentage END), 0) as avg_percentage
         FROM users u
         LEFT JOIN student_submissions ss ON u.user_id = ss.student_id
@@ -290,6 +296,9 @@ try {
         LEFT JOIN game_sessions gs ON u.user_id = gs.student_id
         LEFT JOIN game_activities ga ON gs.game_id = ga.game_id
         LEFT JOIN subjects subj ON ga.subject_id = subj.subject_id
+        LEFT JOIN matching_sessions ms ON u.user_id = ms.student_id
+        LEFT JOIN matching_games mg ON ms.matching_game_id = mg.matching_game_id
+        LEFT JOIN subjects msubj ON mg.subject_id = msubj.subject_id
         WHERE u.role_id = 4 AND u.grade_level = ?
         GROUP BY u.user_id, u.first_name, u.last_name
         ORDER BY total_points DESC, avg_percentage DESC
@@ -338,8 +347,20 @@ try {
 
     echo json_encode($response);
 
-} catch (Exception $e) {
+} catch (PDOException $e) {
+    error_log("Database error in student_dashboard.php: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['error' => 'Error fetching dashboard data: ' . $e->getMessage()]);
+    echo json_encode([
+        'error' => 'Database error occurred while fetching dashboard data',
+        'details' => $e->getMessage(),
+        'code' => $e->getCode()
+    ]);
+} catch (Exception $e) {
+    error_log("General error in student_dashboard.php: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode([
+        'error' => 'Error fetching dashboard data: ' . $e->getMessage(),
+        'trace' => $e->getTraceAsString()
+    ]);
 }
 ?>

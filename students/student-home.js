@@ -65,14 +65,32 @@ async function loadDashboardData() {
         showLoadingState();
         
         const response = await fetch('../api/student_dashboard.php');
+        
+        // Check if response is OK
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const errorText = await response.text();
+            console.error('HTTP Error Response:', errorText);
+            throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
         }
         
-        const data = await response.json();
+        // Try to parse JSON
+        let data;
+        try {
+            data = await response.json();
+        } catch (jsonError) {
+            console.error('JSON Parse Error:', jsonError);
+            const responseText = await response.text();
+            console.error('Response text:', responseText);
+            throw new Error('Invalid JSON response from server');
+        }
+        
         console.log('Dashboard data loaded:', data);
         
+        // Check for error in response
         if (data.error) {
+            console.error('API Error:', data.error);
+            if (data.details) console.error('Error Details:', data.details);
+            if (data.trace) console.error('Stack Trace:', data.trace);
             throw new Error(data.error);
         }
         
@@ -82,7 +100,8 @@ async function loadDashboardData() {
         
     } catch (error) {
         console.error('Error loading dashboard data:', error);
-        showErrorState('Failed to load dashboard data. Please refresh the page.');
+        hideLoadingState();
+        showErrorState('Failed to load dashboard data. ' + error.message + '\n\nPlease refresh the page or contact support if the problem persists.');
     }
 }
 

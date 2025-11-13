@@ -965,17 +965,53 @@ function updateGameTypeInfo(gameType) {
     
     if (gameType === 'matching') {
         helpText.textContent = 'Matching games let students connect related items, images, or words';
-        timeLimitLabel.textContent = 'Total Game Time (seconds) *';
+        timeLimitLabel.innerHTML = '⏱️ Total Game Time (seconds) *';
         timeLimitHelp.textContent = 'Recommended: 180-600 seconds (3-10 minutes)';
         timeLimitInput.value = 300;
         timeLimitInput.max = 1800;
+        timeLimitInput.min = 60;
     } else {
         helpText.textContent = 'Quiz games test knowledge with multiple-choice questions';
-        timeLimitLabel.textContent = 'Time per Question (seconds) *';
+        timeLimitLabel.innerHTML = '⏱️ Time per Question (seconds) *';
         timeLimitHelp.textContent = 'Recommended: 20-60 seconds';
         timeLimitInput.value = 30;
         timeLimitInput.max = 300;
+        timeLimitInput.min = 10;
     }
+}
+
+// Validate game title
+function validateGameTitle(input) {
+    const feedback = document.getElementById('titleFeedback');
+    const value = input.value.trim();
+    
+    if (value.length === 0) {
+        input.classList.remove('valid', 'invalid');
+        feedback.style.display = 'none';
+        return false;
+    }
+    
+    if (value.length < 5) {
+        input.classList.add('invalid');
+        input.classList.remove('valid');
+        feedback.textContent = '❌ Title is too short (minimum 5 characters)';
+        feedback.className = 'validation-feedback invalid';
+        return false;
+    }
+    
+    if (value.length > 100) {
+        input.classList.add('invalid');
+        input.classList.remove('valid');
+        feedback.textContent = '❌ Title is too long (maximum 100 characters)';
+        feedback.className = 'validation-feedback invalid';
+        return false;
+    }
+    
+    input.classList.add('valid');
+    input.classList.remove('invalid');
+    feedback.textContent = '✓ Great title!';
+    feedback.className = 'validation-feedback valid';
+    return true;
 }
 
 // Handle game creation form submission

@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.1
+-- version 5.2.2
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Sep 17, 2025 at 04:20 PM
--- Server version: 10.4.32-MariaDB
--- PHP Version: 8.2.12
+-- Generation Time: Nov 13, 2025 at 01:56 PM
+-- Server version: 11.7.2-MariaDB
+-- PHP Version: 8.4.14
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -25,9 +25,6 @@ SET time_zone = "+00:00";
 
 --
 -- Table structure for table `account_creation_log`
-
---
--- Table structure for table `account_creation_log`
 --
 
 CREATE TABLE `account_creation_log` (
@@ -38,7 +35,7 @@ CREATE TABLE `account_creation_log` (
   `creation_method` enum('manual','bulk_upload') DEFAULT 'manual',
   `creation_timestamp` timestamp NOT NULL DEFAULT current_timestamp(),
   `additional_info` text DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -59,15 +56,14 @@ CREATE TABLE `activities` (
   `is_active` tinyint(1) DEFAULT 1,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 --
 -- Dumping data for table `activities`
 --
 
 INSERT INTO `activities` (`activity_id`, `title`, `description`, `teacher_id`, `subject_id`, `activity_type`, `total_points`, `time_limit`, `due_date`, `is_active`, `created_at`, `updated_at`) VALUES
-(29, 'Filipino Recitation Quiz – Grade 7', '', 62, 1, 'quiz', 50, 15, '2025-09-17 17:30:00', 1, '2025-09-17 07:34:47', '2025-09-17 07:34:47'),
-(30, 'sample 2', '', 62, 1, 'recitation', 30, 10, '2025-09-17 19:52:00', 1, '2025-09-17 09:52:59', '2025-09-17 09:52:59');
+(29, 'Filipino Recitation Quiz – Grade 7', '', 62, 1, 'quiz', 50, 15, '2025-09-17 17:30:00', 1, '2025-09-17 07:34:47', '2025-09-17 07:34:47');
 
 -- --------------------------------------------------------
 
@@ -85,7 +81,7 @@ CREATE TABLE `activity_analytics` (
   `highest_score` decimal(5,2) DEFAULT NULL,
   `lowest_score` decimal(5,2) DEFAULT NULL,
   `last_updated` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -101,7 +97,7 @@ CREATE TABLE `activity_questions` (
   `points` int(11) NOT NULL DEFAULT 10,
   `question_order` int(11) NOT NULL DEFAULT 1,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 --
 -- Dumping data for table `activity_questions`
@@ -109,10 +105,192 @@ CREATE TABLE `activity_questions` (
 
 INSERT INTO `activity_questions` (`question_id`, `activity_id`, `question_text`, `question_type`, `points`, `question_order`, `created_at`) VALUES
 (51, 29, 'Ano ang ibig sabihin ng salitang “pangarap”?', 'multiple_choice', 10, 1, '2025-09-17 07:34:47'),
-(52, 29, 'Ano ang pangunahing layunin ng tula o panulaan?', 'multiple_choice', 10, 2, '2025-09-17 07:34:47'),
-(53, 30, '1', 'multiple_choice', 10, 1, '2025-09-17 09:52:59'),
-(54, 30, '2', 'multiple_choice', 10, 2, '2025-09-17 09:52:59'),
-(55, 30, '3', 'multiple_choice', 10, 3, '2025-09-17 09:52:59');
+(52, 29, 'Ano ang pangunahing layunin ng tula o panulaan?', 'multiple_choice', 10, 2, '2025-09-17 07:34:47');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `game_activities`
+--
+
+CREATE TABLE `game_activities` (
+  `game_id` int(11) NOT NULL,
+  `subject_id` int(11) NOT NULL,
+  `teacher_id` int(11) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  `time_limit` int(11) DEFAULT 30,
+  `show_leaderboard` tinyint(1) DEFAULT 1,
+  `status` enum('draft','active','completed','archived') DEFAULT 'draft',
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `game_options`
+--
+
+CREATE TABLE `game_options` (
+  `option_id` int(11) NOT NULL,
+  `question_id` int(11) NOT NULL,
+  `option_text` varchar(255) NOT NULL,
+  `is_correct` tinyint(1) DEFAULT 0,
+  `option_order` int(11) NOT NULL,
+  `color_code` varchar(20) DEFAULT 'blue'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `game_questions`
+--
+
+CREATE TABLE `game_questions` (
+  `question_id` int(11) NOT NULL,
+  `game_id` int(11) NOT NULL,
+  `question_text` text NOT NULL,
+  `question_order` int(11) NOT NULL,
+  `time_limit` int(11) DEFAULT 30,
+  `points` int(11) DEFAULT 1000,
+  `image_url` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `game_responses`
+--
+
+CREATE TABLE `game_responses` (
+  `response_id` int(11) NOT NULL,
+  `game_id` int(11) NOT NULL,
+  `student_id` int(11) NOT NULL,
+  `question_id` int(11) NOT NULL,
+  `selected_option_id` int(11) DEFAULT NULL,
+  `is_correct` tinyint(1) DEFAULT NULL,
+  `time_taken` int(11) DEFAULT NULL,
+  `points_earned` int(11) DEFAULT 0,
+  `answered_at` timestamp NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `game_sessions`
+--
+
+CREATE TABLE `game_sessions` (
+  `session_id` int(11) NOT NULL,
+  `game_id` int(11) NOT NULL,
+  `student_id` int(11) NOT NULL,
+  `total_score` int(11) DEFAULT 0,
+  `total_correct` int(11) DEFAULT 0,
+  `total_questions` int(11) DEFAULT 0,
+  `started_at` timestamp NULL DEFAULT current_timestamp(),
+  `completed_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `matching_games`
+--
+
+CREATE TABLE `matching_games` (
+  `matching_game_id` int(11) NOT NULL,
+  `subject_id` int(11) NOT NULL,
+  `teacher_id` int(11) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  `game_type` enum('image-to-text','text-to-text','image-to-image','number-to-text') DEFAULT 'image-to-text',
+  `time_limit` int(11) DEFAULT 300,
+  `points_per_pair` int(11) DEFAULT 100,
+  `show_leaderboard` tinyint(1) DEFAULT 1,
+  `status` enum('draft','active','completed','archived') DEFAULT 'draft',
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+--
+-- Dumping data for table `matching_games`
+--
+
+INSERT INTO `matching_games` (`matching_game_id`, `subject_id`, `teacher_id`, `title`, `description`, `game_type`, `time_limit`, `points_per_pair`, `show_leaderboard`, `status`, `created_at`, `updated_at`) VALUES
+(1, 1, 62, 'Sample Fill game', 'ss', 'image-to-text', 60, 100, 1, 'active', '2025-11-13 12:22:42', '2025-11-13 12:33:13');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `matching_pairs`
+--
+
+CREATE TABLE `matching_pairs` (
+  `pair_id` int(11) NOT NULL,
+  `matching_game_id` int(11) NOT NULL,
+  `left_item_text` varchar(255) DEFAULT NULL,
+  `left_item_image` varchar(255) DEFAULT NULL,
+  `right_item_text` varchar(255) NOT NULL,
+  `right_item_image` varchar(255) DEFAULT NULL,
+  `pair_order` int(11) NOT NULL,
+  `created_at` timestamp NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+--
+-- Dumping data for table `matching_pairs`
+--
+
+INSERT INTO `matching_pairs` (`pair_id`, `matching_game_id`, `left_item_text`, `left_item_image`, `right_item_text`, `right_item_image`, `pair_order`, `created_at`) VALUES
+(1, 1, '', '../../uploads/matching_games/left_6915cda97bb7a_1763036585.png', 'sample', NULL, 1, '2025-11-13 12:23:05'),
+(2, 1, '', '../../uploads/matching_games/left_6915cdb710793_1763036599.png', 'hehe', NULL, 2, '2025-11-13 12:23:19'),
+(3, 1, '', '../../uploads/matching_games/left_6915cdcab0b69_1763036618.png', 'edi wow', NULL, 3, '2025-11-13 12:23:38'),
+(4, 1, '', '../../uploads/matching_games/left_6915cdd181ee9_1763036625.jpg', 'ee', NULL, 4, '2025-11-13 12:23:45');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `matching_responses`
+--
+
+CREATE TABLE `matching_responses` (
+  `response_id` int(11) NOT NULL,
+  `session_id` int(11) NOT NULL,
+  `pair_id` int(11) NOT NULL,
+  `is_correct` tinyint(1) DEFAULT NULL,
+  `attempts` int(11) DEFAULT 1,
+  `time_taken` int(11) DEFAULT 0,
+  `points_earned` int(11) DEFAULT 0,
+  `matched_at` timestamp NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `matching_sessions`
+--
+
+CREATE TABLE `matching_sessions` (
+  `session_id` int(11) NOT NULL,
+  `matching_game_id` int(11) NOT NULL,
+  `student_id` int(11) NOT NULL,
+  `total_score` int(11) DEFAULT 0,
+  `total_correct` int(11) DEFAULT 0,
+  `total_pairs` int(11) DEFAULT 0,
+  `time_taken` int(11) DEFAULT 0,
+  `started_at` timestamp NULL DEFAULT current_timestamp(),
+  `completed_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+--
+-- Dumping data for table `matching_sessions`
+--
+
+INSERT INTO `matching_sessions` (`session_id`, `matching_game_id`, `student_id`, `total_score`, `total_correct`, `total_pairs`, `time_taken`, `started_at`, `completed_at`) VALUES
+(1, 1, 60, 0, 0, 4, 0, '2025-11-13 12:26:03', NULL),
+(2, 1, 21, 0, 0, 4, 0, '2025-11-13 12:38:27', NULL),
+(3, 1, 22, 650, 2, 4, 15, '2025-11-13 12:54:55', '2025-11-13 12:55:13');
 
 -- --------------------------------------------------------
 
@@ -126,7 +304,7 @@ CREATE TABLE `question_choices` (
   `choice_text` text NOT NULL,
   `is_correct` tinyint(1) DEFAULT 0,
   `choice_order` int(11) NOT NULL DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 --
 -- Dumping data for table `question_choices`
@@ -140,16 +318,7 @@ INSERT INTO `question_choices` (`choice_id`, `question_id`, `choice_text`, `is_c
 (141, 52, 'Maglaro', 0, 1),
 (142, 52, 'Magpahayag ng damdamin at kaisipan', 1, 2),
 (143, 52, 'Magturo ng matematika', 0, 3),
-(144, 52, 'Magbenta ng produkto', 0, 4),
-(145, 53, '1', 1, 1),
-(146, 53, '2', 0, 2),
-(147, 53, '3', 0, 3),
-(148, 54, '1', 0, 1),
-(149, 54, '2', 1, 2),
-(150, 54, '3', 0, 3),
-(151, 55, '1', 0, 1),
-(152, 55, '2', 0, 2),
-(153, 55, '3', 1, 3);
+(144, 52, 'Magbenta ng produkto', 0, 4);
 
 -- --------------------------------------------------------
 
@@ -160,7 +329,7 @@ INSERT INTO `question_choices` (`choice_id`, `question_id`, `choice_text`, `is_c
 CREATE TABLE `roles` (
   `role_id` int(11) NOT NULL,
   `role_name` varchar(50) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 --
 -- Dumping data for table `roles`
@@ -187,7 +356,7 @@ CREATE TABLE `student_answers` (
   `points_earned` decimal(5,2) DEFAULT 0.00,
   `is_correct` tinyint(1) DEFAULT NULL,
   `answered_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 --
 -- Dumping data for table `student_answers`
@@ -215,13 +384,7 @@ INSERT INTO `student_answers` (`answer_id`, `submission_id`, `question_id`, `cho
 (44, 35, 52, 142, NULL, 10.00, 1, '2025-09-17 07:44:11'),
 (45, 36, 51, 138, NULL, 10.00, 1, '2025-09-17 07:44:33'),
 (46, 36, 52, 142, NULL, 10.00, 1, '2025-09-17 07:44:33'),
-(47, 37, 51, 138, NULL, 10.00, 1, '2025-09-17 07:44:57'),
-(48, 38, 53, 145, NULL, 10.00, 1, '2025-09-17 09:53:47'),
-(49, 38, 54, 149, NULL, 10.00, 1, '2025-09-17 09:53:47'),
-(50, 38, 55, 152, NULL, 0.00, 0, '2025-09-17 09:53:47'),
-(51, 39, 53, 145, NULL, 10.00, 1, '2025-09-17 10:13:47'),
-(52, 39, 54, 149, NULL, 10.00, 1, '2025-09-17 10:13:47'),
-(53, 39, 55, 153, NULL, 10.00, 1, '2025-09-17 10:13:47');
+(47, 37, 51, 138, NULL, 10.00, 1, '2025-09-17 07:44:57');
 
 -- --------------------------------------------------------
 
@@ -238,7 +401,7 @@ CREATE TABLE `student_login_audit` (
   `failure_reason` varchar(255) DEFAULT NULL,
   `attempt_timestamp` timestamp NOT NULL DEFAULT current_timestamp(),
   `user_agent` text DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -259,7 +422,7 @@ CREATE TABLE `student_submissions` (
   `graded_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 --
 -- Dumping data for table `student_submissions`
@@ -277,9 +440,7 @@ INSERT INTO `student_submissions` (`submission_id`, `activity_id`, `student_id`,
 (34, 29, 22, 'submitted', 20.00, 50.00, 40.00, NULL, '2025-09-17 07:43:26', NULL, '2025-09-17 07:43:22', '2025-09-17 07:43:26'),
 (35, 29, 17, 'submitted', 10.00, 50.00, 20.00, NULL, '2025-09-17 07:44:11', NULL, '2025-09-17 07:44:07', '2025-09-17 07:44:11'),
 (36, 29, 18, 'submitted', 20.00, 50.00, 40.00, NULL, '2025-09-17 07:44:33', NULL, '2025-09-17 07:44:26', '2025-09-17 07:44:33'),
-(37, 29, 20, 'submitted', 10.00, 50.00, 20.00, NULL, '2025-09-17 07:44:57', NULL, '2025-09-17 07:44:48', '2025-09-17 07:44:57'),
-(38, 30, 24, 'submitted', 20.00, 30.00, 66.67, NULL, '2025-09-17 09:53:47', NULL, '2025-09-17 09:53:41', '2025-09-17 09:53:47'),
-(39, 30, 16, 'submitted', 30.00, 30.00, 100.00, NULL, '2025-09-17 10:13:47', NULL, '2025-09-17 10:13:38', '2025-09-17 10:13:47');
+(37, 29, 20, 'submitted', 10.00, 50.00, 20.00, NULL, '2025-09-17 07:44:57', NULL, '2025-09-17 07:44:48', '2025-09-17 07:44:57');
 
 -- --------------------------------------------------------
 
@@ -293,7 +454,7 @@ CREATE TABLE `subjects` (
   `grade_level` varchar(50) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 --
 -- Dumping data for table `subjects`
@@ -315,7 +476,7 @@ CREATE TABLE `teacher_subjects` (
   `id` int(11) NOT NULL,
   `teacher_id` int(11) NOT NULL,
   `subject_id` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 --
 -- Dumping data for table `teacher_subjects`
@@ -345,7 +506,7 @@ CREATE TABLE `users` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `grade_level` varchar(2) DEFAULT NULL,
   `section` varchar(10) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 --
 -- Dumping data for table `users`
@@ -422,7 +583,7 @@ CREATE TABLE `user_logs` (
   `affected_user_id` int(11) DEFAULT NULL,
   `action_timestamp` timestamp NOT NULL DEFAULT current_timestamp(),
   `ip_address` varchar(45) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 --
 -- Dumping data for table `user_logs`
@@ -574,7 +735,22 @@ INSERT INTO `user_logs` (`log_id`, `user_id`, `action`, `affected_user_id`, `act
 (240, 62, 'Login', NULL, '2025-09-17 12:56:08', NULL),
 (241, 51, 'Login', NULL, '2025-09-17 12:58:35', '::1'),
 (242, 51, 'Logout', NULL, '2025-09-17 12:58:56', '::1'),
-(243, 24, 'Login', NULL, '2025-09-17 12:59:12', '::1');
+(243, 24, 'Login', NULL, '2025-09-17 12:59:12', '::1'),
+(244, 5, 'Login', NULL, '2025-11-13 04:16:00', '::1'),
+(245, 51, 'Login', NULL, '2025-11-13 04:25:32', '::1'),
+(246, 5, 'Login', NULL, '2025-11-13 11:44:20', '::1'),
+(247, 51, 'Login', NULL, '2025-11-13 11:44:54', '::1'),
+(248, 51, 'Logout', NULL, '2025-11-13 11:50:19', '::1'),
+(249, 16, 'Login', NULL, '2025-11-13 11:50:35', '::1'),
+(250, 62, 'Login', NULL, '2025-11-13 12:08:12', NULL),
+(251, 51, 'Login', NULL, '2025-11-13 12:24:20', '::1'),
+(252, 62, 'Login', NULL, '2025-11-13 12:24:48', NULL),
+(253, 62, 'Deleted Activity', 30, '2025-11-13 12:25:01', '::1'),
+(254, 60, 'Login', NULL, '2025-11-13 12:25:55', '::1'),
+(255, 60, 'Logout', NULL, '2025-11-13 12:38:11', '::1'),
+(256, 21, 'Login', NULL, '2025-11-13 12:38:25', '::1'),
+(257, 62, 'Login', NULL, '2025-11-13 12:39:35', NULL),
+(258, 22, 'Login', NULL, '2025-11-13 12:54:53', '::1');
 
 -- --------------------------------------------------------
 
@@ -637,7 +813,7 @@ CREATE TABLE `v_student_accounts` (
 ,`creation_method` enum('manual','bulk_upload')
 ,`creation_timestamp` timestamp
 ,`total_logins` bigint(21)
-,`last_login` timestamp
+,`last_login` timestamp /* mariadb-5.3 */
 );
 
 -- --------------------------------------------------------
@@ -662,42 +838,6 @@ CREATE TABLE `v_student_activity_scores` (
 ,`graded_at` timestamp
 ,`teacher_name` varchar(101)
 );
-
--- --------------------------------------------------------
-
---
--- Structure for view `v_activity_summary`
---
-DROP TABLE IF EXISTS `v_activity_summary`;
-
-CREATE ALGORITHM=UNDEFINED VIEW `v_activity_summary`  AS SELECT `a`.`activity_id` AS `activity_id`, `a`.`title` AS `title`, `a`.`description` AS `description`, `a`.`activity_type` AS `activity_type`, `a`.`total_points` AS `total_points`, `a`.`due_date` AS `due_date`, `a`.`is_active` AS `is_active`, concat(`u`.`first_name`,' ',`u`.`last_name`) AS `teacher_name`, `s`.`subject_name` AS `subject_name`, `s`.`grade_level` AS `grade_level`, coalesce(`an`.`total_students`,0) AS `total_students`, coalesce(`an`.`completed_submissions`,0) AS `completed_submissions`, coalesce(`an`.`pending_submissions`,0) AS `pending_submissions`, coalesce(`an`.`average_score`,0) AS `average_score`, `a`.`created_at` AS `created_at` FROM (((`activities` `a` join `users` `u` on(`a`.`teacher_id` = `u`.`user_id`)) join `subjects` `s` on(`a`.`subject_id` = `s`.`subject_id`)) left join `activity_analytics` `an` on(`a`.`activity_id` = `an`.`activity_id`)) ORDER BY `a`.`created_at` DESC ;
-
--- --------------------------------------------------------
-
---
--- Structure for view `v_login_statistics`
---
-DROP TABLE IF EXISTS `v_login_statistics`;
-
-CREATE ALGORITHM=UNDEFINED VIEW `v_login_statistics`  AS SELECT cast(`student_login_audit`.`attempt_timestamp` as date) AS `login_date`, count(0) AS `total_attempts`, sum(case when `student_login_audit`.`login_status` = 'success' then 1 else 0 end) AS `successful_logins`, sum(case when `student_login_audit`.`login_status` = 'failed' then 1 else 0 end) AS `failed_attempts`, count(distinct `student_login_audit`.`user_id`) AS `unique_users`, count(distinct `student_login_audit`.`ip_address`) AS `unique_ips` FROM `student_login_audit` GROUP BY cast(`student_login_audit`.`attempt_timestamp` as date) ORDER BY cast(`student_login_audit`.`attempt_timestamp` as date) DESC ;
-
--- --------------------------------------------------------
-
---
--- Structure for view `v_student_accounts`
---
-DROP TABLE IF EXISTS `v_student_accounts`;
-
-CREATE ALGORITHM=UNDEFINED VIEW `v_student_accounts`  AS SELECT `u`.`user_id` AS `user_id`, `u`.`username` AS `username`, `u`.`email` AS `email`, `u`.`first_name` AS `first_name`, `u`.`last_name` AS `last_name`, concat(`u`.`first_name`,' ',`u`.`last_name`) AS `full_name`, `u`.`grade_level` AS `grade_level`, `u`.`created_at` AS `created_at`, `u`.`updated_at` AS `updated_at`, `acl`.`created_by_staff_id` AS `created_by_staff_id`, `staff`.`username` AS `created_by_staff_username`, concat(`staff`.`first_name`,' ',`staff`.`last_name`) AS `created_by_staff_name`, `acl`.`creation_method` AS `creation_method`, `acl`.`creation_timestamp` AS `creation_timestamp`, (select count(0) from `student_login_audit` `sla` where `sla`.`user_id` = `u`.`user_id` and `sla`.`login_status` = 'success') AS `total_logins`, (select max(`sla`.`attempt_timestamp`) from `student_login_audit` `sla` where `sla`.`user_id` = `u`.`user_id` and `sla`.`login_status` = 'success') AS `last_login` FROM ((`users` `u` left join `account_creation_log` `acl` on(`u`.`user_id` = `acl`.`created_user_id`)) left join `users` `staff` on(`acl`.`created_by_staff_id` = `staff`.`user_id`)) WHERE `u`.`role_id` = 4 ORDER BY `u`.`grade_level` ASC, `u`.`last_name` ASC, `u`.`first_name` ASC ;
-
--- --------------------------------------------------------
-
---
--- Structure for view `v_student_activity_scores`
---
-DROP TABLE IF EXISTS `v_student_activity_scores`;
-
-CREATE ALGORITHM=UNDEFINED VIEW `v_student_activity_scores`  AS SELECT `sub`.`submission_id` AS `submission_id`, `sub`.`activity_id` AS `activity_id`, `a`.`title` AS `activity_title`, `a`.`activity_type` AS `activity_type`, concat(`u`.`first_name`,' ',`u`.`last_name`) AS `student_name`, `u`.`grade_level` AS `grade_level`, `s`.`subject_name` AS `subject_name`, `sub`.`total_score` AS `total_score`, `sub`.`max_score` AS `max_score`, `sub`.`percentage` AS `percentage`, `sub`.`submission_status` AS `submission_status`, `sub`.`submitted_at` AS `submitted_at`, `sub`.`graded_at` AS `graded_at`, concat(`t`.`first_name`,' ',`t`.`last_name`) AS `teacher_name` FROM ((((`student_submissions` `sub` join `activities` `a` on(`sub`.`activity_id` = `a`.`activity_id`)) join `users` `u` on(`sub`.`student_id` = `u`.`user_id`)) join `subjects` `s` on(`a`.`subject_id` = `s`.`subject_id`)) join `users` `t` on(`a`.`teacher_id` = `t`.`user_id`)) ORDER BY `sub`.`submitted_at` DESC ;
 
 --
 -- Indexes for dumped tables
@@ -738,6 +878,79 @@ ALTER TABLE `activity_questions`
   ADD PRIMARY KEY (`question_id`),
   ADD KEY `idx_activity_id` (`activity_id`),
   ADD KEY `idx_question_order` (`question_order`);
+
+--
+-- Indexes for table `game_activities`
+--
+ALTER TABLE `game_activities`
+  ADD PRIMARY KEY (`game_id`),
+  ADD KEY `idx_game_activities_teacher` (`teacher_id`),
+  ADD KEY `idx_game_activities_subject` (`subject_id`),
+  ADD KEY `idx_game_activities_status` (`status`);
+
+--
+-- Indexes for table `game_options`
+--
+ALTER TABLE `game_options`
+  ADD PRIMARY KEY (`option_id`),
+  ADD KEY `idx_game_options_question` (`question_id`);
+
+--
+-- Indexes for table `game_questions`
+--
+ALTER TABLE `game_questions`
+  ADD PRIMARY KEY (`question_id`),
+  ADD KEY `idx_game_questions_game` (`game_id`);
+
+--
+-- Indexes for table `game_responses`
+--
+ALTER TABLE `game_responses`
+  ADD PRIMARY KEY (`response_id`),
+  ADD KEY `question_id` (`question_id`),
+  ADD KEY `selected_option_id` (`selected_option_id`),
+  ADD KEY `idx_game_responses_student` (`student_id`),
+  ADD KEY `idx_game_responses_game` (`game_id`);
+
+--
+-- Indexes for table `game_sessions`
+--
+ALTER TABLE `game_sessions`
+  ADD PRIMARY KEY (`session_id`),
+  ADD KEY `idx_game_sessions_student` (`student_id`),
+  ADD KEY `idx_game_sessions_game` (`game_id`);
+
+--
+-- Indexes for table `matching_games`
+--
+ALTER TABLE `matching_games`
+  ADD PRIMARY KEY (`matching_game_id`),
+  ADD KEY `idx_matching_games_teacher` (`teacher_id`),
+  ADD KEY `idx_matching_games_subject` (`subject_id`),
+  ADD KEY `idx_matching_games_status` (`status`);
+
+--
+-- Indexes for table `matching_pairs`
+--
+ALTER TABLE `matching_pairs`
+  ADD PRIMARY KEY (`pair_id`),
+  ADD KEY `idx_matching_pairs_game` (`matching_game_id`);
+
+--
+-- Indexes for table `matching_responses`
+--
+ALTER TABLE `matching_responses`
+  ADD PRIMARY KEY (`response_id`),
+  ADD KEY `idx_matching_responses_session` (`session_id`),
+  ADD KEY `idx_matching_responses_pair` (`pair_id`);
+
+--
+-- Indexes for table `matching_sessions`
+--
+ALTER TABLE `matching_sessions`
+  ADD PRIMARY KEY (`session_id`),
+  ADD KEY `idx_matching_sessions_student` (`student_id`),
+  ADD KEY `idx_matching_sessions_game` (`matching_game_id`);
 
 --
 -- Indexes for table `question_choices`
@@ -849,6 +1062,60 @@ ALTER TABLE `activity_questions`
   MODIFY `question_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=56;
 
 --
+-- AUTO_INCREMENT for table `game_activities`
+--
+ALTER TABLE `game_activities`
+  MODIFY `game_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `game_options`
+--
+ALTER TABLE `game_options`
+  MODIFY `option_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `game_questions`
+--
+ALTER TABLE `game_questions`
+  MODIFY `question_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `game_responses`
+--
+ALTER TABLE `game_responses`
+  MODIFY `response_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `game_sessions`
+--
+ALTER TABLE `game_sessions`
+  MODIFY `session_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `matching_games`
+--
+ALTER TABLE `matching_games`
+  MODIFY `matching_game_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT for table `matching_pairs`
+--
+ALTER TABLE `matching_pairs`
+  MODIFY `pair_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT for table `matching_responses`
+--
+ALTER TABLE `matching_responses`
+  MODIFY `response_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `matching_sessions`
+--
+ALTER TABLE `matching_sessions`
+  MODIFY `session_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
 -- AUTO_INCREMENT for table `question_choices`
 --
 ALTER TABLE `question_choices`
@@ -900,7 +1167,43 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `user_logs`
 --
 ALTER TABLE `user_logs`
-  MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=244;
+  MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=259;
+
+-- --------------------------------------------------------
+
+--
+-- Structure for view `v_activity_summary`
+--
+DROP TABLE IF EXISTS `v_activity_summary`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v_activity_summary`  AS SELECT `a`.`activity_id` AS `activity_id`, `a`.`title` AS `title`, `a`.`description` AS `description`, `a`.`activity_type` AS `activity_type`, `a`.`total_points` AS `total_points`, `a`.`due_date` AS `due_date`, `a`.`is_active` AS `is_active`, concat(`u`.`first_name`,' ',`u`.`last_name`) AS `teacher_name`, `s`.`subject_name` AS `subject_name`, `s`.`grade_level` AS `grade_level`, coalesce(`an`.`total_students`,0) AS `total_students`, coalesce(`an`.`completed_submissions`,0) AS `completed_submissions`, coalesce(`an`.`pending_submissions`,0) AS `pending_submissions`, coalesce(`an`.`average_score`,0) AS `average_score`, `a`.`created_at` AS `created_at` FROM (((`activities` `a` join `users` `u` on(`a`.`teacher_id` = `u`.`user_id`)) join `subjects` `s` on(`a`.`subject_id` = `s`.`subject_id`)) left join `activity_analytics` `an` on(`a`.`activity_id` = `an`.`activity_id`)) ORDER BY `a`.`created_at` DESC ;
+
+-- --------------------------------------------------------
+
+--
+-- Structure for view `v_login_statistics`
+--
+DROP TABLE IF EXISTS `v_login_statistics`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v_login_statistics`  AS SELECT cast(`student_login_audit`.`attempt_timestamp` as date) AS `login_date`, count(0) AS `total_attempts`, sum(case when `student_login_audit`.`login_status` = 'success' then 1 else 0 end) AS `successful_logins`, sum(case when `student_login_audit`.`login_status` = 'failed' then 1 else 0 end) AS `failed_attempts`, count(distinct `student_login_audit`.`user_id`) AS `unique_users`, count(distinct `student_login_audit`.`ip_address`) AS `unique_ips` FROM `student_login_audit` GROUP BY cast(`student_login_audit`.`attempt_timestamp` as date) ORDER BY cast(`student_login_audit`.`attempt_timestamp` as date) DESC ;
+
+-- --------------------------------------------------------
+
+--
+-- Structure for view `v_student_accounts`
+--
+DROP TABLE IF EXISTS `v_student_accounts`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v_student_accounts`  AS SELECT `u`.`user_id` AS `user_id`, `u`.`username` AS `username`, `u`.`email` AS `email`, `u`.`first_name` AS `first_name`, `u`.`last_name` AS `last_name`, concat(`u`.`first_name`,' ',`u`.`last_name`) AS `full_name`, `u`.`grade_level` AS `grade_level`, `u`.`created_at` AS `created_at`, `u`.`updated_at` AS `updated_at`, `acl`.`created_by_staff_id` AS `created_by_staff_id`, `staff`.`username` AS `created_by_staff_username`, concat(`staff`.`first_name`,' ',`staff`.`last_name`) AS `created_by_staff_name`, `acl`.`creation_method` AS `creation_method`, `acl`.`creation_timestamp` AS `creation_timestamp`, (select count(0) from `student_login_audit` `sla` where `sla`.`user_id` = `u`.`user_id` and `sla`.`login_status` = 'success') AS `total_logins`, (select max(`sla`.`attempt_timestamp`) from `student_login_audit` `sla` where `sla`.`user_id` = `u`.`user_id` and `sla`.`login_status` = 'success') AS `last_login` FROM ((`users` `u` left join `account_creation_log` `acl` on(`u`.`user_id` = `acl`.`created_user_id`)) left join `users` `staff` on(`acl`.`created_by_staff_id` = `staff`.`user_id`)) WHERE `u`.`role_id` = 4 ORDER BY `u`.`grade_level` ASC, `u`.`last_name` ASC, `u`.`first_name` ASC ;
+
+-- --------------------------------------------------------
+
+--
+-- Structure for view `v_student_activity_scores`
+--
+DROP TABLE IF EXISTS `v_student_activity_scores`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v_student_activity_scores`  AS SELECT `sub`.`submission_id` AS `submission_id`, `sub`.`activity_id` AS `activity_id`, `a`.`title` AS `activity_title`, `a`.`activity_type` AS `activity_type`, concat(`u`.`first_name`,' ',`u`.`last_name`) AS `student_name`, `u`.`grade_level` AS `grade_level`, `s`.`subject_name` AS `subject_name`, `sub`.`total_score` AS `total_score`, `sub`.`max_score` AS `max_score`, `sub`.`percentage` AS `percentage`, `sub`.`submission_status` AS `submission_status`, `sub`.`submitted_at` AS `submitted_at`, `sub`.`graded_at` AS `graded_at`, concat(`t`.`first_name`,' ',`t`.`last_name`) AS `teacher_name` FROM ((((`student_submissions` `sub` join `activities` `a` on(`sub`.`activity_id` = `a`.`activity_id`)) join `users` `u` on(`sub`.`student_id` = `u`.`user_id`)) join `subjects` `s` on(`a`.`subject_id` = `s`.`subject_id`)) join `users` `t` on(`a`.`teacher_id` = `t`.`user_id`)) ORDER BY `sub`.`submitted_at` DESC ;
 
 --
 -- Constraints for dumped tables
@@ -931,6 +1234,68 @@ ALTER TABLE `activity_analytics`
 --
 ALTER TABLE `activity_questions`
   ADD CONSTRAINT `fk_questions_activity` FOREIGN KEY (`activity_id`) REFERENCES `activities` (`activity_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `game_activities`
+--
+ALTER TABLE `game_activities`
+  ADD CONSTRAINT `game_activities_ibfk_1` FOREIGN KEY (`teacher_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `game_activities_ibfk_2` FOREIGN KEY (`subject_id`) REFERENCES `subjects` (`subject_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `game_options`
+--
+ALTER TABLE `game_options`
+  ADD CONSTRAINT `game_options_ibfk_1` FOREIGN KEY (`question_id`) REFERENCES `game_questions` (`question_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `game_questions`
+--
+ALTER TABLE `game_questions`
+  ADD CONSTRAINT `game_questions_ibfk_1` FOREIGN KEY (`game_id`) REFERENCES `game_activities` (`game_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `game_responses`
+--
+ALTER TABLE `game_responses`
+  ADD CONSTRAINT `game_responses_ibfk_1` FOREIGN KEY (`game_id`) REFERENCES `game_activities` (`game_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `game_responses_ibfk_2` FOREIGN KEY (`student_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `game_responses_ibfk_3` FOREIGN KEY (`question_id`) REFERENCES `game_questions` (`question_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `game_responses_ibfk_4` FOREIGN KEY (`selected_option_id`) REFERENCES `game_options` (`option_id`) ON DELETE SET NULL;
+
+--
+-- Constraints for table `game_sessions`
+--
+ALTER TABLE `game_sessions`
+  ADD CONSTRAINT `game_sessions_ibfk_1` FOREIGN KEY (`game_id`) REFERENCES `game_activities` (`game_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `game_sessions_ibfk_2` FOREIGN KEY (`student_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `matching_games`
+--
+ALTER TABLE `matching_games`
+  ADD CONSTRAINT `matching_games_ibfk_1` FOREIGN KEY (`teacher_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `matching_games_ibfk_2` FOREIGN KEY (`subject_id`) REFERENCES `subjects` (`subject_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `matching_pairs`
+--
+ALTER TABLE `matching_pairs`
+  ADD CONSTRAINT `matching_pairs_ibfk_1` FOREIGN KEY (`matching_game_id`) REFERENCES `matching_games` (`matching_game_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `matching_responses`
+--
+ALTER TABLE `matching_responses`
+  ADD CONSTRAINT `matching_responses_ibfk_1` FOREIGN KEY (`session_id`) REFERENCES `matching_sessions` (`session_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `matching_responses_ibfk_2` FOREIGN KEY (`pair_id`) REFERENCES `matching_pairs` (`pair_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `matching_sessions`
+--
+ALTER TABLE `matching_sessions`
+  ADD CONSTRAINT `matching_sessions_ibfk_1` FOREIGN KEY (`matching_game_id`) REFERENCES `matching_games` (`matching_game_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `matching_sessions_ibfk_2` FOREIGN KEY (`student_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `question_choices`

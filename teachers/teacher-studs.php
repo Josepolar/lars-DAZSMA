@@ -42,8 +42,12 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
                     </li>
                     
                     <li class="nav-link">
-                        <button class="tablinks"><a href="teacher-studs.php" class="tablinks">Students</a></button>
-                    </li> 
+                        <button class="tablinks active"><a href="teacher-studs.php" class="tablinks">Students</a></button>
+                    </li>
+                    
+                    <li class="nav-link">
+                        <button class="tablinks"><a href="teacher-game-scores.php" class="tablinks">Game Scores</a></button>
+                    </li>
                     
                 </ul>
             </div>

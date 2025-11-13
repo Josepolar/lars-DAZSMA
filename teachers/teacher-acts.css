@@ -1005,6 +1005,7 @@ form {
     border-radius: 6px;
     margin-bottom: 15px;
     border: 1px solid #f5c6cb;
+    animation: slideDown 0.3s ease;
 }
 
 .success-message {
@@ -1014,6 +1015,113 @@ form {
     border-radius: 6px;
     margin-bottom: 15px;
     border: 1px solid #c3e6cb;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== Step Indicator Styles ===== */
+.step-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 30px;
+    padding: 20px 0;
+}
+
+.step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.step-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #e0e0e0;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+.step.active .step-circle {
+    background: var(--primary-color);
+    color: white;
+    box-shadow: 0 0 0 4px rgba(0, 75, 156, 0.2);
+}
+
+.step.completed .step-circle {
+    background: var(--success-color);
+    color: white;
+}
+
+.step-label {
+    font-size: 12px;
+    color: #666;
+    font-weight: 500;
+}
+
+.step.active .step-label {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.step-line {
+    width: 60px;
+    height: 3px;
+    background: #e0e0e0;
+    margin: 0 10px;
+}
+
+.step.active ~ .step-line,
+.step.completed ~ .step-line {
+    background: var(--primary-color);
+}
+
+/* ===== Enhanced Form Validation ===== */
+.form-group input.valid,
+.form-group textarea.valid,
+.form-group select.valid {
+    border-color: var(--success-color);
+    background: #f0fff4;
+}
+
+.form-group input.invalid,
+.form-group textarea.invalid,
+.form-group select.invalid {
+    border-color: var(--danger-color);
+    background: #fff5f5;
+}
+
+.validation-feedback {
+    font-size: 12px;
+    margin-top: 5px;
+    display: none;
+}
+
+.validation-feedback.valid {
+    color: var(--success-color);
+    display: block;
+}
+
+.validation-feedback.invalid {
+    color: var(--danger-color);
+    display: block;
 }
 
 /* ===== Add Questions Modal Styles ===== */

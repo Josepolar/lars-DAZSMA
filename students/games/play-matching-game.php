@@ -466,7 +466,7 @@ $session_id = $pdo->lastInsertId();
         const sessionId = <?php echo $session_id; ?>;
         const totalPairs = <?php echo count($pairs); ?>;
         const timeLimit = <?php echo $game['time_limit']; ?>;
-        const pointsPerPair = <?php echo ($game['points_per_pair'] ?? 100); ?>;
+        const pointsPerPair = <?php echo isset($game['points_per_pair']) ? $game['points_per_pair'] : 100; ?>;
         
         let timeRemaining = timeLimit;
         let placedCount = 0;
