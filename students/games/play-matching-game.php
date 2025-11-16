@@ -23,7 +23,8 @@ $query = "SELECT mg.*, s.subject_name, CONCAT(u.first_name, ' ', u.last_name) as
           FROM matching_games mg
           INNER JOIN subjects s ON mg.subject_id = s.subject_id
           INNER JOIN users u ON mg.teacher_id = u.user_id
-          WHERE mg.matching_game_id = ? AND mg.status = 'active'";
+          WHERE mg.matching_game_id = ? AND mg.status = 'active'
+          AND (mg.due_date IS NULL OR mg.due_date >= NOW())";
 $stmt = $pdo->prepare($query);
 $stmt->execute([$matching_game_id]);
 $game = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -31,6 +32,14 @@ $game = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$game) {
     header("Location: available-games.php");
     exit();
+}
+
+if (!empty($game['due_date'])) {
+    $due_date_obj = new DateTime($game['due_date']);
+    if ($due_date_obj <= new DateTime()) {
+        header("Location: available-games.php");
+        exit();
+    }
 }
 
 // Get matching pairs
@@ -395,6 +404,9 @@ $session_id = $pdo->lastInsertId();
             <div class="game-info">
                 <span class="info-item">📚 <?php echo htmlspecialchars($game['subject_name']); ?></span>
                 <span class="info-item">👨‍🏫 <?php echo htmlspecialchars($game['teacher_name']); ?></span>
+                <?php if (!empty($game['due_date'])): ?>
+                    <span class="info-item">📅 Due: <?php echo date('M d, Y g:i A', strtotime($game['due_date'])); ?></span>
+                <?php endif; ?>
                 <span class="timer" id="timer">Time: <span id="time-display"><?php echo $game['time_limit']; ?></span>s</span>
                 <span class="score-display">Score: <span id="score">0</span></span>
             </div>

@@ -329,6 +329,9 @@ $questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <h2><?php echo htmlspecialchars($game['title']); ?></h2>
             <p><strong>Subject:</strong> <?php echo htmlspecialchars($game['subject_name']); ?></p>
             <p><strong>Questions:</strong> <?php echo count($questions); ?></p>
+            <?php if (!empty($game['due_date'])): ?>
+                <p><strong>Due:</strong> <?php echo date('M d, Y g:i A', strtotime($game['due_date'])); ?></p>
+            <?php endif; ?>
         </div>
         
         <div class="add-question-form">

@@ -211,6 +211,9 @@ $question_stats = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <div class="game-header">
             <h2><?php echo htmlspecialchars($game['title']); ?></h2>
             <p><?php echo htmlspecialchars($game['subject_name']); ?></p>
+            <?php if (!empty($game['due_date'])): ?>
+                <p><strong>Due:</strong> <?php echo date('M d, Y g:i A', strtotime($game['due_date'])); ?></p>
+            <?php endif; ?>
         </div>
         
         <?php if ($stats['total_players'] > 0): ?>

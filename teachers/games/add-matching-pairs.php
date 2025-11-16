@@ -464,6 +464,11 @@ function uploadImage($file, $prefix) {
                     ?>
                 </span>
             </div>
+            <?php if (!empty($game['due_date'])): ?>
+                <div style="margin-top: 8px; color: #666; font-size: 14px;">
+                    <strong>Due:</strong> <?php echo date('M d, Y g:i A', strtotime($game['due_date'])); ?>
+                </div>
+            <?php endif; ?>
         </div>
         
         <?php if ($error): ?>

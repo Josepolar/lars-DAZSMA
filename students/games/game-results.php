@@ -14,7 +14,7 @@ $game_id = $_GET['game_id'] ?? 0;
 
 // Get session results - either by session_id or by game_id (most recent completed session)
 if ($session_id > 0) {
-    $query = "SELECT gs.*, ga.title, ga.show_leaderboard, s.subject_name
+    $query = "SELECT gs.*, ga.title, ga.show_leaderboard, ga.due_date, s.subject_name
               FROM game_sessions gs
               INNER JOIN game_activities ga ON gs.game_id = ga.game_id
               INNER JOIN subjects s ON ga.subject_id = s.subject_id
@@ -22,7 +22,7 @@ if ($session_id > 0) {
     $stmt = $pdo->prepare($query);
     $stmt->execute([$session_id, $student_id]);
 } else if ($game_id > 0) {
-    $query = "SELECT gs.*, ga.title, ga.show_leaderboard, s.subject_name
+    $query = "SELECT gs.*, ga.title, ga.show_leaderboard, ga.due_date, s.subject_name
               FROM game_sessions gs
               INNER JOIN game_activities ga ON gs.game_id = ga.game_id
               INNER JOIN subjects s ON ga.subject_id = s.subject_id
@@ -52,23 +52,82 @@ $responses_query = "SELECT
                     gq.question_text,
                     gq.time_limit,
                     gq.points,
+                    gr.response_id,
                     gr.selected_option_id,
                     gr.is_correct,
                     gr.time_taken,
+                    gr.points_earned,
                     go_selected.option_text as selected_answer,
                     go_correct.option_text as correct_answer,
                     go_correct.option_id as correct_option_id
                     FROM game_questions gq
                     LEFT JOIN game_responses gr ON gq.question_id = gr.question_id 
-                        AND gr.game_id = ? 
-                        AND gr.student_id = ?
+                        AND gr.session_id = ?
                     LEFT JOIN game_options go_selected ON gr.selected_option_id = go_selected.option_id
                     LEFT JOIN game_options go_correct ON gq.question_id = go_correct.question_id AND go_correct.is_correct = 1
                     WHERE gq.game_id = ?
                     ORDER BY gq.question_order";
 $stmt = $pdo->prepare($responses_query);
-$stmt->execute([$session['game_id'], $student_id, $session['game_id']]);
+$stmt->execute([$session['session_id'], $session['game_id']]);
 $responses = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$has_session_responses = false;
+foreach ($responses as $response) {
+    if (!empty($response['response_id'])) {
+        $has_session_responses = true;
+        break;
+    }
+}
+
+if (!$has_session_responses) {
+    $session_start = $session['started_at'] ?? null;
+    $session_end = $session['completed_at'] ?? null;
+    $fallback_query = "SELECT 
+                        gq.question_id,
+                        gq.question_text,
+                        gq.time_limit,
+                        gq.points,
+                        gr.response_id,
+                        gr.selected_option_id,
+                        gr.is_correct,
+                        gr.time_taken,
+                        gr.points_earned,
+                        go_selected.option_text as selected_answer,
+                        go_correct.option_text as correct_answer,
+                        go_correct.option_id as correct_option_id
+                        FROM game_questions gq
+                        LEFT JOIN (
+                            SELECT gr_latest.*
+                            FROM game_responses gr_latest
+                            INNER JOIN (
+                                SELECT question_id, MAX(answered_at) AS max_answered_at
+                                FROM game_responses
+                                WHERE game_id = ?
+                                  AND student_id = ?
+                                  AND (? IS NULL OR answered_at >= ?)
+                                  AND (? IS NULL OR answered_at <= ?)
+                                GROUP BY question_id
+                            ) latest ON gr_latest.question_id = latest.question_id AND gr_latest.answered_at = latest.max_answered_at
+                            WHERE gr_latest.game_id = ? AND gr_latest.student_id = ?
+                        ) gr ON gq.question_id = gr.question_id
+                        LEFT JOIN game_options go_selected ON gr.selected_option_id = go_selected.option_id
+                        LEFT JOIN game_options go_correct ON gq.question_id = go_correct.question_id AND go_correct.is_correct = 1
+                        WHERE gq.game_id = ?
+                        ORDER BY gq.question_order";
+    $stmt = $pdo->prepare($fallback_query);
+    $stmt->execute([
+        $session['game_id'],
+        $student_id,
+        $session_start,
+        $session_start,
+        $session_end,
+        $session_end,
+        $session['game_id'],
+        $student_id,
+        $session['game_id']
+    ]);
+    $responses = $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 
 // Get leaderboard if enabled
 $leaderboard = [];
@@ -629,6 +688,11 @@ if ($session['show_leaderboard']) {
             
             <div class="game-over">Game Complete!</div>
             <div class="game-title"><?php echo htmlspecialchars($session['title']); ?></div>
+            <?php if (!empty($session['due_date'])): ?>
+                <div style="color: #888; margin-bottom: 20px; font-size: 15px;">
+                    Due: <?php echo date('M d, Y g:i A', strtotime($session['due_date'])); ?>
+                </div>
+            <?php endif; ?>
             
             <div class="score-display">
                 <div class="score-label">Your Score</div>
@@ -695,8 +759,12 @@ if ($session['show_leaderboard']) {
         <?php if (count($responses) > 0): ?>
             <div class="review-card">
                 <div class="review-title">📝 Answer Review</div>
-                <?php foreach ($responses as $index => $response): ?>
-                    <div class="review-item <?php echo $response['is_correct'] ? 'correct' : 'incorrect'; ?>">
+                <?php foreach ($responses as $index => $response): 
+                    $answered = !empty($response['response_id']);
+                    $is_correct = $answered && (bool) $response['is_correct'];
+                    $earned_points = $answered ? (int) ($response['points_earned'] ?? 0) : 0;
+                ?>
+                    <div class="review-item <?php echo $is_correct ? 'correct' : 'incorrect'; ?>">
                         <div class="question-number">Question <?php echo $index + 1; ?></div>
                         <div class="question-text"><?php echo htmlspecialchars($response['question_text']); ?></div>
                         
@@ -704,16 +772,16 @@ if ($session['show_leaderboard']) {
                             <div class="your-answer">
                                 <span class="answer-label">Your Answer:</span>
                                 <span class="answer-value">
-                                    <?php if ($response['is_correct']): ?>
-                                        ✓
+                                    <?php if ($answered): ?>
+                                        <?php echo $is_correct ? '✓' : '✗'; ?>
+                                        <?php echo htmlspecialchars($response['selected_answer']); ?>
                                     <?php else: ?>
-                                        ✗
+                                        — No answer submitted
                                     <?php endif; ?>
-                                    <?php echo htmlspecialchars($response['selected_answer']); ?>
                                 </span>
                             </div>
                             
-                            <?php if (!$response['is_correct']): ?>
+                            <?php if (!$is_correct && !empty($response['correct_answer'])): ?>
                                 <div class="correct-answer">
                                     <span class="answer-label">Correct Answer:</span>
                                     <span class="answer-value">
@@ -723,7 +791,7 @@ if ($session['show_leaderboard']) {
                             <?php endif; ?>
                             
                             <div class="points-earned">
-                                <?php echo $response['is_correct'] ? '+' . $response['points'] : '0'; ?> pts
+                                <?php echo $answered ? '+' . $earned_points : '0'; ?> pts
                             </div>
                         </div>
                     </div>

@@ -11,6 +11,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role_id'] != 3) {
 $teacher_id = $_SESSION['user_id'];
 $error = '';
 $success = '';
+$due_date_input = date('Y-m-d\TH:i', strtotime('+7 days'));
 
 // Get teacher's subjects
 $query = "SELECT DISTINCT s.subject_id, s.subject_name 
@@ -29,13 +30,35 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $time_limit = $_POST['time_limit'];
     $show_leaderboard = isset($_POST['show_leaderboard']) ? 1 : 0;
     $game_type = $_POST['game_type'] ?? 'quiz'; // quiz or matching
+    $due_date_input = $_POST['due_date'] ?? $due_date_input;
+    $due_date = null;
+    $due_date_error = false;
+    
+    if (empty($due_date_input)) {
+        $error = 'Please set a due date and time for the game';
+        $due_date_error = true;
+    } else {
+        $due_date_obj = DateTime::createFromFormat('Y-m-d\TH:i', $due_date_input);
+        if (!$due_date_obj) {
+            $error = 'Invalid due date format. Please use the picker provided.';
+            $due_date_error = true;
+        } else {
+            $now = new DateTime();
+            if ($due_date_obj <= $now) {
+                $error = 'Due date must be set in the future.';
+                $due_date_error = true;
+            } else {
+                $due_date = $due_date_obj->format('Y-m-d H:i:s');
+            }
+        }
+    }
     
     // Validation
     if (empty($title)) {
         $error = 'Game title is required';
     } elseif (empty($subject_id)) {
         $error = 'Please select a subject';
-    } else {
+    } elseif (!$due_date_error) {
         // Verify teacher teaches this subject
         $verify = "SELECT 1 FROM teacher_subjects WHERE teacher_id = ? AND subject_id = ?";
         $stmt = $pdo->prepare($verify);
@@ -44,15 +67,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if ($stmt->fetch()) {
             if ($game_type == 'matching') {
                 // Redirect to create matching game
-                header("Location: create-matching-game.php?subject_id=$subject_id&title=" . urlencode($title) . 
-                       "&description=" . urlencode($description) . "&time_limit=$time_limit&show_leaderboard=$show_leaderboard");
+                $redirect_url = "create-matching-game.php?subject_id=$subject_id";
+                $redirect_url .= "&title=" . urlencode($title);
+                $redirect_url .= "&description=" . urlencode($description);
+                $redirect_url .= "&time_limit=$time_limit";
+                $redirect_url .= "&show_leaderboard=$show_leaderboard";
+                $redirect_url .= "&due_date=" . urlencode($due_date_input);
+                header("Location: $redirect_url");
                 exit();
             } else {
                 // Create quiz game (existing functionality)
-                $query = "INSERT INTO game_activities (subject_id, teacher_id, title, description, time_limit, show_leaderboard) 
-                          VALUES (?, ?, ?, ?, ?, ?)";
+                $query = "INSERT INTO game_activities (subject_id, teacher_id, title, description, time_limit, show_leaderboard, due_date) 
+                          VALUES (?, ?, ?, ?, ?, ?, ?)";
                 $stmt = $pdo->prepare($query);
-                $stmt->execute([$subject_id, $teacher_id, $title, $description, $time_limit, $show_leaderboard]);
+                $stmt->execute([$subject_id, $teacher_id, $title, $description, $time_limit, $show_leaderboard, $due_date]);
                 
                 $game_id = $pdo->lastInsertId();
                 header("Location: add-questions.php?game_id=" . $game_id);
@@ -298,6 +326,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                value="<?php echo isset($_POST['time_limit']) ? $_POST['time_limit'] : 30; ?>" required>
                         <div class="help-text">Recommended: 20-60 seconds</div>
                     </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="due_date">Due Date &amp; Time *</label>
+                    <input type="datetime-local" id="due_date" name="due_date" required
+                           min="<?php echo date('Y-m-d\TH:i'); ?>"
+                           value="<?php echo htmlspecialchars($due_date_input); ?>">
+                    <div class="help-text">Students can only launch this game before the due date.</div>
                 </div>
                 
                 <div class="form-group">

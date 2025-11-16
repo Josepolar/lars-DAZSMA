@@ -23,6 +23,7 @@ $student_grade = $student['grade_level'];
 // Get games from subjects matching student's grade level (both quiz and matching games)
 $query = "SELECT ga.game_id, ga.title, ga.description, ga.time_limit, ga.show_leaderboard, 
           ga.status, ga.created_at, ga.updated_at, ga.teacher_id, ga.subject_id,
+          ga.due_date,
           s.subject_name, s.grade_level as subject_grade, 
           CONCAT(u.first_name, ' ', u.last_name) as teacher_name,
           'quiz' as game_type_flag,
@@ -34,6 +35,7 @@ $query = "SELECT ga.game_id, ga.title, ga.description, ga.time_limit, ga.show_le
           INNER JOIN users u ON ga.teacher_id = u.user_id
           WHERE s.grade_level = ? 
           AND ga.status = 'active'
+          AND (ga.due_date IS NULL OR ga.due_date >= NOW())
           AND NOT EXISTS (
               SELECT 1 FROM game_sessions gs 
               WHERE gs.game_id = ga.game_id 
@@ -41,9 +43,10 @@ $query = "SELECT ga.game_id, ga.title, ga.description, ga.time_limit, ga.show_le
               AND gs.completed_at IS NOT NULL
           )
           UNION ALL
-          SELECT mg.matching_game_id as game_id, mg.title, mg.description, mg.time_limit, 
-                 mg.show_leaderboard, mg.status, mg.created_at, mg.updated_at, 
-                 mg.teacher_id, mg.subject_id,
+           SELECT mg.matching_game_id as game_id, mg.title, mg.description, mg.time_limit, 
+               mg.show_leaderboard, mg.status, mg.created_at, mg.updated_at, 
+               mg.teacher_id, mg.subject_id,
+               mg.due_date,
                  s.subject_name, s.grade_level as subject_grade, 
                  CONCAT(u.first_name, ' ', u.last_name) as teacher_name,
                  'matching' as game_type_flag,
@@ -55,6 +58,7 @@ $query = "SELECT ga.game_id, ga.title, ga.description, ga.time_limit, ga.show_le
           INNER JOIN users u ON mg.teacher_id = u.user_id
           WHERE s.grade_level = ? 
           AND mg.status = 'active'
+          AND (mg.due_date IS NULL OR mg.due_date >= NOW())
           AND NOT EXISTS (
               SELECT 1 FROM matching_sessions ms 
               WHERE ms.matching_game_id = mg.matching_game_id 
@@ -174,6 +178,29 @@ $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
             font-weight: bold;
             display: inline-block;
             margin-bottom: 15px;
+        }
+        
+        .due-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #e9f5ff;
+            color: #0b5ed7;
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        
+        .due-badge.overdue {
+            background: #fde2e1;
+            color: #b02a37;
+        }
+        
+        .due-badge.soon {
+            background: #fff4cc;
+            color: #946200;
         }
         
         .best-score {
@@ -440,6 +467,31 @@ $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             }
                             ?>
                         </div>
+                        <?php
+                            $due_badge_text = '';
+                            $due_badge_class = 'due-badge';
+                            if (!empty($game['due_date'])) {
+                                $due_ts = strtotime($game['due_date']);
+                                $now_ts = time();
+                                if ($due_ts !== false) {
+                                    $formatted_due = date('M d, Y g:i A', $due_ts);
+                                    if ($due_ts < $now_ts) {
+                                        $due_badge_class .= ' overdue';
+                                        $due_badge_text = 'Past Due • ' . $formatted_due;
+                                    } elseif (($due_ts - $now_ts) <= 86400) {
+                                        $due_badge_class .= ' soon';
+                                        $due_badge_text = 'Due Soon • ' . $formatted_due;
+                                    } else {
+                                        $due_badge_text = 'Due • ' . $formatted_due;
+                                    }
+                                }
+                            }
+                        ?>
+                        <?php if (!empty($due_badge_text)): ?>
+                            <div class="<?php echo $due_badge_class; ?>">
+                                ⏰ <?php echo htmlspecialchars($due_badge_text); ?>
+                            </div>
+                        <?php endif; ?>
                         
                         <div class="game-meta">
                             <span class="meta-item">📚 <?php echo htmlspecialchars($game['subject_name']); ?></span>

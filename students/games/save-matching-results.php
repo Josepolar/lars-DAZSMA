@@ -30,7 +30,7 @@ $responses = isset($data['responses']) ? $data['responses'] : [];
 try {
     // Verify session belongs to this student and get game info
     $verify = $pdo->prepare("
-        SELECT ms.*, mg.matching_game_id, mg.title
+        SELECT ms.*, mg.matching_game_id, mg.title, mg.due_date
         FROM matching_sessions ms
         JOIN matching_games mg ON ms.matching_game_id = mg.matching_game_id
         WHERE ms.session_id = ? AND ms.student_id = ?
@@ -41,6 +41,14 @@ try {
     if (!$session) {
         echo json_encode(['success' => false, 'error' => 'Invalid session']);
         exit();
+    }
+    
+    if (!empty($session['due_date'])) {
+        $due_date_obj = new DateTime($session['due_date']);
+        if ($due_date_obj <= new DateTime()) {
+            echo json_encode(['success' => false, 'error' => 'This matching game is already past due.']);
+            exit();
+        }
     }
     
     // Try to get points_per_pair, use default if column doesn't exist

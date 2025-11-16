@@ -24,7 +24,8 @@ $query = "SELECT ga.*, s.subject_name, CONCAT(u.first_name, ' ', u.last_name) as
           FROM game_activities ga
           INNER JOIN subjects s ON ga.subject_id = s.subject_id
           INNER JOIN users u ON ga.teacher_id = u.user_id
-          WHERE ga.game_id = ? AND s.grade_level = ? AND ga.status = 'active'";
+          WHERE ga.game_id = ? AND s.grade_level = ? AND ga.status = 'active'
+          AND (ga.due_date IS NULL OR ga.due_date >= NOW())";
 $stmt = $pdo->prepare($query);
 $stmt->execute([$game_id, $student_grade]);
 $game = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -32,6 +33,14 @@ $game = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$game) {
     header("Location: available-games.php");
     exit();
+}
+
+if (!empty($game['due_date'])) {
+    $due_date_obj = new DateTime($game['due_date']);
+    if ($due_date_obj <= new DateTime()) {
+        header("Location: available-games.php");
+        exit();
+    }
 }
 
 // Create new game session
@@ -519,6 +528,14 @@ $session_id = $pdo->lastInsertId();
                 <span>Score:</span>
                 <span id="current-score">0</span>
             </div>
+            <?php if (!empty($game['due_date'])): ?>
+                <div class="stat-item" style="flex-direction: column; align-items: flex-start;">
+                    <span>Due:</span>
+                    <span id="due-date-label" style="font-size: 14px; color: #555;">
+                        <?php echo date('M d, Y g:i A', strtotime($game['due_date'])); ?>
+                    </span>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
     
@@ -629,27 +646,41 @@ $session_id = $pdo->lastInsertId();
                     btn.disabled = true;
                 });
                 
-                // Submit answer
-                const formData = new FormData();
-                formData.append('game_id', this.gameId);
-                formData.append('session_id', this.sessionId);
-                formData.append('question_id', questionId);
-                formData.append('option_id', optionId);
-                formData.append('time_taken', timeTaken);
-                
-                const response = await fetch('../../api/games/submit-answer.php', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const result = await response.json();
-                
-                // Show result
-                this.showResult(result.is_correct, result.points_earned);
-                
-                if (result.is_correct) {
-                    this.currentScore += result.points_earned;
-                    document.getElementById('current-score').textContent = this.currentScore;
+                try {
+                    // Submit answer
+                    const formData = new FormData();
+                    formData.append('game_id', this.gameId);
+                    formData.append('session_id', this.sessionId);
+                    formData.append('question_id', questionId);
+                    formData.append('option_id', optionId);
+                    formData.append('time_taken', timeTaken);
+                    
+                    const response = await fetch('../../api/games/submit-answer.php', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    if (!response.ok) {
+                        throw new Error('Server responded with an error');
+                    }
+                    const result = await response.json();
+                    
+                    if (!result.success) {
+                        alert(result.error || 'Unable to record your answer. Please try the next question.');
+                        this.loadQuestion(this.currentQuestionIndex + 1);
+                        return;
+                    }
+                    
+                    // Show result
+                    this.showResult(result.is_correct, result.points_earned);
+                    
+                    if (result.is_correct) {
+                        this.currentScore += result.points_earned;
+                        document.getElementById('current-score').textContent = this.currentScore;
+                    }
+                } catch (error) {
+                    console.error('Failed to submit answer', error);
+                    alert('We could not save your answer due to a network issue. Moving to the next question.');
+                    this.loadQuestion(this.currentQuestionIndex + 1);
                 }
             },
             

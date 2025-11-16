@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 13, 2025 at 01:56 PM
+-- Generation Time: Nov 16, 2025 at 04:23 AM
 -- Server version: 11.7.2-MariaDB
 -- PHP Version: 8.4.14
 
@@ -121,6 +121,7 @@ CREATE TABLE `game_activities` (
   `description` text DEFAULT NULL,
   `time_limit` int(11) DEFAULT 30,
   `show_leaderboard` tinyint(1) DEFAULT 1,
+  `due_date` datetime DEFAULT NULL,
   `status` enum('draft','active','completed','archived') DEFAULT 'draft',
   `created_at` timestamp NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
@@ -168,6 +169,7 @@ CREATE TABLE `game_responses` (
   `response_id` int(11) NOT NULL,
   `game_id` int(11) NOT NULL,
   `student_id` int(11) NOT NULL,
+  `session_id` int(11) DEFAULT NULL,
   `question_id` int(11) NOT NULL,
   `selected_option_id` int(11) DEFAULT NULL,
   `is_correct` tinyint(1) DEFAULT NULL,
@@ -209,6 +211,7 @@ CREATE TABLE `matching_games` (
   `time_limit` int(11) DEFAULT 300,
   `points_per_pair` int(11) DEFAULT 100,
   `show_leaderboard` tinyint(1) DEFAULT 1,
+  `due_date` datetime DEFAULT NULL,
   `status` enum('draft','active','completed','archived') DEFAULT 'draft',
   `created_at` timestamp NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
@@ -218,8 +221,8 @@ CREATE TABLE `matching_games` (
 -- Dumping data for table `matching_games`
 --
 
-INSERT INTO `matching_games` (`matching_game_id`, `subject_id`, `teacher_id`, `title`, `description`, `game_type`, `time_limit`, `points_per_pair`, `show_leaderboard`, `status`, `created_at`, `updated_at`) VALUES
-(1, 1, 62, 'Sample Fill game', 'ss', 'image-to-text', 60, 100, 1, 'active', '2025-11-13 12:22:42', '2025-11-13 12:33:13');
+INSERT INTO `matching_games` (`matching_game_id`, `subject_id`, `teacher_id`, `title`, `description`, `game_type`, `time_limit`, `points_per_pair`, `show_leaderboard`, `due_date`, `status`, `created_at`, `updated_at`) VALUES
+(1, 1, 62, 'Sample Fill game', 'ss', 'image-to-text', 60, 100, 1, NULL, 'active', '2025-11-13 12:22:42', '2025-11-13 12:33:13');
 
 -- --------------------------------------------------------
 
@@ -750,7 +753,8 @@ INSERT INTO `user_logs` (`log_id`, `user_id`, `action`, `affected_user_id`, `act
 (255, 60, 'Logout', NULL, '2025-11-13 12:38:11', '::1'),
 (256, 21, 'Login', NULL, '2025-11-13 12:38:25', '::1'),
 (257, 62, 'Login', NULL, '2025-11-13 12:39:35', NULL),
-(258, 22, 'Login', NULL, '2025-11-13 12:54:53', '::1');
+(258, 22, 'Login', NULL, '2025-11-13 12:54:53', '::1'),
+(259, 62, 'Login', NULL, '2025-11-16 03:00:39', NULL);
 
 -- --------------------------------------------------------
 
@@ -907,6 +911,7 @@ ALTER TABLE `game_questions`
 --
 ALTER TABLE `game_responses`
   ADD PRIMARY KEY (`response_id`),
+  ADD UNIQUE KEY `ux_game_responses_session_question` (`session_id`,`question_id`),
   ADD KEY `question_id` (`question_id`),
   ADD KEY `selected_option_id` (`selected_option_id`),
   ADD KEY `idx_game_responses_student` (`student_id`),
@@ -1167,7 +1172,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `user_logs`
 --
 ALTER TABLE `user_logs`
-  MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=259;
+  MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=260;
 
 -- --------------------------------------------------------
 
@@ -1258,6 +1263,7 @@ ALTER TABLE `game_questions`
 -- Constraints for table `game_responses`
 --
 ALTER TABLE `game_responses`
+  ADD CONSTRAINT `fk_game_responses_session` FOREIGN KEY (`session_id`) REFERENCES `game_sessions` (`session_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `game_responses_ibfk_1` FOREIGN KEY (`game_id`) REFERENCES `game_activities` (`game_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `game_responses_ibfk_2` FOREIGN KEY (`student_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `game_responses_ibfk_3` FOREIGN KEY (`question_id`) REFERENCES `game_questions` (`question_id`) ON DELETE CASCADE,

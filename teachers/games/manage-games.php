@@ -47,8 +47,9 @@ if (isset($_GET['change_status']) && isset($_GET['game_id']) && isset($_GET['gam
 
 // Get all games created by this teacher (both quiz and matching games)
 $query = "SELECT ga.game_id, ga.title, ga.description, ga.time_limit, ga.show_leaderboard, 
-          ga.status, ga.created_at, ga.updated_at, ga.teacher_id, ga.subject_id,
-          s.subject_name, 'quiz' as game_type_flag,
+       ga.status, ga.created_at, ga.updated_at, ga.teacher_id, ga.subject_id,
+       ga.due_date,
+       s.subject_name, 'quiz' as game_type_flag,
           (SELECT COUNT(*) FROM game_questions WHERE game_id = ga.game_id) as question_count,
           (SELECT COUNT(DISTINCT student_id) FROM game_sessions WHERE game_id = ga.game_id) as player_count
           FROM game_activities ga
@@ -56,8 +57,9 @@ $query = "SELECT ga.game_id, ga.title, ga.description, ga.time_limit, ga.show_le
           WHERE ga.teacher_id = ?
           UNION ALL
           SELECT mg.matching_game_id as game_id, mg.title, mg.description, 
-                 mg.time_limit, mg.show_leaderboard, mg.status, mg.created_at, 
-                 mg.updated_at, mg.teacher_id, mg.subject_id,
+           mg.time_limit, mg.show_leaderboard, mg.status, mg.created_at, 
+           mg.updated_at, mg.teacher_id, mg.subject_id,
+           mg.due_date,
                  s.subject_name, 'matching' as game_type_flag,
           (SELECT COUNT(*) FROM matching_pairs WHERE matching_game_id = mg.matching_game_id) as question_count,
           (SELECT COUNT(DISTINCT student_id) FROM matching_sessions WHERE matching_game_id = mg.matching_game_id) as player_count
@@ -151,6 +153,27 @@ $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
             font-size: 12px;
             font-weight: bold;
             margin-bottom: 15px;
+        }
+        
+        .due-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 14px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #e9f5ff;
+            color: #0b5ed7;
+            margin-bottom: 10px;
+        }
+        
+        .due-badge.overdue {
+            background: #fde2e1;
+            color: #b02a37;
+        }
+        
+        .due-badge.soon {
+            background: #fff4cc;
+            color: #b07900;
         }
         
         .status-draft {
@@ -280,6 +303,30 @@ $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <span class="status-badge status-<?php echo $game['status']; ?>">
                             <?php echo strtoupper($game['status']); ?>
                         </span>
+
+                        <?php
+                            $due_badge_text = '';
+                            $due_badge_class = 'due-badge';
+                            if (!empty($game['due_date'])) {
+                                $due_ts = strtotime($game['due_date']);
+                                $now_ts = time();
+                                if ($due_ts !== false) {
+                                    $formatted_due = date('M d, Y g:i A', $due_ts);
+                                    if ($due_ts < $now_ts) {
+                                        $due_badge_class .= ' overdue';
+                                        $due_badge_text = 'Past Due • ' . $formatted_due;
+                                    } elseif (($due_ts - $now_ts) <= 86400) {
+                                        $due_badge_class .= ' soon';
+                                        $due_badge_text = 'Due Soon • ' . $formatted_due;
+                                    } else {
+                                        $due_badge_text = 'Due • ' . $formatted_due;
+                                    }
+                                }
+                            }
+                        ?>
+                        <?php if (!empty($due_badge_text)): ?>
+                            <span class="<?php echo $due_badge_class; ?>"><?php echo htmlspecialchars($due_badge_text); ?></span>
+                        <?php endif; ?>
                         
                         <div class="game-description">
                             <?php echo htmlspecialchars($game['description'] ?: 'No description'); ?>

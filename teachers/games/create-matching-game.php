@@ -11,6 +11,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role_id'] != 3) {
 $teacher_id = $_SESSION['user_id'];
 $error = '';
 $success = '';
+$default_due_date = date('Y-m-d\TH:i', strtotime('+7 days'));
 
 // Get teacher's subjects
 $query = "SELECT DISTINCT s.subject_id, s.subject_name 
@@ -28,7 +29,8 @@ $prefill = [
     'description' => $_GET['description'] ?? '',
     'subject_id' => $_GET['subject_id'] ?? '',
     'time_limit' => $_GET['time_limit'] ?? 300,
-    'show_leaderboard' => $_GET['show_leaderboard'] ?? 1
+    'show_leaderboard' => $_GET['show_leaderboard'] ?? 1,
+    'due_date' => $_GET['due_date'] ?? $default_due_date
 ];
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -38,6 +40,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $game_type = $_POST['game_type'];
     $time_limit = $_POST['time_limit'];
     $show_leaderboard = isset($_POST['show_leaderboard']) ? 1 : 0;
+    $due_date_input = $_POST['due_date'] ?? $prefill['due_date'];
+    $due_date = null;
+    $due_date_error = false;
+    
+    if (empty($due_date_input)) {
+        $error = 'Please set a due date and time for the matching game';
+        $due_date_error = true;
+    } else {
+        $due_date_obj = DateTime::createFromFormat('Y-m-d\TH:i', $due_date_input);
+        if (!$due_date_obj) {
+            $error = 'Invalid due date format. Please use the picker provided.';
+            $due_date_error = true;
+        } else {
+            $now = new DateTime();
+            if ($due_date_obj <= $now) {
+                $error = 'Due date must be set in the future.';
+                $due_date_error = true;
+            } else {
+                $due_date = $due_date_obj->format('Y-m-d H:i:s');
+            }
+        }
+    }
     
     // Validation
     if (empty($title)) {
@@ -46,17 +70,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $error = 'Please select a subject';
     } elseif (empty($game_type)) {
         $error = 'Please select a matching game type';
-    } else {
+    } elseif (!$due_date_error) {
         // Verify teacher teaches this subject
         $verify = "SELECT 1 FROM teacher_subjects WHERE teacher_id = ? AND subject_id = ?";
         $stmt = $pdo->prepare($verify);
         $stmt->execute([$teacher_id, $subject_id]);
         
         if ($stmt->fetch()) {
-            $query = "INSERT INTO matching_games (subject_id, teacher_id, title, description, game_type, time_limit, show_leaderboard) 
-                      VALUES (?, ?, ?, ?, ?, ?, ?)";
+            $query = "INSERT INTO matching_games (subject_id, teacher_id, title, description, game_type, time_limit, show_leaderboard, due_date) 
+                      VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt = $pdo->prepare($query);
-            $stmt->execute([$subject_id, $teacher_id, $title, $description, $game_type, $time_limit, $show_leaderboard]);
+            $stmt->execute([$subject_id, $teacher_id, $title, $description, $game_type, $time_limit, $show_leaderboard, $due_date]);
             
             $matching_game_id = $pdo->lastInsertId();
             header("Location: add-matching-pairs.php?matching_game_id=" . $matching_game_id);
@@ -319,6 +343,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                value="<?php echo isset($_POST['time_limit']) ? $_POST['time_limit'] : $prefill['time_limit']; ?>" required>
                         <div class="help-text">Recommended: 180-600 seconds (3-10 min)</div>
                     </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="due_date">Due Date &amp; Time *</label>
+                    <input type="datetime-local" id="due_date" name="due_date" required
+                           min="<?php echo date('Y-m-d\TH:i'); ?>"
+                           value="<?php echo isset($_POST['due_date']) ? htmlspecialchars($_POST['due_date']) : htmlspecialchars($prefill['due_date']); ?>">
+                    <div class="help-text">Students can only start this matching game before the due date.</div>
                 </div>
                 
                 <div class="form-group">
