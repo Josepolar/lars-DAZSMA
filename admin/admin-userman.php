@@ -205,28 +205,6 @@ $teachers = $result->fetchAll(PDO::FETCH_ASSOC);
         <div class="table-container">
 
 
- <div class="table_responsive">
-    <table>
-        <tr>
-            <th>
-                <div class="th-content">
-                    <span>STAFF</span>
-                    <button class="table-btn" onclick="openModal('staffModal')">ADD STAFF</button>
-                </div>
-            </th>
-            <th>
-                <div class="th-content">
-                    <span>TEACHERS</span>
-                    <button class="table-btn" onclick="openModal('teachersModal')">ADD TEACHERS</button>
-                </div>
-            </th>
-        </tr>
-    </table>
-</div>
-
-
-
-
 
 <!-- Staff Modal -->
 <div id="staffModal" class="modal">
@@ -367,14 +345,14 @@ $teachers = $result->fetchAll(PDO::FETCH_ASSOC);
 
 
 
-                <div class="table_creds">
-    <div class="table_credss"> 
-        <table>
-            <tr>
-                <!-- First main column -->
-                <th>
-                    <div class="th-content">
-                        <table class="inner-table">
+                <!-- Staff Credentials Section -->
+                <div class="table-section">
+                    <div class="section-header">
+                        <h3>STAFF</h3>
+                        <button class="table-btn" onclick="openModal('staffModal')">ADD STAFF</button>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="credentials-table">
                             <thead>
                                 <tr>
                                     <th>Firstname</th>
@@ -407,12 +385,16 @@ $teachers = $result->fetchAll(PDO::FETCH_ASSOC);
                             </tbody>
                         </table>
                     </div>
-                </th>
+                </div>
 
-                <!-- Second main column -->
-                <th>
-                    <div class="th-content">
-                        <table class="inner-table">
+                <!-- Teachers Credentials Section -->
+                <div class="table-section">
+                    <div class="section-header">
+                        <h3>TEACHERS</h3>
+                        <button class="table-btn" onclick="openModal('teachersModal')">ADD TEACHERS</button>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="credentials-table">
                             <thead>
                                 <tr>
                                     <th>Firstname</th>
@@ -445,11 +427,7 @@ $teachers = $result->fetchAll(PDO::FETCH_ASSOC);
                             </tbody>
                         </table>
                     </div>
-                </th>
-            </tr>
-        </table>
-    </div>
-</div>
+                </div>
                 
 
 

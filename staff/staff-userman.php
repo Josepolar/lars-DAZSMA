@@ -472,7 +472,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
     <!-- Teachers Table -->
     <div class="table_responsive" style="flex: 1; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
         <div class="controls">
-            <h3 style="cursor: pointer;" onclick="openModal('teacherTableModal')">Registered Teachers (<?= $teacherCount ?>)</h3>
+            <h3 style="cursor: pointer;" onclick="openModal('teacherTableModal')">Teachers (<?= $teacherCount ?>)</h3>
             <button class="stat-btn" onclick="openModal('teacherModal')">ADD TEACHER</button>
         </div>
         <table class="teacher-table">
@@ -511,7 +511,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
                               </div></td>";
                         echo "<td style='white-space: nowrap;'>
                                 <button onclick=\"openEditModal('teacher', {$row['user_id']})\" class='action-btn edit-btn'>Edit</button>
-                                <button onclick=\"if(confirm('Are you sure you want to delete this teacher?')) deleteUser('teacher', {$row['user_id']})\" class='action-btn delete-btn'>Delete</button>
+                                <!-- <button onclick=\"if(confirm('Are you sure you want to delete this teacher?')) deleteUser('teacher', {$row['user_id']})\" class='action-btn delete-btn'>Delete</button> -->
                               </td>";
                         echo "</tr>";
                     }
@@ -527,7 +527,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
  <!-- Students Table -->
     <div class="table_responsive" style="flex: 1; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
         <div class="controls">
-            <h3 style="cursor: pointer;" onclick="openModal('studentTableModal')">Registered Students (<?= $studentCount ?>)</h3>
+            <h3 style="cursor: pointer;" onclick="openModal('studentTableModal')">Students (<?= $studentCount ?>)</h3>
             <button class="stat-btn" onclick="openModal('studentModal')">ADD STUDENT</button>
         </div>
         <div class="grade-filters">
@@ -570,7 +570,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
                               </div></td>";
                         echo "<td style='white-space: nowrap;'>
                                 <button onclick=\"openEditModal('student', {$row['user_id']})\" class='action-btn edit-btn'>Edit</button>
-                                <button onclick=\"if(confirm('Are you sure you want to delete this student?')) deleteUser('student', {$row['user_id']})\" class='action-btn delete-btn'>Delete</button>
+                               <!-- <button onclick=\"if(confirm('Are you sure you want to delete this student?')) deleteUser('student', {$row['user_id']})\" class='action-btn delete-btn'>Delete</button> -->
                               </td>";
                         echo "</tr>";
                     }

@@ -341,60 +341,90 @@ hr {
 }
 
 .table-container {
-    display: flex; /* Use flexbox for the stat item */
-    color: black;
-    justify-content: space-between; /* Space content between the text and icon */
-    position: relative;
-    flex-wrap: wrap;
-    align-items: center; /* Center items vertically */
-    background-color: #fff; /* Background color for each stat */
-    border-radius: 8px; /* Rounded corners */
-    padding: 10px; /* Padding for inner spacing */
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); /* Shadow effect */
-    transition: background 0.5s ease; /* Smooth transition for background color */
-    margin: 0 auto; /* Margin between each stat */
-    margin-bottom: 20px;
-    position: relative;
-    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    padding: 20px;
+    margin: 0 auto;
     width: 90%;
     box-sizing: border-box;
 }
 
-.table_creds {
-    padding-left: 15px;
-    padding-bottom: 15px;
+/* Individual table section styling */
+.table-section {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: box-shadow 0.3s ease;
 }
 
-.table_creds table {
+.table-section:hover {
+    box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.15);
+}
+
+/* Section header with title and button */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.section-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+}
+
+/* Table wrapper for scrolling on mobile */
+.table-wrapper {
+    overflow-x: auto;
+}
+
+/* Credentials table styling */
+.credentials-table {
+    width: 100%;
     border-collapse: collapse;
     text-align: center;
 }
 
-.table_creds th, 
-.table_creds td {
-    border-left: 1px solid #9c9c9c;
-    border-right: 1px solid #9c9c9c;
-    border-bottom: 1px solid #9c9c9c;
-    padding: 10px;
+.credentials-table thead {
+    background-color: #004b9c;
+    color: white;
 }
 
-/* Remove borders for inner tables */
-.inner-table th, 
-.inner-table td {
-    border: none; 
-    padding: 10px;
-}
-
-.table_creds th:not(:last-child),
-.table_creds td:not(:last-child){
-    border-right: 1px solid #ccc;
-}
-
-/* Add bottom border only for header row */
-.inner-table thead th {
-    border-bottom: 1px solid #9c9c9c; /* adjust thickness & color */
-    padding: 10px;
+.credentials-table thead th {
+    padding: 12px;
+    font-weight: 600;
+    border: none;
     text-align: center;
+}
+
+.credentials-table tbody tr {
+    border-bottom: 1px solid #e9ecef;
+    transition: background-color 0.2s ease;
+}
+
+.credentials-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.credentials-table tbody td {
+    padding: 12px;
+    color: #333;
+    border: none;
+}
+
+.credentials-table tbody td:nth-child(4) {
+    width: 150px;
+}
+
+.credentials-table tbody td:last-child {
+    width: 140px;
 }
 /* Action buttons */
 .btn {
@@ -504,4 +534,44 @@ hr {
 
 .create-btn:hover {
     background: #218838;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .table-container {
+        padding: 10px;
+        width: 98%;
+    }
+    
+    .table-section {
+        border-radius: 6px;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+    
+    .section-header h3 {
+        width: 100%;
+    }
+    
+    .table-btn {
+        width: 100%;
+    }
+    
+    .credentials-table {
+        font-size: 12px;
+    }
+    
+    .credentials-table thead th,
+    .credentials-table tbody td {
+        padding: 8px 4px;
+    }
+    
+    .btn {
+        padding: 4px 8px;
+        font-size: 12px;
+    }
 }
