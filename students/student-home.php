@@ -110,6 +110,7 @@ if ($userStats && $userStats['total_available_activities'] > 0) {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="icon" type="image/png" href="../assets/tablogo.png">
         <title>Student Dashboard - LARS</title>
         <link rel="stylesheet" href="student-home.css?v=<?php echo time(); ?>">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">

@@ -130,14 +130,14 @@ async function showLogs(date) {
         if (logs.length === 0) {
             tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No logs found for this date</td></tr>';
         } else {
-            // Add logs to table
+            // Add logs to table (add data-label attributes for responsive display)
             logs.forEach(log => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${log.user_name}</td>
-                    <td>${log.role}</td>
-                    <td>${log.action}</td>
-                    <td>${log.time}</td>
+                    <td data-label="User">${log.user_name}</td>
+                    <td data-label="Role">${log.role}</td>
+                    <td data-label="Action">${log.action}</td>
+                    <td data-label="Time">${log.time}</td>
                 `;
                 tbody.appendChild(row);
             });

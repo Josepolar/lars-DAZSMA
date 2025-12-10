@@ -16,6 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="assets/tablogo.png">
     <title>Admin Login</title>
     <style>
         body { font-family: Arial, sans-serif; background: #f4f4f4; }

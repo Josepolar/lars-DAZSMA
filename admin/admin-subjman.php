@@ -58,7 +58,9 @@ $subjects = $pdo->query($query)->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="../assets/tablogo.png">
     <link rel="stylesheet" href="admin-subjman.css">
+    <link rel="stylesheet" href="../assets/css/responsive.css?v=<?php echo time(); ?>">
     <title>Admin Dashboard</title>
 </head>
 <body>
@@ -151,8 +153,9 @@ $subjects = $pdo->query($query)->fetchAll(PDO::FETCH_ASSOC);
     </div>
 
             
-             <div class="table_responsive">
-    <table>
+                <div class="table_responsive">
+            <div class="table-wrapper">
+            <table>
         <thead>
             <tr>
                 <th>Subject Name</th>
@@ -166,13 +169,13 @@ $subjects = $pdo->query($query)->fetchAll(PDO::FETCH_ASSOC);
             if ($subjects) {
                 foreach ($subjects as $row) {
                     echo "<tr>";
-                    echo "<td>" . htmlspecialchars($row['subject_name']) . "</td>";
-                    echo "<td>Grade " . htmlspecialchars($row['grade_level']) . "</td>";
-                    echo "<td>" . ($row['teachers'] ? htmlspecialchars($row['teachers']) : 'No teacher assigned') . "</td>";
-                    echo "<td>
-                            <button class='edit-btn' onclick=\"editSubject(" . $row['subject_id'] . ", '" . htmlspecialchars($row['subject_name']) . "', '" . htmlspecialchars($row['grade_level']) . "')\">Edit</button>
-                            <button class='delete-btn' onclick=\"deleteSubject(" . $row['subject_id'] . ")\">Delete</button>
-                          </td>";
+                                        echo "<td data-label='Subject Name'>" . htmlspecialchars($row['subject_name']) . "</td>";
+                                        echo "<td data-label='Grade Level'>Grade " . htmlspecialchars($row['grade_level']) . "</td>";
+                                        echo "<td data-label='Assigned Teacher'>" . ($row['teachers'] ? htmlspecialchars($row['teachers']) : 'No teacher assigned') . "</td>";
+                                        echo "<td data-label='Actions'>
+                                                        <button class='edit-btn' onclick=\"editSubject(" . $row['subject_id'] . ", '" . htmlspecialchars($row['subject_name']) . "', '" . htmlspecialchars($row['grade_level']) . "')\">Edit</button>
+                                                        <button class='delete-btn' onclick=\"deleteSubject(" . $row['subject_id'] . ")\">Delete</button>
+                                                    </td>";
                     echo "</tr>";
                 }
             } else {
@@ -181,6 +184,7 @@ $subjects = $pdo->query($query)->fetchAll(PDO::FETCH_ASSOC);
             ?>
         </tbody>
     </table>
+    </div>
 </div>
 
 

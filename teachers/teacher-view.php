@@ -3,8 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="../assets/tablogo.png">
   <title>Student Records</title>
   <link rel="stylesheet" href="teacher-view.css">
+  <link rel="stylesheet" href="../assets/css/responsive.css">
 </head>
 <body>
   <div class="container">
@@ -16,6 +18,7 @@
           <HR>
       <br>
     
+    <div class="table-wrapper">
     <table>
       <thead>
         <tr>
@@ -27,25 +30,26 @@
       </thead>
       <tbody>
         <tr>
-          <td>Juan Dela Cruz</td>
-          <td>Digital Logic</td>
-          <td>Submitted</td>
-          <td>95</td>
+          <td data-label="Student Name">Juan Dela Cruz</td>
+          <td data-label="Recitation">Digital Logic</td>
+          <td data-label="Status">Submitted</td>
+          <td data-label="Score">95</td>
         </tr>
         <tr>
-          <td>Maria Santos</td>
-          <td>PC Assembly</td>
-          <td>Did Not Submit</td>
-          <td>0</td>
+          <td data-label="Student Name">Maria Santos</td>
+          <td data-label="Recitation">PC Assembly</td>
+          <td data-label="Status">Did Not Submit</td>
+          <td data-label="Score">0</td>
         </tr>
         <tr>
-          <td>Carlos Reyes</td>
-          <td>Assessment</td>
-          <td>Submitted</td>
-          <td>88</td>
+          <td data-label="Student Name">Carlos Reyes</td>
+          <td data-label="Recitation">Assessment</td>
+          <td data-label="Status">Submitted</td>
+          <td data-label="Score">88</td>
         </tr>
       </tbody>
     </table>
+    </div>
   </div>
 </body>
 </html>

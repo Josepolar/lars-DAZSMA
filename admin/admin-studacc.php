@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="../assets/tablogo.png">
     <link rel="stylesheet" href="admin-studacc.css">
+    <link rel="stylesheet" href="../assets/css/responsive.css?v=<?php echo time(); ?>">
     <title>Admin Dashboard</title>
 </head>
 <body>
@@ -171,6 +173,7 @@
         </div>
             
         <div class="table_responsive">
+            <div class="table-wrapper">
             <table>
                 <thead>
                     <tr>
@@ -196,13 +199,13 @@
                     if ($students) {
                         foreach ($students as $row) {
                             echo "<tr data-grade='{$row['grade_level']}'>";
-                            echo "<td>" . htmlspecialchars($row['user_id']) . "</td>";
-                            echo "<td>" . htmlspecialchars($row['email']) . "</td>";
-                            echo "<td>" . htmlspecialchars($row['first_name']) . "</td>";
-                            echo "<td>" . htmlspecialchars($row['last_name']) . "</td>";
-                            echo "<td>" . htmlspecialchars($row['username']) . "</td>";
-                            echo "<td>Grade " . htmlspecialchars($row['grade_level']) . "</td>";
-                            echo "<td>";
+                            echo "<td data-label='Student ID'>" . htmlspecialchars($row['user_id']) . "</td>";
+                            echo "<td data-label='Email'>" . htmlspecialchars($row['email']) . "</td>";
+                            echo "<td data-label='First Name'>" . htmlspecialchars($row['first_name']) . "</td>";
+                            echo "<td data-label='Last Name'>" . htmlspecialchars($row['last_name']) . "</td>";
+                            echo "<td data-label='Username'>" . htmlspecialchars($row['username']) . "</td>";
+                            echo "<td data-label='Grade Level'>Grade " . htmlspecialchars($row['grade_level']) . "</td>";
+                            echo "<td data-label='Actions'>";
                             echo "<button class='edit-btn' onclick='openEditModal({$row['user_id']})'>Edit</button>";
                             echo "<button class='delete-btn' onclick='deleteStudent({$row['user_id']})'>Delete</button>";
                             echo "</td>";
@@ -214,6 +217,7 @@
                     ?>
                 </tbody>
             </table>
+            </div>
         </div>
 
 

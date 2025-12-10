@@ -116,7 +116,9 @@ $subjects = $pdo->query($subjectQuery);
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="../assets/tablogo.png">
     <link rel="stylesheet" href="staff-subjman.css">
+    <link rel="stylesheet" href="../assets/css/responsive.css?v=<?php echo time(); ?>">
     <title>Staff Dashboard</title>
 </head>
 <body>
@@ -249,10 +251,11 @@ $subjects = $pdo->query($subjectQuery);
 
 
 
-       <div class="table-container">
-  <div class="table_responsive">
-    <!-- Table -->
-    <table>
+             <div class="table-container">
+    <div class="table_responsive">
+        <!-- Table -->
+        <div class="table-wrapper">
+        <table>
       <thead>
         <tr>
           <th>Subject Name</th>
@@ -274,13 +277,13 @@ $subjects = $pdo->query($subjectQuery);
         
         $result = $pdo->query($query);
         
-        if ($result && $result->rowCount() > 0) {
+                if ($result && $result->rowCount() > 0) {
             while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
                 echo "<tr>";
-                echo "<td>" . htmlspecialchars($row['subject_name']) . "</td>";
-                echo "<td>Grade " . htmlspecialchars($row['grade_level']) . "</td>";
-                echo "<td>" . ($row['teachers'] ? htmlspecialchars($row['teachers']) : 'No teacher assigned') . "</td>";
-                echo "<td class='action-btns'>
+                echo "<td data-label='Subject Name'>" . htmlspecialchars($row['subject_name']) . "</td>";
+                echo "<td data-label='Grade Level'>Grade " . htmlspecialchars($row['grade_level']) . "</td>";
+                echo "<td data-label='Assigned Teacher'>" . ($row['teachers'] ? htmlspecialchars($row['teachers']) : 'No teacher assigned') . "</td>";
+                echo "<td data-label='Actions' class='action-btns'>
                         <form method='POST' style='display:inline;'>
                             <input type='hidden' name='subject_id' value='" . $row['subject_id'] . "'>
                             <button type='button' onclick=\"deleteSubject(" . $row['subject_id'] . ")\" class='delete-btn'>Delete</button>
@@ -293,8 +296,8 @@ $subjects = $pdo->query($subjectQuery);
         }
         ?>
       </tbody>
-    </table>
-  </div>
+        </table>
+        </div>
 </div>
 
 

@@ -106,7 +106,9 @@ $teachers = $result->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="../assets/tablogo.png">
     <link rel="stylesheet" href="admin-userman.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="../assets/css/responsive.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .password-container {
@@ -365,10 +367,10 @@ $teachers = $result->fetchAll(PDO::FETCH_ASSOC);
                             <tbody>
                                 <?php foreach ($users as $i => $user): ?>
                                 <tr>
-                                    <td><?= htmlspecialchars($user['first_name']) ?></td>
-                                    <td><?= htmlspecialchars($user['last_name']) ?></td>
-                                    <td><?= htmlspecialchars($user['email']) ?></td>
-                                    <td>
+                                    <td data-label="Firstname"><?= htmlspecialchars($user['first_name']) ?></td>
+                                    <td data-label="Lastname"><?= htmlspecialchars($user['last_name']) ?></td>
+                                    <td data-label="Email"><?= htmlspecialchars($user['email']) ?></td>
+                                    <td data-label="Password">
                                         <div class='password-field'>
                                             <input type='password' value='<?= htmlspecialchars($user['password']) ?>' readonly>
                                             <button class='toggle-password' onclick='toggleTablePassword(this)'>
@@ -376,7 +378,7 @@ $teachers = $result->fetchAll(PDO::FETCH_ASSOC);
                                             </button>
                                         </div>
                                     </td>
-                                    <td>
+                                    <td data-label="Actions">
                                         <button class="btn edit-btn" onclick="editEntry('user', <?= $user['user_id'] ?>)">Edit</button>
                                         <button class="btn delete-btn" onclick="confirmDelete('user', <?= $user['user_id'] ?>)">Delete</button>
                                     </td>
@@ -407,10 +409,10 @@ $teachers = $result->fetchAll(PDO::FETCH_ASSOC);
                             <tbody>
                                 <?php foreach ($teachers as $i => $teacher): ?>
                                 <tr>
-                                    <td><?= htmlspecialchars($teacher['first_name']) ?></td>
-                                    <td><?= htmlspecialchars($teacher['last_name']) ?></td>
-                                    <td><?= htmlspecialchars($teacher['email']) ?></td>
-                                    <td>
+                                    <td data-label="Firstname"><?= htmlspecialchars($teacher['first_name']) ?></td>
+                                    <td data-label="Lastname"><?= htmlspecialchars($teacher['last_name']) ?></td>
+                                    <td data-label="Email"><?= htmlspecialchars($teacher['email']) ?></td>
+                                    <td data-label="Password">
                                         <div class='password-field'>
                                             <input type='password' value='<?= htmlspecialchars($teacher['password']) ?>' readonly>
                                             <button class='toggle-password' onclick='toggleTablePassword(this)'>
@@ -418,7 +420,7 @@ $teachers = $result->fetchAll(PDO::FETCH_ASSOC);
                                             </button>
                                         </div>
                                     </td>
-                                    <td>
+                                    <td data-label="Actions">
                                         <button class="btn edit-btn" onclick="editEntry('teacher', <?= $teacher['user_id'] ?>)">Edit</button>
                                         <button class="btn delete-btn" onclick="confirmDelete('teacher', <?= $teacher['user_id'] ?>)">Delete</button>
                                     </td>

@@ -1,0 +1,107 @@
+/* Responsive helper utilities for mobile compatibility */
+/* Place this file in `assets/css/responsive.css` and include it in page <head> */
+
+/* Basic touch and text adjustments */
+html, body {
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+:root {
+  --touch-target-min: 44px;
+}
+
+/* Make interactive elements easier to tap */
+button, .btn, .table-btn, .create-btn, .action-btn, a.tablinks {
+  min-height: var(--touch-target-min);
+  min-width: var(--touch-target-min);
+  line-height: 1.2;
+}
+
+/* Ensure tables can scroll horizontally on small devices */
+.table-wrapper {
+  -webkit-overflow-scrolling: touch;
+  overflow-x: auto;
+  width: 100%;
+}
+
+/* Improve modal behavior on small screens */
+.modal-content {
+  width: 90% !important;
+  max-width: 480px !important;
+  margin: 8% auto !important;
+}
+
+/* Make form inputs full width on mobile */
+@media (max-width: 768px) {
+  input[type="text"], input[type="email"], input[type="password"], select, textarea {
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  /* Stack section header controls */
+  .section-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .table-btn {
+    width: 100%;
+  }
+
+  /* Convert wide tables to stacked list-like rows */
+  .credentials-table thead {
+    display: none;
+  }
+
+  .credentials-table tbody tr {
+    display: block;
+    border-bottom: 1px solid #e9ecef;
+    margin-bottom: 8px;
+    padding: 8px 0;
+  }
+
+  .credentials-table tbody td {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 8px;
+  }
+
+  .credentials-table tbody td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #333;
+    margin-right: 10px;
+  }
+}
+
+/* Platform specific tweaks */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Prevent iOS from delaying click responses inside scrollable areas */
+.table-wrapper, .modal-content {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Small utility: make large hit areas for icon buttons */
+.toggle-password, .password-toggle {
+  padding: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Ensure focus outlines remain visible for accessibility */
+button:focus, a:focus, input:focus {
+  outline: 3px solid rgba(0,75,156,0.15);
+  outline-offset: 2px;
+}

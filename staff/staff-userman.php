@@ -13,7 +13,9 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="staff-userman.css?v=<?php echo time(); ?>">
+    <link rel="icon" type="image/png" href="../assets/tablogo.png">
+    <link rel="stylesheet" href="staff-userman.css?v=<?php echo time(); ?>">>
+    <link rel="stylesheet" href="../assets/css/responsive.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .user-credential {
@@ -498,23 +500,23 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
                 $teacherQuery = "SELECT user_id, first_name, last_name, email, username, password FROM users WHERE role_id = 3 ORDER BY last_name";
                 $teacherResult = $pdo->query($teacherQuery);
                 if ($teacherResult && $teacherResult->rowCount() > 0) {
-                    while ($row = $teacherResult->fetch(PDO::FETCH_ASSOC)) {
-                        echo "<tr>";
-                        echo "<td>" . htmlspecialchars($row['first_name'] . " " . $row['last_name']) . "</td>";
-                        echo "<td>" . htmlspecialchars($row['email']) . "</td>";
-                        echo "<td>" . htmlspecialchars($row['username']) . "</td>";
-                        echo "<td><div class='password-field'>
-                                <input type='password' value='" . htmlspecialchars($row['password']) . "' readonly>
-                                <button class='toggle-password' onclick='toggleTablePassword(this)'>
-                                    <i class='fas fa-eye'></i>
-                                </button>
-                              </div></td>";
-                        echo "<td style='white-space: nowrap;'>
-                                <button onclick=\"openEditModal('teacher', {$row['user_id']})\" class='action-btn edit-btn'>Edit</button>
-                                <!-- <button onclick=\"if(confirm('Are you sure you want to delete this teacher?')) deleteUser('teacher', {$row['user_id']})\" class='action-btn delete-btn'>Delete</button> -->
-                              </td>";
-                        echo "</tr>";
-                    }
+                                        while ($row = $teacherResult->fetch(PDO::FETCH_ASSOC)) {
+                                                echo "<tr>";
+                                                echo "<td data-label='Teacher Name'>" . htmlspecialchars($row['first_name'] . " " . $row['last_name']) . "</td>";
+                                                echo "<td data-label='Email'>" . htmlspecialchars($row['email']) . "</td>";
+                                                echo "<td data-label='Username'>" . htmlspecialchars($row['username']) . "</td>";
+                                                echo "<td data-label='Password'><div class='password-field'>
+                                                                <input type='password' value='" . htmlspecialchars($row['password']) . "' readonly>
+                                                                <button class='toggle-password' onclick='toggleTablePassword(this)'>
+                                                                        <i class='fas fa-eye'></i>
+                                                                </button>
+                                                            </div></td>";
+                                                echo "<td data-label='Actions' style='white-space: nowrap;'>
+                                                                <button onclick=\"openEditModal('teacher', {$row['user_id']})\" class='action-btn edit-btn'>Edit</button>
+                                                                <!-- <button onclick=\"if(confirm('Are you sure you want to delete this teacher?')) deleteUser('teacher', {$row['user_id']})\" class='action-btn delete-btn'>Delete</button> -->
+                                                            </td>";
+                                                echo "</tr>";
+                                        }
                 } else {
                     echo "<tr><td colspan='4' style='text-align: center;'>No teachers registered</td></tr>";
                 }
@@ -558,17 +560,17 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
                         // Generate email from username
                         $email = $row['username'] . "@lars.edu.ph";
                         echo "<tr>";
-                        echo "<td>" . htmlspecialchars($row['first_name'] . " " . $row['last_name']) . "</td>";
-                        echo "<td>Grade " . htmlspecialchars($row['grade_level']) . "</td>";
-                        echo "<td><span class='user-credential'>" . htmlspecialchars($row['username']) . "</span></td>";
-                        echo "<td><span class='user-credential'>" . htmlspecialchars($email) . "</span></td>";
-                        echo "<td><div class='password-field'>
+                        echo "<td data-label='Name'>" . htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) . "</td>";
+                        echo "<td data-label='Grade'>Grade " . htmlspecialchars($row['grade_level']) . "</td>";
+                        echo "<td data-label='Username'><span class='user-credential'>" . htmlspecialchars($row['username']) . "</span></td>";
+                        echo "<td data-label='Email'><span class='user-credential'>" . htmlspecialchars($email) . "</span></td>";
+                        echo "<td data-label='Password'><div class='password-field'>
                                 <input type='password' value='" . htmlspecialchars($row['password']) . "' readonly>
                                 <button class='toggle-password' onclick='toggleTablePassword(this)'>
                                     <i class='fas fa-eye'></i>
                                 </button>
                               </div></td>";
-                        echo "<td style='white-space: nowrap;'>
+                        echo "<td data-label='Actions' style='white-space: nowrap;'>
                                 <button onclick=\"openEditModal('student', {$row['user_id']})\" class='action-btn edit-btn'>Edit</button>
                                <!-- <button onclick=\"if(confirm('Are you sure you want to delete this student?')) deleteUser('student', {$row['user_id']})\" class='action-btn delete-btn'>Delete</button> -->
                               </td>";

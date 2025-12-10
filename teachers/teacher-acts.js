@@ -251,19 +251,19 @@ function populateActivitiesTable() {
         }
         
         row.innerHTML = `
-            <td class="activity-title">${activity.title}${gameIcon}</td>
-            <td>${activity.subject_name}</td>
-            <td><span class="activity-type ${activity.activity_type}">${activity.activity_type}</span></td>
-            <td>${activity.total_points || 0}</td>
-            <td>${formatDate(activity.due_date)}</td>
-            <td class="submissions-count">${activity.total_submissions || 0}</td>
-            <td class="avg-score">${activity.avg_score ? Math.round(activity.avg_score) + '%' : 'N/A'}</td>
-            <td>
+            <td data-label="Title" class="activity-title">${activity.title}${gameIcon}</td>
+            <td data-label="Subject">${activity.subject_name}</td>
+            <td data-label="Type"><span class="activity-type ${activity.activity_type}">${activity.activity_type}</span></td>
+            <td data-label="Points">${activity.total_points || 0}</td>
+            <td data-label="Due Date">${formatDate(activity.due_date)}</td>
+            <td data-label="Submissions" class="submissions-count">${activity.total_submissions || 0}</td>
+            <td data-label="Avg Score" class="avg-score">${activity.avg_score ? Math.round(activity.avg_score) + '%' : 'N/A'}</td>
+            <td data-label="Status">
                 <span class="status-badge ${status}">
                     ${statusLabel}
                 </span>
             </td>
-            <td class="actions">
+            <td data-label="Actions" class="actions">
                 ${actionsHTML}
             </td>
         `;

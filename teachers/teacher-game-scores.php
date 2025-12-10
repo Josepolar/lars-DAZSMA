@@ -181,8 +181,10 @@ $avg_percentage = $total_submissions > 0 ? array_sum(array_column($all_scores, '
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="../assets/tablogo.png">
     <link rel="stylesheet" href="teacher-acts.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="../assets/css/responsive.css">
     <title>Game & Activity Scores</title>
     <style>
         .filters-container {
@@ -546,6 +548,7 @@ $avg_percentage = $total_submissions > 0 ? array_sum(array_column($all_scores, '
         <div class="scores-table-container">
             <h2 style="margin-bottom: 20px;">Student Scores</h2>
             <?php if (count($all_scores) > 0): ?>
+                <div class="table-wrapper">
                 <table class="scores-table" id="scoresTable">
                     <thead>
                         <tr>
@@ -562,10 +565,10 @@ $avg_percentage = $total_submissions > 0 ? array_sum(array_column($all_scores, '
                     <tbody>
                         <?php foreach ($all_scores as $score): ?>
                             <tr>
-                                <td><strong><?php echo htmlspecialchars($score['student_name']); ?></strong></td>
-                                <td><?php echo htmlspecialchars($score['subject_name']); ?></td>
-                                <td><?php echo htmlspecialchars($score['activity_title']); ?></td>
-                                <td>
+                                <td data-label="Student Name"><strong><?php echo htmlspecialchars($score['student_name']); ?></strong></td>
+                                <td data-label="Subject"><?php echo htmlspecialchars($score['subject_name']); ?></td>
+                                <td data-label="Activity"><?php echo htmlspecialchars($score['activity_title']); ?></td>
+                                <td data-label="Type">
                                     <?php
                                     $type_class = '';
                                     $type_display = $score['activity_type'];
@@ -594,9 +597,9 @@ $avg_percentage = $total_submissions > 0 ? array_sum(array_column($all_scores, '
                                         <?php echo $type_display; ?>
                                     </span>
                                 </td>
-                                <td><strong><?php echo number_format($score['score'], 1); ?></strong></td>
-                                <td><?php echo $score['total_correct']; ?> / <?php echo $score['total_questions']; ?></td>
-                                <td>
+                                <td data-label="Score"><strong><?php echo number_format($score['score'], 1); ?></strong></td>
+                                <td data-label="Correct/Total"><?php echo $score['total_correct']; ?> / <?php echo $score['total_questions']; ?></td>
+                                <td data-label="Percentage">
                                     <?php
                                     $percentage = $score['percentage'];
                                     $score_class = '';
@@ -615,11 +618,12 @@ $avg_percentage = $total_submissions > 0 ? array_sum(array_column($all_scores, '
                                         <?php echo number_format($percentage, 1); ?>%
                                     </span>
                                 </td>
-                                <td><?php echo date('M d, Y H:i', strtotime($score['completed_at'])); ?></td>
+                                <td data-label="Completed At"><?php echo date('M d, Y H:i', strtotime($score['completed_at'])); ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+                </div>
             <?php else: ?>
                 <div class="no-data">
                     <i class="fas fa-inbox" style="font-size: 64px; color: #ccc; margin-bottom: 20px;"></i>

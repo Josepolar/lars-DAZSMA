@@ -11,8 +11,10 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="../assets/tablogo.png">
     <link rel="stylesheet" href="teacher-studs.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="../assets/css/responsive.css">
     <title>Teachers Dashboard</title>
 </head>
 <body>
@@ -86,6 +88,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
 
             
         <div class="table_responsive">
+            <div class="table-wrapper">
             <table>
                 <thead>
                     <tr>
@@ -234,10 +237,10 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
             const totalPoints = Math.round(student.total_points || 0);
             const avgGrade = (student.avg_grade || 0).toFixed(1);
             row.innerHTML = `
-                <td>${student.first_name} ${student.last_name}</td>
-                <td>Grade ${student.grade_level}</td>
-                <td>${totalPoints}</td>
-                <td>${avgGrade}%</td>
+                <td data-label="Student Name">${student.first_name} ${student.last_name}</td>
+                <td data-label="Grade Level">Grade ${student.grade_level}</td>
+                <td data-label="Total Points">${totalPoints}</td>
+                <td data-label="Average Grade (%)">${avgGrade}%</td>
             `;
             tbody.appendChild(row);
         });

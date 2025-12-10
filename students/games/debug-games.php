@@ -22,6 +22,7 @@ $student_grade = $student['grade_level'];
 <!DOCTYPE html>
 <html>
 <head>
+    <link rel="icon" type="image/png" href="../../assets/tablogo.png">
     <title>Game Debug</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }

@@ -74,8 +74,10 @@ $overall_accuracy = $stats['total_questions'] > 0 ? round(($stats['total_correct
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="../../assets/tablogo.png">
     <title>My Game Scores</title>
     <link rel="stylesheet" href="../student-home.css">
+    <link rel="stylesheet" href="../../assets/css/responsive.css">
     <style>
         .scores-container {
             max-width: 1200px;
@@ -270,6 +272,7 @@ $overall_accuracy = $stats['total_questions'] > 0 ? round(($stats['total_correct
             
             <div class="sessions-list">
                 <h3>Game History</h3>
+                <div class="table-wrapper">
                 <table>
                     <thead>
                         <tr>
@@ -287,16 +290,16 @@ $overall_accuracy = $stats['total_questions'] > 0 ? round(($stats['total_correct
                                             ($session['accuracy'] >= 50 ? 'accuracy-medium' : 'accuracy-low');
                         ?>
                             <tr>
-                                <td><?php echo date('M d, Y H:i', strtotime($session['completed_at'])); ?></td>
-                                <td><strong><?php echo htmlspecialchars($session['title']); ?></strong></td>
-                                <td><?php echo htmlspecialchars($session['subject_name']); ?></td>
-                                <td>
+                                <td data-label="Date"><?php echo date('M d, Y H:i', strtotime($session['completed_at'])); ?></td>
+                                <td data-label="Game"><strong><?php echo htmlspecialchars($session['title']); ?></strong></td>
+                                <td data-label="Subject"><?php echo htmlspecialchars($session['subject_name']); ?></td>
+                                <td data-label="Score">
                                     <span class="score-badge">
                                         <?php echo $session['total_score']; ?> / <?php echo $session['max_score'] ?? 'N/A'; ?>
                                     </span>
                                 </td>
-                                <td><?php echo $session['total_correct']; ?> / <?php echo $session['total_questions']; ?></td>
-                                <td>
+                                <td data-label="Correct"><?php echo $session['total_correct']; ?> / <?php echo $session['total_questions']; ?></td>
+                                <td data-label="Accuracy">
                                     <span class="accuracy-badge <?php echo $accuracy_class; ?>">
                                         <?php echo $session['accuracy']; ?>%
                                     </span>
@@ -305,6 +308,7 @@ $overall_accuracy = $stats['total_questions'] > 0 ? round(($stats['total_correct
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+                </div>
             </div>
         <?php else: ?>
             <div class="sessions-list no-scores">

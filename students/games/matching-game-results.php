@@ -71,8 +71,10 @@ if ($completedAttempts > 0) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="../../assets/tablogo.png">
     <title>Matching Game Results - <?php echo htmlspecialchars($game['title']); ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="../../assets/css/responsive.css">
     <style>
         * {
             margin: 0;
@@ -353,6 +355,7 @@ if ($completedAttempts > 0) {
             </div>
             
             <?php if (count($sessions) > 0): ?>
+                <div class="table-wrapper">
                 <table>
                     <thead>
                         <tr>
@@ -375,8 +378,8 @@ if ($completedAttempts > 0) {
                             $isCompleted = $session['completed_at'] !== null;
                         ?>
                             <tr>
-                                <td><?php echo $index + 1; ?></td>
-                                <td>
+                                <td data-label="#"><?php echo $index + 1; ?></td>
+                                <td data-label="Date & Time">
                                     <?php 
                                     if ($isCompleted) {
                                         echo date('M d, Y - g:i A', strtotime($session['completed_at']));
@@ -385,18 +388,18 @@ if ($completedAttempts > 0) {
                                     }
                                     ?>
                                 </td>
-                                <td>
+                                <td data-label="Correct Matches">
                                     <?php echo $session['total_correct']; ?> / <?php echo $session['total_pairs']; ?>
                                 </td>
-                                <td>
+                                <td data-label="Accuracy">
                                     <?php echo number_format($percentage, 1); ?>%
                                 </td>
-                                <td>
+                                <td data-label="Score">
                                     <strong style="color: #26890D; font-size: 18px;">
                                         <?php echo number_format($session['total_score']); ?>
                                     </strong>
                                 </td>
-                                <td>
+                                <td data-label="Status">
                                     <?php if ($isCompleted): ?>
                                         <span class="score-badge <?php echo $scoreClass; ?>">
                                             Completed
@@ -411,6 +414,7 @@ if ($completedAttempts > 0) {
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+                </div>
                 
            
                 

@@ -182,8 +182,9 @@ function uploadImage($file, $prefix) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="../../assets/tablogo.png">
     <title>Add Matching Pairs</title>
-    <link rel="stylesheet" href="../teacher-dashboard.css">
+    <link rel="stylesheet" href="../../admin/admin-dashboard.css">
     <style>
         .pairs-container {
             max-width: 1200px;

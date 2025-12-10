@@ -63,8 +63,10 @@ $avg_correct = $total_players > 0 ? array_sum(array_column($results, 'total_corr
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="../../assets/tablogo.png">
     <title>Matching Game Results</title>
     <link rel="stylesheet" href="../teacher-dashboard.css">
+    <link rel="stylesheet" href="../../assets/css/responsive.css">
     <style>
         .results-container {
             max-width: 1400px;
@@ -291,6 +293,7 @@ $avg_correct = $total_players > 0 ? array_sum(array_column($results, 'total_corr
             <h2 style="margin-bottom: 20px;">Student Results</h2>
             
             <?php if (count($results) > 0): ?>
+                <div class="table-wrapper">
                 <table class="results-table">
                     <thead>
                         <tr>
@@ -312,31 +315,32 @@ $avg_correct = $total_players > 0 ? array_sum(array_column($results, 'total_corr
                             $rank_class = $rank <= 3 ? "rank-$rank" : "rank-other";
                         ?>
                             <tr>
-                                <td>
+                                <td data-label="Rank">
                                     <span class="rank-badge <?php echo $rank_class; ?>">
                                         <?php echo $rank; ?>
                                     </span>
                                 </td>
-                                <td><?php echo htmlspecialchars($result['student_number']); ?></td>
-                                <td><?php echo htmlspecialchars($result['student_name']); ?></td>
-                                <td>
+                                <td data-label="Student ID"><?php echo htmlspecialchars($result['student_number']); ?></td>
+                                <td data-label="Student Name"><?php echo htmlspecialchars($result['student_name']); ?></td>
+                                <td data-label="Pairs Matched">
                                     <?php echo $result['total_correct']; ?> / <?php echo $total_pairs; ?>
                                     <div class="score-bar">
                                         <div class="score-fill" style="width: <?php echo $accuracy; ?>%;"></div>
                                     </div>
                                 </td>
-                                <td>
+                                <td data-label="Accuracy">
                                     <span class="accuracy <?php echo $accuracy_class; ?>">
                                         <?php echo number_format($accuracy, 1); ?>%
                                     </span>
                                 </td>
-                                <td><?php echo number_format($result['time_taken'], 0); ?>s</td>
-                                <td><strong><?php echo number_format($result['total_score'], 0); ?></strong></td>
-                                <td><?php echo date('M d, Y H:i', strtotime($result['completed_at'])); ?></td>
+                                <td data-label="Time Taken"><?php echo number_format($result['time_taken'], 0); ?>s</td>
+                                <td data-label="Score"><strong><?php echo number_format($result['total_score'], 0); ?></strong></td>
+                                <td data-label="Completed At"><?php echo date('M d, Y H:i', strtotime($result['completed_at'])); ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+                </div>
             <?php else: ?>
                 <div class="no-results">
                     <h2>No Results Yet</h2>

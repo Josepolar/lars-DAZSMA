@@ -77,8 +77,10 @@ $question_stats = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="../../assets/tablogo.png">
     <title>Game Results - <?php echo htmlspecialchars($game['title']); ?></title>
     <link rel="stylesheet" href="../teacher-dashboard.css">
+    <link rel="stylesheet" href="../../assets/css/responsive.css">
     <style>
         .results-container {
             max-width: 1200px;
@@ -241,6 +243,7 @@ $question_stats = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
             <div class="section">
                 <h3>🏆 Leaderboard</h3>
+                <div class="table-wrapper">
                 <table>
                     <thead>
                         <tr>
@@ -258,15 +261,15 @@ $question_stats = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             $rank_class = $rank <= 3 ? "rank-$rank" : "rank-other";
                         ?>
                             <tr>
-                                <td>
+                                <td data-label="Rank">
                                     <span class="rank-badge <?php echo $rank_class; ?>">
                                         <?php echo $rank; ?>
                                     </span>
                                 </td>
-                                <td><?php echo htmlspecialchars($player['student_name']); ?></td>
-                                <td><strong><?php echo $player['total_score']; ?></strong></td>
-                                <td><?php echo $player['total_correct']; ?> / <?php echo $player['total_questions']; ?></td>
-                                <td>
+                                <td data-label="Student"><?php echo htmlspecialchars($player['student_name']); ?></td>
+                                <td data-label="Score"><strong><?php echo $player['total_score']; ?></strong></td>
+                                <td data-label="Correct Answers"><?php echo $player['total_correct']; ?> / <?php echo $player['total_questions']; ?></td>
+                                <td data-label="Accuracy">
                                     <div style="display: flex; align-items: center; gap: 10px;">
                                         <div class="accuracy-bar" style="flex: 1;">
                                             <div class="accuracy-fill" style="width: <?php echo $player['accuracy']; ?>%"></div>
@@ -274,15 +277,17 @@ $question_stats = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         <span style="font-size: 12px; color: #666;"><?php echo $player['accuracy']; ?>%</span>
                                     </div>
                                 </td>
-                                <td><?php echo date('M d, Y H:i', strtotime($player['completed_at'])); ?></td>
+                                <td data-label="Completed"><?php echo date('M d, Y H:i', strtotime($player['completed_at'])); ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+                </div>
             </div>
             
             <div class="section">
                 <h3>📊 Question Analysis</h3>
+                <div class="table-wrapper">
                 <table>
                     <thead>
                         <tr>
@@ -299,11 +304,11 @@ $question_stats = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             $success_rate = $q['total_answers'] > 0 ? round(($q['correct_answers'] / $q['total_answers']) * 100, 1) : 0;
                         ?>
                             <tr>
-                                <td><?php echo $q['question_order']; ?></td>
-                                <td><?php echo htmlspecialchars($q['question_text']); ?></td>
-                                <td><?php echo $q['total_answers']; ?></td>
-                                <td><?php echo $q['correct_answers']; ?></td>
-                                <td>
+                                <td data-label="#"><?php echo $q['question_order']; ?></td>
+                                <td data-label="Question"><?php echo htmlspecialchars($q['question_text']); ?></td>
+                                <td data-label="Answered By"><?php echo $q['total_answers']; ?></td>
+                                <td data-label="Correct"><?php echo $q['correct_answers']; ?></td>
+                                <td data-label="Success Rate">
                                     <div style="display: flex; align-items: center; gap: 10px;">
                                         <div class="accuracy-bar" style="flex: 1;">
                                             <div class="accuracy-fill" style="width: <?php echo $success_rate; ?>%"></div>
@@ -311,11 +316,12 @@ $question_stats = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         <span style="font-size: 12px; color: #666;"><?php echo $success_rate; ?>%</span>
                                     </div>
                                 </td>
-                                <td><?php echo $q['avg_time'] ? $q['avg_time'] . 's' : '-'; ?></td>
+                                <td data-label="Avg. Time"><?php echo $q['avg_time'] ? $q['avg_time'] . 's' : '-'; ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+                </div>
             </div>
         <?php else: ?>
             <div class="section no-data">

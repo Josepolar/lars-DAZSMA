@@ -82,6 +82,7 @@ $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="../../assets/tablogo.png">
     <title>Available Games</title>
     <link rel="stylesheet" href="../student-home.css">
     <style>

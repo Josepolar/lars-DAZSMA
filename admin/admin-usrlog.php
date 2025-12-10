@@ -13,8 +13,10 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role_id'] != 1) {
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="../assets/tablogo.png">
     <link rel="stylesheet" href="admin-usrlog.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="../assets/css/responsive.css?v=<?php echo time(); ?>">
     <title>Admin Dashboard</title>
 </head>
 <body>
@@ -193,6 +195,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role_id'] != 1) {
                     <span class="close" onclick="closeModal()">&times;</span>
                     <h2 id="selectedDate">User Logs for </h2>
                     <div class="table_responsive">
+                        <div class="table-wrapper">
                         <table id="dailyLogsTable">
                             <thead>
                                 <tr>
@@ -205,6 +208,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role_id'] != 1) {
                             <tbody id="dailyLogsBody">
                             </tbody>
                         </table>
+                        </div>
                     </div>
                 </div>
             </div>
