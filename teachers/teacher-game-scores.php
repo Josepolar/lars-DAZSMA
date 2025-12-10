@@ -429,6 +429,7 @@ $avg_percentage = $total_submissions > 0 ? array_sum(array_column($all_scores, '
 
                 <div class="text header-text">
                     <span class="profession">Teacher Dashboard</span>
+                    <span class="name">Hello <?php $firstName = ''; if (!empty($_SESSION['first_name'])) { $firstName = $_SESSION['first_name']; } elseif (!empty($_SESSION['name'])) { $parts = explode(' ', trim($_SESSION['name'])); $firstName = $parts[0]; } echo htmlspecialchars($firstName); ?></span>
                 </div>
             </div>
             <hr>

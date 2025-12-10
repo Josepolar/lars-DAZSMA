@@ -22,6 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $_SESSION['user_id'] = $user['user_id'];
                 $_SESSION['role_id'] = 3;
                 $_SESSION['name'] = $user['first_name'] . ' ' . $user['last_name'];
+                $_SESSION['first_name'] = $user['first_name'];
 
                 // Log the login activity
                 log_activity('Login');

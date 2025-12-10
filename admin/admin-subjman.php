@@ -73,7 +73,7 @@ $subjects = $pdo->query($query)->fetchAll(PDO::FETCH_ASSOC);
 
                 <div class="text header-text">
                     <span class="profession">Admin Dashboard</span>
-                    <span class="name">Hello [NAME]</span>
+                    <span class="name">Hello <?php $firstName = ''; if (!empty($_SESSION['first_name'])) { $firstName = $_SESSION['first_name']; } elseif (!empty($_SESSION['name'])) { $parts = explode(' ', trim($_SESSION['name'])); $firstName = $parts[0]; } echo htmlspecialchars($firstName); ?></span>
                 </div>
             </div>
             <hr>

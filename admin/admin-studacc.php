@@ -1,3 +1,4 @@
+<?php session_start(); ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -19,7 +20,7 @@
 
                 <div class="text header-text">
                     <span class="profession">Admin Dashboard</span>
-                    <span class="name">Hello [NAME]</span>
+                    <span class="name">Hello <?php $firstName = ''; if (!empty($_SESSION['first_name'])) { $firstName = $_SESSION['first_name']; } elseif (!empty($_SESSION['name'])) { $parts = explode(' ', trim($_SESSION['name'])); $firstName = $parts[0]; } echo htmlspecialchars($firstName); ?></span>
                 </div>
             </div>
             <hr>
@@ -59,11 +60,10 @@
         </div>
     </nav>
 
-   <section class="home" id="home-section">
-    <?php
-    session_start();
-    require_once '../log_activity.php';
-    include '../Database/database.php';
+    <section class="home" id="home-section">
+     <?php
+     require_once '../log_activity.php';
+     include '../Database/database.php';
 
     // Handle Edit Student
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_student'])) {

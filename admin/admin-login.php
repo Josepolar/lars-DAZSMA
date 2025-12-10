@@ -19,6 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $_SESSION['user_id'] = $user['user_id'];
             $_SESSION['role_id'] = 1;
             $_SESSION['name'] = $user['first_name'] . ' ' . $user['last_name'];
+            $_SESSION['first_name'] = $user['first_name'];
             $log_query = "INSERT INTO user_logs (user_id, action, ip_address) VALUES (?, 'Login', ?)";
             $log_stmt = $pdo->prepare($log_query);
             $ip = $_SERVER['REMOTE_ADDR'];
