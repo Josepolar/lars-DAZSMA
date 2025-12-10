@@ -17,6 +17,8 @@ if (isset($_GET['delete_id']) && isset($_GET['game_type'])) {
     
     if ($game_type == 'matching') {
         $delete_query = "DELETE FROM matching_games WHERE matching_game_id = ? AND teacher_id = ?";
+    } elseif ($game_type == 'typing') {
+        $delete_query = "DELETE FROM typing_games WHERE typing_game_id = ? AND teacher_id = ?";
     } else {
         $delete_query = "DELETE FROM game_activities WHERE game_id = ? AND teacher_id = ?";
     }
@@ -35,6 +37,8 @@ if (isset($_GET['change_status']) && isset($_GET['game_id']) && isset($_GET['gam
     
     if ($game_type == 'matching') {
         $status_query = "UPDATE matching_games SET status = ? WHERE matching_game_id = ? AND teacher_id = ?";
+    } elseif ($game_type == 'typing') {
+        $status_query = "UPDATE typing_games SET status = ? WHERE typing_game_id = ? AND teacher_id = ?";
     } else {
         $status_query = "UPDATE game_activities SET status = ? WHERE game_id = ? AND teacher_id = ?";
     }
@@ -45,7 +49,7 @@ if (isset($_GET['change_status']) && isset($_GET['game_id']) && isset($_GET['gam
     exit();
 }
 
-// Get all games created by this teacher (both quiz and matching games)
+// Get all games created by this teacher (quiz, matching, and typing games)
 $query = "SELECT ga.game_id, ga.title, ga.description, ga.time_limit, ga.show_leaderboard, 
        ga.status, ga.created_at, ga.updated_at, ga.teacher_id, ga.subject_id,
        ga.due_date,
@@ -66,9 +70,20 @@ $query = "SELECT ga.game_id, ga.title, ga.description, ga.time_limit, ga.show_le
           FROM matching_games mg
           INNER JOIN subjects s ON mg.subject_id = s.subject_id
           WHERE mg.teacher_id = ?
+          UNION ALL
+          SELECT tg.typing_game_id as game_id, tg.title, tg.description, 
+           tg.time_limit, tg.show_leaderboard, tg.status, tg.created_at, 
+           tg.updated_at, tg.teacher_id, tg.subject_id,
+           tg.due_date,
+                 s.subject_name, 'typing' as game_type_flag,
+          (SELECT COUNT(*) FROM typing_texts WHERE typing_game_id = tg.typing_game_id) as question_count,
+          (SELECT COUNT(DISTINCT student_id) FROM typing_sessions WHERE typing_game_id = tg.typing_game_id) as player_count
+          FROM typing_games tg
+          INNER JOIN subjects s ON tg.subject_id = s.subject_id
+          WHERE tg.teacher_id = ?
           ORDER BY created_at DESC";
 $stmt = $pdo->prepare($query);
-$stmt->execute([$teacher_id, $teacher_id]);
+$stmt->execute([$teacher_id, $teacher_id, $teacher_id]);
 $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
@@ -295,6 +310,8 @@ $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <div class="game-title">
                             <?php if ($game['game_type_flag'] == 'matching'): ?>
                                 🧩 
+                            <?php elseif ($game['game_type_flag'] == 'typing'): ?>
+                                ⌨️ 
                             <?php else: ?>
                                 🎯 
                             <?php endif; ?>
@@ -338,6 +355,8 @@ $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <span>
                                 <?php if ($game['game_type_flag'] == 'matching'): ?>
                                     🧩 <?php echo $game['question_count']; ?> pairs
+                                <?php elseif ($game['game_type_flag'] == 'typing'): ?>
+                                    📝 <?php echo $game['question_count']; ?> text(s)
                                 <?php else: ?>
                                     ❓ <?php echo $game['question_count']; ?> questions
                                 <?php endif; ?>
@@ -351,6 +370,13 @@ $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     ➕ Pairs
                                 </a>
                                 <a href="matching-game-results.php?matching_game_id=<?php echo $game['game_id']; ?>" class="action-btn btn-results">
+                                    📊 Results
+                                </a>
+                            <?php elseif ($game['game_type_flag'] == 'typing'): ?>
+                                <a href="create-typing-game.php?typing_game_id=<?php echo $game['game_id']; ?>" class="action-btn btn-questions">
+                                    ✏️ Edit
+                                </a>
+                                <a href="typing-game-results.php?typing_game_id=<?php echo $game['game_id']; ?>" class="action-btn btn-results">
                                     📊 Results
                                 </a>
                             <?php else: ?>

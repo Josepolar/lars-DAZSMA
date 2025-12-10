@@ -31,7 +31,7 @@ if (count($profileImgFiles) > 0) {
     $profileImg = '../assets/dazsma.png';
 }
 
-// Get class leaderboard (ALL students in same grade level with points from activities AND games)
+// Get class leaderboard (ALL students in same grade level with points from activities, games, matching games, AND typing games)
 $leaderboardStmt = $pdo->prepare("
     SELECT 
         u.user_id,
@@ -41,11 +41,13 @@ $leaderboardStmt = $pdo->prepare("
         (
             COALESCE(SUM(CASE WHEN ss.submission_status IN ('submitted', 'graded') AND s.grade_level = u.grade_level THEN ss.total_score ELSE 0 END), 0) +
             COALESCE(SUM(CASE WHEN gs.completed_at IS NOT NULL AND subj.grade_level = u.grade_level THEN gs.total_score ELSE 0 END), 0) +
-            COALESCE(SUM(CASE WHEN ms.completed_at IS NOT NULL AND msubj.grade_level = u.grade_level THEN ms.total_score ELSE 0 END), 0)
+            COALESCE(SUM(CASE WHEN ms.completed_at IS NOT NULL AND msubj.grade_level = u.grade_level THEN ms.total_score ELSE 0 END), 0) +
+            COALESCE(SUM(CASE WHEN ts.completed_at IS NOT NULL AND tsubj.grade_level = u.grade_level THEN ts.total_score ELSE 0 END), 0)
         ) as total_points,
         COUNT(CASE WHEN ss.submission_status IN ('submitted', 'graded') AND s.grade_level = u.grade_level THEN 1 END) as completed_activities,
         COUNT(CASE WHEN gs.completed_at IS NOT NULL AND subj.grade_level = u.grade_level THEN 1 END) as completed_games,
         COUNT(CASE WHEN ms.completed_at IS NOT NULL AND msubj.grade_level = u.grade_level THEN 1 END) as completed_matching_games,
+        COUNT(CASE WHEN ts.completed_at IS NOT NULL AND tsubj.grade_level = u.grade_level THEN 1 END) as completed_typing_games,
         COALESCE(AVG(CASE WHEN ss.submission_status IN ('submitted', 'graded') AND s.grade_level = u.grade_level AND ss.percentage IS NOT NULL THEN ss.percentage END), 0) as avg_percentage
     FROM users u
     LEFT JOIN student_submissions ss ON u.user_id = ss.student_id
@@ -57,6 +59,9 @@ $leaderboardStmt = $pdo->prepare("
     LEFT JOIN matching_sessions ms ON u.user_id = ms.student_id
     LEFT JOIN matching_games mg ON ms.matching_game_id = mg.matching_game_id
     LEFT JOIN subjects msubj ON mg.subject_id = msubj.subject_id
+    LEFT JOIN typing_sessions ts ON u.user_id = ts.student_id
+    LEFT JOIN typing_games tg ON ts.typing_game_id = tg.typing_game_id
+    LEFT JOIN subjects tsubj ON tg.subject_id = tsubj.subject_id
     WHERE u.role_id = 4 AND u.grade_level = ?
     GROUP BY u.user_id, u.first_name, u.last_name
     ORDER BY total_points DESC, avg_percentage DESC
@@ -64,7 +69,7 @@ $leaderboardStmt = $pdo->prepare("
 $leaderboardStmt->execute([$profile['grade_level']]);
 $leaderboard = $leaderboardStmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Get current user's detailed statistics (including game scores)
+// Get current user's detailed statistics (including game scores and typing game scores)
 $userStatsStmt = $pdo->prepare("
     SELECT 
         (
@@ -76,7 +81,11 @@ $userStatsStmt = $pdo->prepare("
             COALESCE((SELECT SUM(ms.total_score) FROM matching_sessions ms 
                       INNER JOIN matching_games mg ON ms.matching_game_id = mg.matching_game_id 
                       INNER JOIN subjects msubj ON mg.subject_id = msubj.subject_id 
-                      WHERE ms.student_id = ? AND ms.completed_at IS NOT NULL AND msubj.grade_level = ?), 0)
+                      WHERE ms.student_id = ? AND ms.completed_at IS NOT NULL AND msubj.grade_level = ?), 0) +
+            COALESCE((SELECT SUM(ts.total_score) FROM typing_sessions ts 
+                      INNER JOIN typing_games tg ON ts.typing_game_id = tg.typing_game_id 
+                      INNER JOIN subjects tsubj ON tg.subject_id = tsubj.subject_id 
+                      WHERE ts.student_id = ? AND ts.completed_at IS NOT NULL AND tsubj.grade_level = ?), 0)
         ) as total_points,
         COUNT(CASE WHEN ss.submission_status IN ('submitted', 'graded') AND s.grade_level = ? THEN 1 END) as completed_activities,
         COUNT(CASE WHEN a.activity_id IS NOT NULL AND s.grade_level = ? THEN 1 END) as total_available_activities,
@@ -87,6 +96,8 @@ $userStatsStmt = $pdo->prepare("
     WHERE ss.student_id = ?
 ");
 $userStatsStmt->execute([
+    $profile['grade_level'], 
+    $_SESSION['user_id'], 
     $profile['grade_level'], 
     $_SESSION['user_id'], 
     $profile['grade_level'], 
@@ -109,10 +120,11 @@ if ($userStats && $userStats['total_available_activities'] > 0) {
     <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
         <link rel="icon" type="image/png" href="../assets/tablogo.png">
         <title>Student Dashboard - LARS</title>
         <link rel="stylesheet" href="student-home.css?v=<?php echo time(); ?>">
+        <link rel="stylesheet" href="../assets/css/responsive.css?v=<?php echo time(); ?>">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     </head>
     <body>
@@ -128,8 +140,8 @@ if ($userStats && $userStats['total_available_activities'] > 0) {
                 <div class="profile-status online">Online</div>
             </div>
         </div>
-<div class="dropdown">
-                    <button class="dropbtn">☰</button>
+<div class="dropdown" id="menuDropdown">
+                    <button class="dropbtn" id="menuBtn" onclick="toggleMenu(event)">☰</button>
                     <div class="dropdown-content">
                         <a href="student-viewprof.php">View Profile</a>
                         <a href="games/available-games.php">Game Activities</a>
@@ -137,6 +149,21 @@ if ($userStats && $userStats['total_available_activities'] > 0) {
                     </div>
                 </div>
     </nav>
+
+    <script>
+    function toggleMenu(event) {
+        event.stopPropagation();
+        document.getElementById('menuDropdown').classList.toggle('active');
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+        const dropdown = document.getElementById('menuDropdown');
+        if (!dropdown.contains(event.target)) {
+            dropdown.classList.remove('active');
+        }
+    });
+    </script>
 
         <!-- BODY -->
         <div class="dashboard">

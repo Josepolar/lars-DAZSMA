@@ -32,6 +32,45 @@ body {
     transition: var(--tran-05);
 }
 
+/* Mobile Menu Toggle Button */
+.mobile-menu-toggle {
+    display: none;
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    z-index: 1001;
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 12px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 18px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    align-items: center;
+    justify-content: center;
+}
+
+.mobile-menu-toggle:hover {
+    background: #003570;
+}
+
+/* Sidebar Overlay for Mobile */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 99;
+}
+
+.sidebar-overlay.show {
+    display: block;
+}
+
 /* ===== Sidebar ===== */
 .sidebar {
     position: fixed;
@@ -454,5 +493,178 @@ table>tbody>tr:hover{
     overflow: hidden;
     width: 90%;
     box-sizing: border-box;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+/* Mobile Phones (up to 576px) */
+@media (max-width: 576px) {
+    .sidebar {
+        position: fixed;
+        left: -250px;
+        width: 250px;
+        z-index: 1000;
+        transition: left 0.3s ease;
+    }
+    
+    .sidebar.show-mobile {
+        left: 0;
+    }
+    
+    .home {
+        left: 0;
+        width: 100%;
+        padding: 15px;
+    }
+    
+    .home .text {
+        font-size: 22px;
+        padding-top: 50px;
+    }
+    
+    .mobile-menu-toggle {
+        display: flex !important;
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        z-index: 1001;
+        background: var(--accent-color);
+        color: white;
+        border: none;
+        padding: 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 20px;
+    }
+    
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 999;
+    }
+    
+    .sidebar-overlay.show {
+        display: block;
+    }
+    
+    /* Tables */
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        width: 100%;
+        margin: 0 0 20px 0;
+    }
+    
+    table {
+        min-width: 500px;
+    }
+    
+    table th, table td {
+        padding: 8px 10px;
+        font-size: 12px;
+    }
+    
+    .action_btn {
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .action_btn > a {
+        padding: 5px 12px;
+        font-size: 12px;
+    }
+    
+    /* Stats */
+    .stat-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .stat-item {
+        padding: 15px;
+    }
+    
+    /* Tab buttons */
+    .tablinks {
+        padding: 8px;
+        font-size: 13px;
+    }
+    
+    .tablinks .icon {
+        min-width: 40px;
+    }
+}
+
+/* Tablets (577px - 768px) */
+@media (min-width: 577px) and (max-width: 768px) {
+    .sidebar {
+        width: 70px;
+    }
+    
+    .home {
+        left: 70px;
+        width: calc(100% - 70px);
+    }
+    
+    .sidebar .text,
+    .sidebar .header .text {
+        display: none;
+    }
+    
+    .tablinks {
+        width: 50px;
+        justify-content: center;
+    }
+    
+    .tablinks span {
+        display: none;
+    }
+    
+    .stat-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Small Laptops (769px - 992px) */
+@media (min-width: 769px) and (max-width: 992px) {
+    .sidebar {
+        width: 250px;
+    }
+    
+    .home {
+        left: 250px;
+        width: calc(100% - 250px);
+    }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+    .tablinks,
+    .action_btn > a,
+    table th,
+    table td {
+        min-height: 44px;
+    }
+}
+
+/* Landscape orientation on mobile */
+@media (orientation: landscape) and (max-height: 500px) {
+    .sidebar {
+        padding: 5px 10px;
+    }
+    
+    .home {
+        padding: 10px;
+    }
+    
+    .home .text {
+        font-size: 20px;
+    }
 }
 

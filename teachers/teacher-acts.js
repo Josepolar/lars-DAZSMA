@@ -176,6 +176,7 @@ function populateActivitiesTable() {
         const status = isGame ? activity.status : (activity.is_active ? 'active' : 'inactive');
         const statusLabel = isGame ? activity.status.charAt(0).toUpperCase() + activity.status.slice(1) : (activity.is_active ? 'Active' : 'Inactive');
         const isMatchingGame = isGame && activity.game_type_flag === 'matching';
+        const isTypingGame = isGame && activity.game_type_flag === 'typing';
         
         // Different actions for games vs regular activities
         let actionsHTML = '';
@@ -195,6 +196,24 @@ function populateActivitiesTable() {
                         <i class="fas ${status === 'active' ? 'fa-pause' : 'fa-play'}"></i>
                     </button>
                     <button class="btn btn-small btn-danger" onclick="deleteMatchingGame(${activityId})" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                `;
+            } else if (isTypingGame) {
+                // Typing game actions
+                actionsHTML = `
+                    <button class="btn btn-small btn-info" onclick="window.location.href='games/add-typing-texts.php?typing_game_id=${activityId}'" title="Manage Texts">
+                        <i class="fas fa-keyboard"></i>
+                    </button>
+                    <button class="btn btn-small btn-secondary" onclick="window.location.href='games/typing-game-results.php?typing_game_id=${activityId}'" title="View Results">
+                        <i class="fas fa-trophy"></i>
+                    </button>
+                    <button class="btn btn-small ${status === 'active' ? 'btn-warning' : 'btn-success'}" 
+                            onclick="toggleTypingGameStatus(${activityId}, '${status}')" 
+                            title="${status === 'active' ? 'Deactivate' : 'Activate'}">
+                        <i class="fas ${status === 'active' ? 'fa-pause' : 'fa-play'}"></i>
+                    </button>
+                    <button class="btn btn-small btn-danger" onclick="deleteTypingGame(${activityId})" title="Delete">
                         <i class="fas fa-trash"></i>
                     </button>
                 `;
@@ -245,9 +264,13 @@ function populateActivitiesTable() {
         // Add game type icon
         let gameIcon = '';
         if (isGame) {
-            gameIcon = isMatchingGame ? 
-                ' <i class="fas fa-puzzle-piece" style="color: #26890D;" title="Matching Game"></i>' :
-                ' <i class="fas fa-gamepad" style="color: #ff6b6b;" title="Quiz Game"></i>';
+            if (isTypingGame) {
+                gameIcon = ' <i class="fas fa-keyboard" style="color: #00d4ff;" title="Typing Game"></i>';
+            } else if (isMatchingGame) {
+                gameIcon = ' <i class="fas fa-puzzle-piece" style="color: #26890D;" title="Matching Game"></i>';
+            } else {
+                gameIcon = ' <i class="fas fa-gamepad" style="color: #ff6b6b;" title="Quiz Game"></i>';
+            }
         }
         
         row.innerHTML = `
@@ -921,6 +944,67 @@ function deleteMatchingGame(gameId) {
     .catch(error => {
         console.error('Error:', error);
         showNotification('Error deleting matching game', 'error');
+    });
+}
+
+// Typing Game Functions
+function toggleTypingGameStatus(gameId, currentStatus) {
+    const newStatus = currentStatus === 'active' ? 'draft' : 'active';
+    const confirmMsg = newStatus === 'active' ? 
+        'Activate this typing game for students?' : 
+        'Deactivate this typing game?';
+    
+    if (!confirm(confirmMsg)) return;
+    
+    const formData = new FormData();
+    formData.append('action', 'toggle_typing_game_status');
+    formData.append('typing_game_id', gameId);
+    formData.append('new_status', newStatus);
+    
+    fetch('teacher-activities-backend.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message || 'Typing game status updated successfully!', 'success');
+            loadActivities();
+        } else {
+            showNotification(data.message || 'Failed to update typing game status', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error updating typing game status', 'error');
+    });
+}
+
+function deleteTypingGame(gameId) {
+    if (!confirm('Delete this typing game? This action cannot be undone and will delete all texts and student scores!')) {
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('action', 'delete_typing_game');
+    formData.append('typing_game_id', gameId);
+    
+    fetch('teacher-activities-backend.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message || 'Typing game deleted successfully!', 'success');
+            loadActivities();
+        } else {
+            showNotification(data.message || 'Failed to delete typing game', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error deleting typing game', 'error');
     });
 }
 
@@ -1727,4 +1811,340 @@ function finishAddingPairs() {
         closeAddMatchingPairsModal();
         showNotification(`Matching game "${currentMatchingGameData.title}" created! Don't forget to activate it when you're ready for students to play.`, 'info');
     }
+}
+
+// ========== SCORE REPORT FUNCTIONS ==========
+
+function showScoreReportModal() {
+    document.getElementById('scoreReportModal').style.display = 'block';
+    loadSections();
+    loadGamesList();
+    loadScoreReport();
+}
+
+function closeScoreReportModal() {
+    document.getElementById('scoreReportModal').style.display = 'none';
+}
+
+// Load available sections
+function loadSections() {
+    fetch('teacher-activities-backend.php?action=get_sections')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const select = document.getElementById('reportSection');
+                select.innerHTML = '<option value="all">All Sections</option>';
+                data.sections.forEach(section => {
+                    if (section) {
+                        select.innerHTML += `<option value="${section}">${section}</option>`;
+                    }
+                });
+            }
+        })
+        .catch(error => console.error('Error loading sections:', error));
+}
+
+// Load games list for filter
+function loadGamesList() {
+    const gameType = document.getElementById('reportGameType').value;
+    
+    fetch(`teacher-activities-backend.php?action=get_teacher_games&game_type=${gameType}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const select = document.getElementById('reportGame');
+                select.innerHTML = '<option value="all">All Games</option>';
+                data.games.forEach(game => {
+                    select.innerHTML += `<option value="${game.type}_${game.id}">${game.title} (${game.type})</option>`;
+                });
+            }
+        })
+        .catch(error => console.error('Error loading games:', error));
+}
+
+// Load score report based on filters
+function loadScoreReport() {
+    const gameType = document.getElementById('reportGameType').value;
+    const grade = document.getElementById('reportGrade').value;
+    const section = document.getElementById('reportSection').value;
+    const game = document.getElementById('reportGame').value;
+    
+    document.getElementById('scoreReportContent').innerHTML = `
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i> Loading score reports...
+        </div>
+    `;
+    
+    fetch(`teacher-activities-backend.php?action=get_score_report&game_type=${gameType}&grade=${grade}&section=${section}&game=${game}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                renderScoreReport(data);
+            } else {
+                document.getElementById('scoreReportContent').innerHTML = `
+                    <div class="no-data-message">
+                        <i class="fas fa-chart-bar"></i>
+                        <p>No score data available</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading score report:', error);
+            document.getElementById('scoreReportContent').innerHTML = `
+                <div class="no-data-message">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Error loading score report</p>
+                </div>
+            `;
+        });
+}
+
+// Render score report content
+function renderScoreReport(data) {
+    let html = '';
+    
+    // Section Summary Cards
+    if (data.section_summary && data.section_summary.length > 0) {
+        html += `
+            <div class="score-report-section">
+                <h3><i class="fas fa-th-large"></i> Section Summary</h3>
+                <div class="section-summary">
+        `;
+        
+        data.section_summary.forEach(section => {
+            html += `
+                <div class="section-card">
+                    <h4><i class="fas fa-users"></i> Grade ${section.grade_level}${section.section ? ' - ' + section.section : ''}</h4>
+                    <div class="section-stats">
+                        <div class="section-stat">
+                            <div class="value">${section.student_count}</div>
+                            <div class="label">Students</div>
+                        </div>
+                        <div class="section-stat">
+                            <div class="value">${section.total_attempts}</div>
+                            <div class="label">Attempts</div>
+                        </div>
+                        <div class="section-stat">
+                            <div class="value">${parseFloat(section.avg_score).toFixed(1)}%</div>
+                            <div class="label">Avg Score</div>
+                        </div>
+                        <div class="section-stat">
+                            <div class="value">${section.highest_score}</div>
+                            <div class="label">Highest</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += '</div></div>';
+    }
+    
+    // Top 10 Overall
+    if (data.top_10_all && data.top_10_all.length > 0) {
+        html += `
+            <div class="score-report-section">
+                <h3><i class="fas fa-trophy"></i> Top 10 Highest Scores - All Grades</h3>
+                <table class="score-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Student Name</th>
+                            <th>Grade & Section</th>
+                            <th>Game</th>
+                            <th>Score</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+        
+        data.top_10_all.forEach((score, index) => {
+            const rankClass = index < 3 ? `rank-${index + 1}` : '';
+            const rankIcon = index === 0 ? '🥇' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : (index + 1)));
+            const scoreBadge = getScoreBadge(score.percentage || score.score);
+            
+            html += `
+                <tr>
+                    <td class="rank-cell ${rankClass}">${rankIcon}</td>
+                    <td>${score.student_name}</td>
+                    <td><span class="grade-section-badge">Grade ${score.grade_level}${score.section ? ' - ' + score.section : ''}</span></td>
+                    <td>${score.game_title} <small>(${score.game_type})</small></td>
+                    <td><span class="score-badge ${scoreBadge.class}">${score.total_score} pts ${score.percentage ? '(' + score.percentage + '%)' : ''}</span></td>
+                    <td>${formatDate(score.completed_at)}</td>
+                </tr>
+            `;
+        });
+        
+        html += '</tbody></table></div>';
+    }
+    
+    // Top 10 Per Section
+    if (data.top_by_section && Object.keys(data.top_by_section).length > 0) {
+        html += `<div class="score-report-section"><h3><i class="fas fa-list-ol"></i> Top 10 Per Section</h3>`;
+        
+        for (const [sectionKey, scores] of Object.entries(data.top_by_section)) {
+            if (scores.length > 0) {
+                html += `
+                    <h4 style="margin: 20px 0 10px; color: #666;"><i class="fas fa-graduation-cap"></i> ${sectionKey}</h4>
+                    <table class="score-table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Student Name</th>
+                                <th>Game</th>
+                                <th>Score</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                scores.forEach((score, index) => {
+                    const rankClass = index < 3 ? `rank-${index + 1}` : '';
+                    const rankIcon = index === 0 ? '🥇' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : (index + 1)));
+                    
+                    html += `
+                        <tr>
+                            <td class="rank-cell ${rankClass}">${rankIcon}</td>
+                            <td>${score.student_name}</td>
+                            <td>${score.game_title} <small>(${score.game_type})</small></td>
+                            <td>${score.total_score} pts</td>
+                            <td>${formatDate(score.completed_at)}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table>';
+            }
+        }
+        
+        html += '</div>';
+    }
+    
+    if (!html) {
+        html = `
+            <div class="no-data-message">
+                <i class="fas fa-chart-bar"></i>
+                <p>No score data available for the selected filters</p>
+            </div>
+        `;
+    }
+    
+    document.getElementById('scoreReportContent').innerHTML = html;
+}
+
+function getScoreBadge(score) {
+    if (score >= 90) return { class: 'excellent', text: 'Excellent' };
+    if (score >= 75) return { class: 'good', text: 'Good' };
+    if (score >= 50) return { class: 'average', text: 'Average' };
+    return { class: 'poor', text: 'Needs Improvement' };
+}
+
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+// Export score report to PDF
+function exportScoreReport(reportType) {
+    const gameType = document.getElementById('reportGameType').value;
+    const grade = document.getElementById('reportGrade').value;
+    const section = document.getElementById('reportSection').value;
+    const game = document.getElementById('reportGame').value;
+    
+    // Open PDF in new window
+    window.open(`teacher-export-scores.php?report_type=${reportType}&game_type=${gameType}&grade=${grade}&section=${section}&game=${game}`, '_blank');
+}
+
+// ========== RESET LEADERBOARD FUNCTIONS ==========
+
+function showResetLeaderboardModal() {
+    document.getElementById('resetLeaderboardModal').style.display = 'block';
+    document.getElementById('confirmReset').value = '';
+    document.getElementById('resetBtn').disabled = true;
+    document.getElementById('resetGameType').value = '';
+    document.getElementById('specificGameGroup').style.display = 'none';
+    
+    // Add input listener for confirmation
+    document.getElementById('confirmReset').addEventListener('input', function() {
+        document.getElementById('resetBtn').disabled = this.value !== 'RESET';
+    });
+}
+
+function closeResetLeaderboardModal() {
+    document.getElementById('resetLeaderboardModal').style.display = 'none';
+}
+
+// Update game list when type changes
+function updateResetGameList() {
+    const gameType = document.getElementById('resetGameType').value;
+    const specificGameGroup = document.getElementById('specificGameGroup');
+    
+    if (gameType && gameType !== 'all') {
+        specificGameGroup.style.display = 'block';
+        
+        fetch(`teacher-activities-backend.php?action=get_teacher_games&game_type=${gameType}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const select = document.getElementById('resetSpecificGame');
+                    select.innerHTML = '<option value="all">All Games of Selected Type</option>';
+                    data.games.forEach(game => {
+                        select.innerHTML += `<option value="${game.id}">${game.title}</option>`;
+                    });
+                }
+            })
+            .catch(error => console.error('Error loading games:', error));
+    } else {
+        specificGameGroup.style.display = 'none';
+    }
+}
+
+// Execute leaderboard reset
+function executeResetLeaderboard() {
+    const confirmText = document.getElementById('confirmReset').value;
+    
+    if (confirmText !== 'RESET') {
+        showNotification('Please type RESET to confirm', 'error');
+        return;
+    }
+    
+    const gameType = document.getElementById('resetGameType').value;
+    const specificGame = document.getElementById('resetSpecificGame').value;
+    
+    if (!gameType) {
+        showNotification('Please select a game type to reset', 'error');
+        return;
+    }
+    
+    if (!confirm('Are you absolutely sure you want to reset the leaderboard? This action CANNOT be undone!')) {
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('action', 'reset_leaderboard');
+    formData.append('game_type', gameType);
+    formData.append('specific_game', specificGame);
+    
+    fetch('teacher-activities-backend.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(`Leaderboard reset successfully! ${data.deleted_count} session(s) deleted.`, 'success');
+            closeResetLeaderboardModal();
+            loadActivities();
+        } else {
+            showNotification('Failed to reset leaderboard: ' + data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('An error occurred while resetting the leaderboard', 'error');
+    });
 }

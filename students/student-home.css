@@ -124,7 +124,8 @@ body::before {
     color: white;
 }
 
-.dropdown:hover .dropdown-content {
+/* Show dropdown on click (controlled by JS) */
+.dropdown.active .dropdown-content {
     display: block;
 }
 

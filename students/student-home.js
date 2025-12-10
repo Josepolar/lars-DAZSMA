@@ -181,12 +181,26 @@ function updateActiveGamesList(games) {
         const li = document.createElement('li');
         
         const isMatchingGame = game.game_type_flag === 'matching';
-        const gameIcon = isMatchingGame ? 'fa-puzzle-piece' : 'fa-gamepad';
-        const iconColor = isMatchingGame ? '#26890D' : '#ff6b6b';
-        const playUrl = isMatchingGame ? 
-            `games/play-matching-game.php?matching_game_id=${game.game_id}` :
-            `games/play-game.php?game_id=${game.game_id}`;
-        const itemLabel = isMatchingGame ? 'pairs' : 'questions';
+        const isTypingGame = game.game_type_flag === 'typing';
+        
+        let gameIcon, iconColor, playUrl, itemLabel;
+        
+        if (isMatchingGame) {
+            gameIcon = 'fa-puzzle-piece';
+            iconColor = '#26890D';
+            playUrl = `games/play-matching-game.php?matching_game_id=${game.game_id}`;
+            itemLabel = 'pairs';
+        } else if (isTypingGame) {
+            gameIcon = 'fa-keyboard';
+            iconColor = '#9C27B0';
+            playUrl = `games/play-typing-game.php?typing_game_id=${game.game_id}`;
+            itemLabel = 'texts';
+        } else {
+            gameIcon = 'fa-gamepad';
+            iconColor = '#ff6b6b';
+            playUrl = `games/play-game.php?game_id=${game.game_id}`;
+            itemLabel = 'questions';
+        }
         
         li.innerHTML = `
             <div style="display: flex; align-items: center; justify-content: space-between;">

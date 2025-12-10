@@ -38,7 +38,7 @@ try {
         throw new Exception('Student profile not found');
     }
 
-    // Get student's total points and submission statistics (including game scores and matching game scores)
+    // Get student's total points and submission statistics (including game scores, matching game scores, and typing game scores)
     $statsStmt = $pdo->prepare("
         SELECT 
             COUNT(DISTINCT ss.submission_id) as total_submissions,
@@ -46,14 +46,15 @@ try {
             (
                 COALESCE(SUM(CASE WHEN ss.submission_status IN ('submitted', 'graded') THEN ss.total_score ELSE 0 END), 0) +
                 COALESCE((SELECT SUM(gs.total_score) FROM game_sessions gs WHERE gs.student_id = ? AND gs.completed_at IS NOT NULL), 0) +
-                COALESCE((SELECT SUM(ms.total_score) FROM matching_sessions ms WHERE ms.student_id = ? AND ms.completed_at IS NOT NULL), 0)
+                COALESCE((SELECT SUM(ms.total_score) FROM matching_sessions ms WHERE ms.student_id = ? AND ms.completed_at IS NOT NULL), 0) +
+                COALESCE((SELECT SUM(ts.total_score) FROM typing_sessions ts WHERE ts.student_id = ? AND ts.completed_at IS NOT NULL), 0)
             ) as total_points_earned,
             COALESCE(SUM(CASE WHEN ss.submission_status IN ('submitted', 'graded') THEN ss.max_score ELSE 0 END), 0) as total_possible_points,
             COALESCE(AVG(CASE WHEN ss.submission_status IN ('submitted', 'graded') AND ss.percentage IS NOT NULL THEN ss.percentage END), 0) as average_percentage
         FROM student_submissions ss
         WHERE ss.student_id = ?
     ");
-    $statsStmt->execute([$student_id, $student_id, $student_id]);
+    $statsStmt->execute([$student_id, $student_id, $student_id, $student_id]);
     $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
 
     // Get recent submissions (completed or graded activities AND completed games)
@@ -130,10 +131,32 @@ try {
         WHERE ms.student_id = ? 
         AND ms.completed_at IS NOT NULL
         
+        UNION ALL
+        
+        SELECT 
+            tg.title as activity_title,
+            s.subject_name,
+            'typing' as activity_type,
+            ts.total_score,
+            1000 as max_score,
+            ts.accuracy as percentage,
+            ts.completed_at as submitted_at,
+            'completed' as submission_status,
+            CONCAT(t.first_name, ' ', t.last_name) as teacher_name,
+            NULL as game_id,
+            ts.typing_game_id as matching_game_id,
+            'typing_game' as item_type
+        FROM typing_sessions ts
+        JOIN typing_games tg ON ts.typing_game_id = tg.typing_game_id
+        JOIN subjects s ON tg.subject_id = s.subject_id
+        JOIN users t ON tg.teacher_id = t.user_id
+        WHERE ts.student_id = ? 
+        AND ts.completed_at IS NOT NULL
+        
         ORDER BY submitted_at DESC
         LIMIT 10
     ");
-    $recentSubmissionsStmt->execute([$student_id, $student_id, $student_id]);
+    $recentSubmissionsStmt->execute([$student_id, $student_id, $student_id, $student_id]);
     $recentSubmissions = $recentSubmissionsStmt->fetchAll(PDO::FETCH_ASSOC);
 
     // Get pending activities (not started or in progress) - filtered by student's grade level
@@ -268,12 +291,40 @@ try {
             AND ms.completed_at IS NOT NULL
         )
         
+        UNION ALL
+        
+        SELECT 
+            tg.typing_game_id as game_id,
+            tg.title as game_title,
+            tg.description,
+            tg.time_limit,
+            tg.show_leaderboard,
+            tg.status,
+            s.subject_name,
+            s.grade_level,
+            CONCAT(u.first_name, ' ', u.last_name) as teacher_name,
+            (SELECT COUNT(*) FROM typing_texts WHERE typing_game_id = tg.typing_game_id) as question_count,
+            (SELECT COUNT(*) FROM typing_sessions WHERE typing_game_id = tg.typing_game_id AND student_id = ? AND completed_at IS NOT NULL) as times_played,
+            (SELECT total_score FROM typing_sessions WHERE typing_game_id = tg.typing_game_id AND student_id = ? AND completed_at IS NOT NULL ORDER BY total_score DESC LIMIT 1) as best_score,
+            'typing' as game_type_flag
+        FROM typing_games tg
+        INNER JOIN subjects s ON tg.subject_id = s.subject_id
+        INNER JOIN users u ON tg.teacher_id = u.user_id
+        WHERE s.grade_level = ? 
+        AND tg.status = 'active'
+        AND NOT EXISTS (
+            SELECT 1 FROM typing_sessions ts 
+            WHERE ts.typing_game_id = tg.typing_game_id 
+            AND ts.student_id = ? 
+            AND ts.completed_at IS NOT NULL
+        )
+        
         ORDER BY game_title
     ");
-    $gamesStmt->execute([$student_id, $student_id, $profile['grade_level'], $student_id, $student_id, $student_id, $profile['grade_level'], $student_id]);
+    $gamesStmt->execute([$student_id, $student_id, $profile['grade_level'], $student_id, $student_id, $student_id, $profile['grade_level'], $student_id, $student_id, $student_id, $profile['grade_level'], $student_id]);
     $activeGames = $gamesStmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Get class leaderboard (ALL students in same grade level with points from activities, games, AND matching games)
+    // Get class leaderboard (ALL students in same grade level with points from activities, games, matching games, AND typing games)
     $leaderboardStmt = $pdo->prepare("
         SELECT 
             u.user_id,
@@ -283,11 +334,13 @@ try {
             (
                 COALESCE(SUM(CASE WHEN ss.submission_status IN ('submitted', 'graded') AND s.grade_level = u.grade_level THEN ss.total_score ELSE 0 END), 0) +
                 COALESCE(SUM(CASE WHEN gs.completed_at IS NOT NULL AND subj.grade_level = u.grade_level THEN gs.total_score ELSE 0 END), 0) +
-                COALESCE(SUM(CASE WHEN ms.completed_at IS NOT NULL AND msubj.grade_level = u.grade_level THEN ms.total_score ELSE 0 END), 0)
+                COALESCE(SUM(CASE WHEN ms.completed_at IS NOT NULL AND msubj.grade_level = u.grade_level THEN ms.total_score ELSE 0 END), 0) +
+                COALESCE(SUM(CASE WHEN ts.completed_at IS NOT NULL AND tsubj.grade_level = u.grade_level THEN ts.total_score ELSE 0 END), 0)
             ) as total_points,
             COUNT(CASE WHEN ss.submission_status IN ('submitted', 'graded') AND s.grade_level = u.grade_level THEN 1 END) as completed_activities,
             COUNT(CASE WHEN gs.completed_at IS NOT NULL AND subj.grade_level = u.grade_level THEN 1 END) as completed_games,
             COUNT(CASE WHEN ms.completed_at IS NOT NULL AND msubj.grade_level = u.grade_level THEN 1 END) as completed_matching_games,
+            COUNT(CASE WHEN ts.completed_at IS NOT NULL AND tsubj.grade_level = u.grade_level THEN 1 END) as completed_typing_games,
             COALESCE(AVG(CASE WHEN ss.submission_status IN ('submitted', 'graded') AND s.grade_level = u.grade_level AND ss.percentage IS NOT NULL THEN ss.percentage END), 0) as avg_percentage
         FROM users u
         LEFT JOIN student_submissions ss ON u.user_id = ss.student_id
@@ -299,6 +352,9 @@ try {
         LEFT JOIN matching_sessions ms ON u.user_id = ms.student_id
         LEFT JOIN matching_games mg ON ms.matching_game_id = mg.matching_game_id
         LEFT JOIN subjects msubj ON mg.subject_id = msubj.subject_id
+        LEFT JOIN typing_sessions ts ON u.user_id = ts.student_id
+        LEFT JOIN typing_games tg ON ts.typing_game_id = tg.typing_game_id
+        LEFT JOIN subjects tsubj ON tg.subject_id = tsubj.subject_id
         WHERE u.role_id = 4 AND u.grade_level = ?
         GROUP BY u.user_id, u.first_name, u.last_name
         ORDER BY total_points DESC, avg_percentage DESC

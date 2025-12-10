@@ -75,6 +75,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $redirect_url .= "&due_date=" . urlencode($due_date_input);
                 header("Location: $redirect_url");
                 exit();
+            } elseif ($game_type == 'typing') {
+                // Redirect to create typing game
+                header("Location: create-typing-game.php");
+                exit();
             } else {
                 // Create quiz game (existing functionality)
                 $query = "INSERT INTO game_activities (subject_id, teacher_id, title, description, time_limit, show_leaderboard, due_date) 
@@ -286,6 +290,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         <option value="matching" <?php echo (isset($_POST['game_type']) && $_POST['game_type'] == 'matching') ? 'selected' : ''; ?>>
                             🧩 Matching Game (Match Items/Images)
                         </option>
+                        <option value="typing" <?php echo (isset($_POST['game_type']) && $_POST['game_type'] == 'typing') ? 'selected' : ''; ?>>
+                            ⌨️ Speed Typing Game (Test Typing Speed)
+                        </option>
                     </select>
                     <div class="help-text" id="game-type-help">
                         Quiz games test knowledge with multiple-choice questions
@@ -364,6 +371,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 helpText.textContent = 'Matching games let students connect related items, images, or words';
                 timeLimitLabel.textContent = 'Total Game Time (seconds) *';
                 timeLimitHelp.textContent = 'Recommended: 180-600 seconds (3-10 minutes)';
+            } else if (gameType === 'typing') {
+                helpText.textContent = 'Speed typing games test students\' typing speed and accuracy';
+                timeLimitLabel.textContent = 'Time Limit (seconds) *';
+                timeLimitHelp.textContent = 'Recommended: 60-120 seconds (1-2 minutes)';
             } else {
                 helpText.textContent = 'Quiz games test knowledge with multiple-choice questions';
                 timeLimitLabel.textContent = 'Time per Question (seconds) *';

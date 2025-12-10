@@ -65,9 +65,32 @@ $query = "SELECT ga.game_id, ga.title, ga.description, ga.time_limit, ga.show_le
               AND ms.student_id = ? 
               AND ms.completed_at IS NOT NULL
           )
+          UNION ALL
+          SELECT tg.typing_game_id as game_id, tg.title, tg.description, tg.time_limit, 
+               tg.show_leaderboard, tg.status, tg.created_at, tg.updated_at, 
+               tg.teacher_id, tg.subject_id,
+               tg.due_date,
+                 s.subject_name, s.grade_level as subject_grade, 
+                 CONCAT(u.first_name, ' ', u.last_name) as teacher_name,
+                 'typing' as game_type_flag,
+          (SELECT COUNT(*) FROM typing_texts WHERE typing_game_id = tg.typing_game_id) as question_count,
+          (SELECT COUNT(*) FROM typing_sessions WHERE typing_game_id = tg.typing_game_id AND student_id = ? AND completed_at IS NOT NULL) as played,
+          (SELECT total_score FROM typing_sessions WHERE typing_game_id = tg.typing_game_id AND student_id = ? AND completed_at IS NOT NULL ORDER BY total_score DESC LIMIT 1) as best_score
+          FROM typing_games tg
+          INNER JOIN subjects s ON tg.subject_id = s.subject_id
+          INNER JOIN users u ON tg.teacher_id = u.user_id
+          WHERE s.grade_level = ? 
+          AND tg.status = 'active'
+          AND (tg.due_date IS NULL OR tg.due_date >= NOW())
+          AND NOT EXISTS (
+              SELECT 1 FROM typing_sessions ts 
+              WHERE ts.typing_game_id = tg.typing_game_id 
+              AND ts.student_id = ? 
+              AND ts.completed_at IS NOT NULL
+          )
           ORDER BY created_at DESC";
 $stmt = $pdo->prepare($query);
-$stmt->execute([$student_id, $student_id, $student_grade, $student_id, $student_id, $student_id, $student_grade, $student_id]);
+$stmt->execute([$student_id, $student_id, $student_grade, $student_id, $student_id, $student_id, $student_grade, $student_id, $student_id, $student_id, $student_grade, $student_id]);
 $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // DEBUG: See what games we found
@@ -81,10 +104,11 @@ $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="icon" type="image/png" href="../../assets/tablogo.png">
     <title>Available Games</title>
     <link rel="stylesheet" href="../student-home.css">
+    <link rel="stylesheet" href="../../assets/css/responsive.css?v=<?php echo time(); ?>">
     <style>
         .games-container {
             max-width: 1200px;
@@ -443,7 +467,7 @@ $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         <div class="page-header">
             <h1>🎮 Game Activities</h1>
-            <p>Challenge yourself with interactive quiz and matching games from your subjects!</p>
+            <p>Challenge yourself with interactive quiz, matching, and speed typing games from your subjects!</p>
         </div>
 
         <?php if (count($games) > 0): ?>
@@ -453,6 +477,8 @@ $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <div class="game-title">
                             <?php if ($game['game_type_flag'] == 'matching'): ?>
                                 🧩 
+                            <?php elseif ($game['game_type_flag'] == 'typing'): ?>
+                                ⌨️ 
                             <?php else: ?>
                                 🎯 
                             <?php endif; ?>
@@ -463,6 +489,8 @@ $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <?php 
                             if ($game['game_type_flag'] == 'matching') {
                                 echo htmlspecialchars($game['description'] ?: 'Match related items in this fun puzzle game!');
+                            } elseif ($game['game_type_flag'] == 'typing') {
+                                echo htmlspecialchars($game['description'] ?: 'Test your typing speed and accuracy in this speed typing challenge!');
                             } else {
                                 echo htmlspecialchars($game['description'] ?: 'Test your knowledge with this exciting quiz game!');
                             }
@@ -500,6 +528,9 @@ $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <?php if ($game['game_type_flag'] == 'matching'): ?>
                                 <span class="meta-item">🧩 <?php echo $game['question_count']; ?> pairs</span>
                                 <span class="meta-item">⏱️ <?php echo $game['time_limit']; ?>s total</span>
+                            <?php elseif ($game['game_type_flag'] == 'typing'): ?>
+                                <span class="meta-item">📝 <?php echo $game['question_count']; ?> text(s)</span>
+                                <span class="meta-item">⏱️ <?php echo $game['time_limit']; ?>s time limit</span>
                             <?php else: ?>
                                 <span class="meta-item">❓ <?php echo $game['question_count']; ?> questions</span>
                                 <span class="meta-item">⏱️ <?php echo $game['time_limit']; ?>s per question</span>
@@ -509,6 +540,10 @@ $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <?php if ($game['game_type_flag'] == 'matching'): ?>
                             <a href="play-matching-game.php?matching_game_id=<?php echo $game['game_id']; ?>" class="play-btn">
                                 ▶️ Start Matching Game
+                            </a>
+                        <?php elseif ($game['game_type_flag'] == 'typing'): ?>
+                            <a href="play-typing-game.php?typing_game_id=<?php echo $game['game_id']; ?>" class="play-btn">
+                                ▶️ Start Typing Game
                             </a>
                         <?php else: ?>
                             <a href="play-game.php?game_id=<?php echo $game['game_id']; ?>" class="play-btn">

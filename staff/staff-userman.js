@@ -28,8 +28,8 @@ function switchTab(tab) {
 
 // Function to download grade-specific CSV template
 function downloadTemplate(gradeLevel) {
-    const header = "First Name,Last Name,Username,Email,Password,Grade Level\n";
-    const example = `John,Doe,johndoe${gradeLevel},john.doe${gradeLevel}@example.com,password123,${gradeLevel}\n`;
+    const header = "First Name,Last Name,Username,Email,Password,Grade Level,Section\n";
+    const example = `John,Doe,johndoe${gradeLevel},john.doe${gradeLevel}@example.com,password123,${gradeLevel},A\n`;
     const csvContent = header + example;
     
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -57,40 +57,49 @@ function closeEditModal() {
 async function openEditModal(userType, userId) {
     const modal = document.getElementById('editUserModal');
     const form = document.getElementById('editUserForm');
-    const gradeField = document.getElementById('edit_grade')?.closest('.form-group');
+    const gradeFieldContainer = document.querySelector('.student-grade-field');
+    const sectionFieldContainer = document.querySelector('.student-section-field');
     
-    // Show/hide grade field based on user type
-    if (gradeField) {
-        gradeField.style.display = userType === 'student' ? 'block' : 'none';
+    // Show/hide grade and section fields based on user type
+    if (gradeFieldContainer) {
+        gradeFieldContainer.style.display = userType === 'student' ? 'block' : 'none';
+    }
+    if (sectionFieldContainer) {
+        sectionFieldContainer.style.display = userType === 'student' ? 'block' : 'none';
     }
     
-    // Find the user data from the table
-    const userRow = document.querySelector(`tr[data-id="${userId}"]`);
-    const nameCell = userRow.cells[0];
-    const emailCell = userRow.cells[1];
-    const usernameCell = userRow.cells[2];
-    const gradeCell = userType === 'student' ? userRow.querySelector('.grade-level') : null;
-
-    // Split the full name into first and last name
-    const [firstName, lastName] = nameCell.textContent.trim().split(' ');
-
-    // Populate the form fields
-    document.getElementById('edit_user_id').value = userId;
-    document.getElementById('edit_fname').value = firstName;
-    document.getElementById('edit_lname').value = lastName;
-    document.getElementById('edit_email').value = emailCell.textContent.trim();
-    document.getElementById('edit_username').value = usernameCell.textContent.trim();
-    
-    // Set grade level if it's a student
-    if (gradeField && gradeCell) {
-        document.getElementById('edit_grade').value = gradeCell.textContent.trim();
+    // Fetch user data via AJAX
+    try {
+        const response = await fetch(`staff-userman.php?get_user=${userId}`);
+        const userData = await response.json();
+        
+        if (userData.success) {
+            document.getElementById('edit_user_id').value = userId;
+            document.getElementById('edit_fname').value = userData.first_name;
+            document.getElementById('edit_lname').value = userData.last_name;
+            document.getElementById('edit_email').value = userData.email;
+            document.getElementById('edit_username').value = userData.username;
+            
+            // Set grade level and section if it's a student
+            if (userType === 'student') {
+                document.getElementById('edit_grade').value = userData.grade_level || '';
+                if (document.getElementById('edit_section')) {
+                    document.getElementById('edit_section').value = userData.section || '';
+                }
+            }
+            
+            // Clear password field (it's optional in edit mode)
+            document.getElementById('edit_password').value = '';
+            
+            // Show the modal
+            modal.style.display = "block";
+        } else {
+            alert('Error loading user data');
+        }
+    } catch (error) {
+        console.error('Error fetching user data:', error);
+        alert('Error loading user data. Please try again.');
     }
-    
-    // Clear password field (it's optional in edit mode)
-    document.getElementById('edit_password').value = '';
-    
-    // Show the modal
-    modal.style.display = "block";
 }
 
 // Function to delete a user
@@ -163,7 +172,10 @@ document.addEventListener('DOMContentLoaded', function() {
             studentRows.forEach(row => {
                 const gradeCell = row.querySelector('td:nth-child(2)');
                 if (gradeCell) {
-                    const studentGrade = gradeCell.textContent.replace('Grade ', '').trim();
+                    // Extract grade number from text like "Grade 7" or "Grade 7 - A"
+                    const gradeText = gradeCell.textContent;
+                    const gradeMatch = gradeText.match(/Grade\s*(\d+)/);
+                    const studentGrade = gradeMatch ? gradeMatch[1] : '';
                     
                     if (selectedGrade === 'all' || studentGrade === selectedGrade) {
                         row.style.display = '';

@@ -83,22 +83,18 @@ $hasResponses = count($responses) > 0;
 // Calculate percentage
 $percentage = ($session['total_pairs'] > 0) ? ($session['total_correct'] / $session['total_pairs']) * 100 : 0;
 
-// Determine grade
-$gradeColor = '#721c24';
-$gradeBg = '#f8d7da';
+// Determine grade colors for dark theme
+$gradeColor = '#ff6b6b';
 $gradeText = 'Needs Improvement';
 
 if ($percentage >= 90) {
-    $gradeColor = '#155724';
-    $gradeBg = '#d4edda';
+    $gradeColor = '#00ff88';
     $gradeText = 'Excellent';
 } elseif ($percentage >= 75) {
-    $gradeColor = '#0c5460';
-    $gradeBg = '#d1ecf1';
+    $gradeColor = '#00d4ff';
     $gradeText = 'Good';
 } elseif ($percentage >= 60) {
-    $gradeColor = '#856404';
-    $gradeBg = '#fff3cd';
+    $gradeColor = '#ffc107';
     $gradeText = 'Fair';
 }
 ?>
@@ -120,9 +116,10 @@ if ($percentage >= 90) {
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             min-height: 100vh;
             padding: 20px;
+            color: #ffffff;
         }
         
         .container {
@@ -130,52 +127,69 @@ if ($percentage >= 90) {
             margin: 0 auto;
         }
         
+        /* Alert for already played */
+        .alert-info {
+            background: rgba(0, 212, 255, 0.1);
+            border: 2px solid #00d4ff;
+            border-radius: 12px;
+            padding: 16px 24px;
+            margin-bottom: 20px;
+            color: #00d4ff;
+            text-align: center;
+            font-size: 15px;
+        }
+        
         .back-btn {
-            background: white;
-            color: #667eea;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            color: #ffffff;
             padding: 12px 24px;
-            border-radius: 8px;
+            border-radius: 12px;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
             gap: 8px;
             margin-bottom: 20px;
             font-weight: 600;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             transition: all 0.3s;
         }
         
         .back-btn:hover {
-            background: #f0f0f0;
+            background: rgba(255, 255, 255, 0.2);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.2);
+            border-color: #00d4ff;
         }
         
         .results-card {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             overflow: hidden;
             margin-bottom: 20px;
         }
         
         .score-header {
-            background: <?php echo $gradeBg; ?>;
+            background: rgba(0, 0, 0, 0.3);
             padding: 40px 30px;
             text-align: center;
-            border-bottom: 4px solid <?php echo $gradeColor; ?>;
+            border-bottom: 2px solid <?php echo $gradeColor; ?>;
         }
         
         .score-value {
-            font-size: 64px;
+            font-size: 72px;
             font-weight: bold;
             color: <?php echo $gradeColor; ?>;
             margin-bottom: 10px;
+            text-shadow: 0 0 30px <?php echo $gradeColor; ?>40;
         }
         
         .score-label {
-            font-size: 28px;
-            color: <?php echo $gradeColor; ?>;
+            font-size: 24px;
+            color: rgba(255, 255, 255, 0.8);
             margin-bottom: 10px;
             font-weight: 600;
         }
@@ -183,26 +197,31 @@ if ($percentage >= 90) {
         .grade-badge {
             display: inline-block;
             background: <?php echo $gradeColor; ?>;
-            color: white;
-            padding: 10px 30px;
-            border-radius: 25px;
+            color: #1a1a2e;
+            padding: 12px 35px;
+            border-radius: 30px;
             font-size: 18px;
             font-weight: bold;
-            margin-top: 10px;
+            margin-top: 15px;
+            box-shadow: 0 4px 15px <?php echo $gradeColor; ?>40;
         }
         
         .game-info {
             padding: 30px;
-            border-bottom: 1px solid #e0e0e0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         .game-title {
             font-size: 28px;
-            color: #333;
+            color: #ffffff;
             margin-bottom: 15px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+        }
+        
+        .game-title i {
+            color: #9c27b0;
         }
         
         .info-grid {
@@ -215,14 +234,21 @@ if ($percentage >= 90) {
         .info-item {
             display: flex;
             align-items: center;
-            gap: 8px;
-            color: #666;
+            gap: 10px;
+            color: rgba(255, 255, 255, 0.7);
             font-size: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 12px 16px;
+            border-radius: 10px;
         }
         
         .info-item i {
-            color: #667eea;
+            color: #00d4ff;
             width: 20px;
+        }
+        
+        .info-item strong {
+            color: rgba(255, 255, 255, 0.9);
         }
         
         .answers-section {
@@ -231,35 +257,53 @@ if ($percentage >= 90) {
         
         .section-title {
             font-size: 24px;
-            color: #333;
+            color: #ffffff;
             margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+        }
+        
+        .section-title i {
+            color: #00d4ff;
         }
         
         .pair-card {
-            background: #f8f9fa;
-            border: 2px solid #e0e0e0;
-            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
             padding: 20px;
             margin-bottom: 20px;
             transition: all 0.3s;
         }
         
         .pair-card:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .pair-card.correct {
+            border-color: rgba(0, 255, 136, 0.5);
+            background: rgba(0, 255, 136, 0.05);
+        }
+        
+        .pair-card.incorrect {
+            border-color: rgba(255, 107, 107, 0.5);
+            background: rgba(255, 107, 107, 0.05);
         }
         
         .pair-number {
             font-weight: bold;
-            color: #667eea;
+            color: #00d4ff;
             margin-bottom: 15px;
             font-size: 14px;
             text-transform: uppercase;
             letter-spacing: 1px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         
         .pair-content {
@@ -270,69 +314,162 @@ if ($percentage >= 90) {
         }
         
         .pair-item {
-            background: white;
+            background: rgba(255, 255, 255, 0.05);
             padding: 20px;
-            border-radius: 8px;
+            border-radius: 12px;
             min-height: 120px;
             display: flex;
             align-items: center;
             justify-content: center;
             text-align: center;
-            border: 2px solid #dee2e6;
+            border: 2px solid rgba(255, 255, 255, 0.1);
         }
         
         .pair-item img {
             max-width: 100%;
             max-height: 150px;
-            border-radius: 6px;
+            border-radius: 8px;
         }
         
         .pair-item-text {
             font-size: 16px;
-            color: #333;
+            color: #ffffff;
             font-weight: 500;
         }
         
         .match-arrow {
             font-size: 32px;
-            color: #26890D;
+            color: #00d4ff;
             font-weight: bold;
         }
         
         .correct-label {
-            text-align: center;
-            margin-top: 10px;
-            font-weight: 600;
-            color: #26890D;
+            color: #00ff88;
+            font-weight: bold;
             font-size: 14px;
+        }
+        
+        .incorrect-label {
+            color: #ff6b6b;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .no-response-label {
+            color: #ffc107;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .answer-wrapper {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .answer-wrapper.correct {
+            border-color: rgba(0, 255, 136, 0.5);
+            background: rgba(0, 255, 136, 0.1);
+        }
+        
+        .answer-wrapper.incorrect {
+            border-color: rgba(255, 107, 107, 0.5);
+            background: rgba(255, 107, 107, 0.1);
+        }
+        
+        .answer-badge {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        
+        .answer-badge.correct {
+            background: #00ff88;
+            color: #1a1a2e;
+        }
+        
+        .answer-badge.incorrect {
+            background: #ff6b6b;
+            color: #ffffff;
         }
         
         .stats-footer {
-            background: #f8f9fa;
-            padding: 20px 30px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 25px 30px;
             display: flex;
             justify-content: space-around;
             flex-wrap: wrap;
             gap: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         .stat-item {
             text-align: center;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px 25px;
+            border-radius: 12px;
+            min-width: 120px;
         }
         
-        .stat-value {
-            font-size: 24px;
+        .stat-item .stat-value {
+            font-size: 28px;
             font-weight: bold;
-            color: #333;
+            color: #ffffff;
         }
         
-        .stat-label {
+        .stat-item .stat-label {
             font-size: 12px;
-            color: #666;
+            color: rgba(255, 255, 255, 0.6);
             text-transform: uppercase;
             letter-spacing: 1px;
             margin-top: 5px;
+        }
+        
+        .warning-box {
+            background: rgba(255, 193, 7, 0.1);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 2px solid rgba(255, 193, 7, 0.5);
+            text-align: center;
+            color: #ffc107;
+        }
+        
+        .no-response-box {
+            background: rgba(255, 193, 7, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            border: 2px solid rgba(255, 193, 7, 0.5);
+            text-align: center;
+            color: #ffc107;
+        }
+        
+        /* Correct answers section styling */
+        .correct-answer-card {
+            background: rgba(0, 255, 136, 0.05);
+            border: 2px solid rgba(0, 255, 136, 0.3);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .correct-answer-card .pair-number {
+            color: #00ff88;
+        }
+        
+        .correct-answer-card .match-arrow {
+            color: #00ff88;
         }
         
         @media (max-width: 768px) {
@@ -351,11 +488,24 @@ if ($percentage >= 90) {
             }
             
             .score-label {
-                font-size: 20px;
+                font-size: 18px;
             }
             
             .game-title {
                 font-size: 22px;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-footer {
+                padding: 20px;
+            }
+            
+            .stat-item {
+                min-width: 100px;
+                padding: 12px 16px;
             }
         }
         
@@ -366,12 +516,25 @@ if ($percentage >= 90) {
             
             body {
                 background: white;
+                color: #333;
+            }
+            
+            .results-card {
+                background: white;
+                box-shadow: none;
+                border: 1px solid #ddd;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <?php if (isset($_GET['already_played'])): ?>
+            <div class="alert-info">
+                <strong>⚠️ Note:</strong> You have already completed this game. Only your first attempt counts toward the leaderboard.
+            </div>
+        <?php endif; ?>
+        
         <a href="student-home.php" class="back-btn">
             <i class="fas fa-arrow-left"></i> Back to Dashboard
         </a>
@@ -381,7 +544,7 @@ if ($percentage >= 90) {
             <div class="score-header">
                 <div class="score-value"><?php echo number_format($session['total_score']); ?></div>
                 <div class="score-label">Points Earned</div>
-                <div style="font-size: 18px; color: <?php echo $gradeColor; ?>; margin: 10px 0;">
+                <div style="font-size: 18px; color: rgba(255,255,255,0.7); margin: 10px 0;">
                     <?php echo $session['total_correct']; ?> out of <?php echo $session['total_pairs']; ?> Correct (<?php echo number_format($percentage, 1); ?>%)
                 </div>
                 <div class="grade-badge"><?php echo $gradeText; ?></div>
@@ -390,7 +553,7 @@ if ($percentage >= 90) {
             <!-- Game Info -->
             <div class="game-info">
                 <div class="game-title">
-                    <i class="fas fa-puzzle-piece" style="color: #9c27b0;"></i>
+                    <i class="fas fa-puzzle-piece"></i>
                     <?php echo htmlspecialchars($game['title']); ?>
                 </div>
                 
@@ -423,7 +586,7 @@ if ($percentage >= 90) {
                 </div>
                 
                 <?php if (!$hasResponses): ?>
-                    <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 2px solid #ffc107; text-align: center; color: #856404;">
+                    <div class="warning-box">
                         <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 10px;"></i>
                         <p><strong>No detailed responses found for this session.</strong></p>
                         <p style="font-size: 14px; margin-top: 5px;">Session ID: <?php echo $session['session_id']; ?></p>
@@ -433,31 +596,29 @@ if ($percentage >= 90) {
                 <?php foreach ($pairs as $index => $pair): 
                     $response = isset($responseMap[$pair['pair_id']]) ? $responseMap[$pair['pair_id']] : null;
                     $isCorrect = $response && (int)$response['is_correct'] === 1;
-                    $borderColor = $isCorrect ? '#28a745' : '#dc3545';
-                    $bgColor = $isCorrect ? '#d4edda' : '#f8d7da';
                 ?>
-                    <div class="pair-card" style="border-color: <?php echo $borderColor; ?>; background: <?php echo $bgColor; ?>;">
-                        <div class="pair-number" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="pair-card <?php echo $isCorrect ? 'correct' : 'incorrect'; ?>">
+                        <div class="pair-number">
                             <span><i class="fas fa-link"></i> PAIR <?php echo $index + 1; ?></span>
                             <?php if ($response): ?>
                                 <?php if ($isCorrect): ?>
-                                    <span style="color: #28a745; font-weight: bold; font-size: 14px;">
+                                    <span class="correct-label">
                                         <i class="fas fa-check-circle"></i> CORRECT
                                     </span>
                                 <?php else: ?>
-                                    <span style="color: #dc3545; font-weight: bold; font-size: 14px;">
+                                    <span class="incorrect-label">
                                         <i class="fas fa-times-circle"></i> INCORRECT
                                     </span>
                                 <?php endif; ?>
                             <?php else: ?>
-                                <span style="color: #ffc107; font-weight: bold; font-size: 14px;">
+                                <span class="no-response-label">
                                     <i class="fas fa-exclamation-triangle"></i> NO RESPONSE
                                 </span>
                             <?php endif; ?>
                         </div>
                         
                         <?php if ($response): ?>
-                            <div style="background: white; padding: 20px; border-radius: 8px; margin-top: 15px; border: 2px solid <?php echo $borderColor; ?>;">
+                            <div class="answer-wrapper <?php echo $isCorrect ? 'correct' : 'incorrect'; ?>">
                                 <div class="pair-content">
                                     <!-- Left Item (Question/Prompt) -->
                                     <div class="pair-item" style="min-height: 150px;">
@@ -469,30 +630,30 @@ if ($percentage >= 90) {
                                     </div>
                                     
                                     <!-- Arrow -->
-                                    <div class="match-arrow" style="color: <?php echo $borderColor; ?>;">→</div>
+                                    <div class="match-arrow" style="color: <?php echo $isCorrect ? '#00ff88' : '#ff6b6b'; ?>;">→</div>
                                     
                                     <!-- Right Item (Student's Answer) -->
-                                    <div class="pair-item" style="border-color: <?php echo $borderColor; ?>; border-width: 3px; position: relative; min-height: 150px; background: <?php echo $isCorrect ? '#e8f5e9' : '#ffebee'; ?>;">
+                                    <div class="pair-item" style="border-color: <?php echo $isCorrect ? 'rgba(0,255,136,0.5)' : 'rgba(255,107,107,0.5)'; ?>; position: relative; min-height: 150px;">
                                         <?php if (!empty($response['student_right_image'])): ?>
                                             <img src="../<?php echo htmlspecialchars($response['student_right_image']); ?>" alt="Your Answer" style="max-width: 100%; max-height: 180px; object-fit: contain;">
                                         <?php elseif (!empty($response['student_right_text'])): ?>
                                             <div class="pair-item-text" style="font-weight: 600;"><?php echo htmlspecialchars($response['student_right_text']); ?></div>
                                         <?php else: ?>
-                                            <div class="pair-item-text" style="color: #999; font-style: italic;">
+                                            <div class="pair-item-text" style="color: rgba(255,255,255,0.5); font-style: italic;">
                                                 No answer data<br>
                                                 <small style="font-size: 12px;">Response ID: <?php echo $response['response_id'] ?? 'N/A'; ?></small>
                                             </div>
                                         <?php endif; ?>
                                         
                                         <!-- Label Badge -->
-                                        <div style="position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background: <?php echo $borderColor; ?>; color: white; padding: 6px 16px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+                                        <div class="answer-badge <?php echo $isCorrect ? 'correct' : 'incorrect'; ?>">
                                             <i class="fas fa-<?php echo $isCorrect ? 'check' : 'times'; ?>"></i> Your Answer
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         <?php else: ?>
-                            <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-top: 15px; border: 2px solid #ffc107; text-align: center; color: #856404;">
+                            <div class="no-response-box">
                                 <i class="fas fa-exclamation-triangle"></i> No response recorded for this pair
                                 <br><small style="font-size: 12px;">Pair ID: <?php echo $pair['pair_id']; ?></small>
                             </div>
@@ -507,12 +668,12 @@ if ($percentage >= 90) {
                 </div>
                 
                 <?php foreach ($pairs as $index => $pair): ?>
-                    <div class="pair-card" style="border-color: #28a745; background: #d4edda;">
-                        <div class="pair-number" style="color: #155724;">
+                    <div class="correct-answer-card">
+                        <div class="pair-number">
                             <i class="fas fa-link"></i> Pair <?php echo $index + 1; ?> - Correct Match
                         </div>
                         
-                        <div style="background: white; padding: 15px; border-radius: 8px; margin-top: 15px; border: 2px solid #28a745;">
+                        <div class="answer-wrapper correct">
                             <div class="pair-content">
                                 <!-- Left Item -->
                                 <div class="pair-item">
@@ -524,10 +685,10 @@ if ($percentage >= 90) {
                                 </div>
                                 
                                 <!-- Arrow -->
-                                <div class="match-arrow" style="color: #28a745;">↔</div>
+                                <div class="match-arrow">↔</div>
                                 
                                 <!-- Right Item (correct answer) -->
-                                <div class="pair-item" style="border-color: #28a745; border-width: 3px;">
+                                <div class="pair-item" style="border-color: rgba(0,255,136,0.5);">
                                     <?php if (!empty($pair['right_item_image'])): ?>
                                         <img src="../<?php echo htmlspecialchars($pair['right_item_image']); ?>" alt="Correct Answer">
                                     <?php else: ?>
@@ -547,7 +708,7 @@ if ($percentage >= 90) {
                     <div class="stat-label">Total Pairs</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-value" style="color: #26890D;"><?php echo $session['total_correct']; ?></div>
+                    <div class="stat-value" style="color: #00ff88;"><?php echo $session['total_correct']; ?></div>
                     <div class="stat-label">Correct Matches</div>
                 </div>
                 <div class="stat-item">
@@ -555,7 +716,7 @@ if ($percentage >= 90) {
                     <div class="stat-label">Accuracy</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-value" style="color: #667eea;"><?php echo number_format($session['total_score']); ?></div>
+                    <div class="stat-value" style="color: #00d4ff;"><?php echo number_format($session['total_score']); ?></div>
                     <div class="stat-label">Points</div>
                 </div>
             </div>

@@ -30,14 +30,27 @@ $stmt->execute([$matching_game_id]);
 $game = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$game) {
-    header("Location: available-games.php");
+    header("Location: available-games.php?error=game_not_found");
+    exit();
+}
+
+// Check if student has already completed this game (one attempt only)
+$checkAttemptQuery = "SELECT session_id FROM matching_sessions 
+                      WHERE matching_game_id = ? AND student_id = ? AND completed_at IS NOT NULL
+                      LIMIT 1";
+$checkStmt = $pdo->prepare($checkAttemptQuery);
+$checkStmt->execute([$matching_game_id, $student_id]);
+$existingAttempt = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+if ($existingAttempt) {
+    header("Location: view-matching-results.php?matching_game_id=" . $matching_game_id . "&already_played=1");
     exit();
 }
 
 if (!empty($game['due_date'])) {
     $due_date_obj = new DateTime($game['due_date']);
     if ($due_date_obj <= new DateTime()) {
-        header("Location: available-games.php");
+        header("Location: available-games.php?error=game_expired");
         exit();
     }
 }
@@ -63,8 +76,10 @@ $session_id = $pdo->lastInsertId();
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title><?php echo htmlspecialchars($game['title']); ?> - Matching Game</title>
+    <link rel="icon" type="image/png" href="../../assets/tablogo.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -74,9 +89,10 @@ $session_id = $pdo->lastInsertId();
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             min-height: 100vh;
             padding: 20px;
+            color: white;
         }
         
         .game-container {
@@ -85,45 +101,127 @@ $session_id = $pdo->lastInsertId();
         }
         
         .game-header {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 16px;
             margin-bottom: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
         }
         
         .game-title {
             font-size: 28px;
-            color: #333;
-            margin-bottom: 10px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .game-title i {
+            color: #00d4ff;
+        }
+        
+        .back-btn {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
         }
         
         .game-info {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
             flex-wrap: wrap;
-            gap: 15px;
+            gap: 20px;
+            margin-bottom: 20px;
         }
         
         .info-item {
-            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 8px;
             font-size: 14px;
+            opacity: 0.9;
         }
         
-        .timer {
-            font-size: 24px;
-            font-weight: bold;
-            color: #e21b3c;
-            padding: 10px 20px;
-            background: #fff3cd;
-            border-radius: 8px;
+        .info-item i {
+            color: #00d4ff;
         }
         
-        .score-display {
-            font-size: 20px;
-            font-weight: bold;
-            color: #26890D;
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        
+        .stat-box {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #00d4ff;
+        }
+        
+        .stat-value.timer {
+            color: #ff6b6b;
+        }
+        
+        .stat-value.score {
+            color: #00ff88;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+        
+        .progress-container {
+            margin-top: 20px;
+        }
+        
+        .progress-bar {
+            background: rgba(0,0,0,0.3);
+            height: 12px;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00d4ff, #00ff88);
+            transition: width 0.5s ease;
+            border-radius: 6px;
+        }
+        
+        .progress-text {
+            text-align: center;
+            margin-top: 8px;
+            font-size: 14px;
+            opacity: 0.8;
         }
         
         .matching-board {
@@ -134,31 +232,39 @@ $session_id = $pdo->lastInsertId();
         }
         
         .column {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.2);
         }
         
         .column-title {
             text-align: center;
             font-size: 20px;
-            font-weight: bold;
-            color: #333;
+            font-weight: 600;
             margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 3px solid #26890D;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(0,212,255,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .column-title i {
+            color: #00d4ff;
         }
         
         .item {
-            background: #f8f9fa;
+            background: rgba(255,255,255,0.1);
             padding: 20px;
             margin-bottom: 15px;
-            border-radius: 10px;
+            border-radius: 12px;
             cursor: grab;
             transition: all 0.3s;
-            border: 3px solid transparent;
-            min-height: 100px;
+            border: 2px solid transparent;
+            min-height: 80px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -173,18 +279,21 @@ $session_id = $pdo->lastInsertId();
         }
         
         .item:hover {
+            background: rgba(255,255,255,0.15);
             transform: translateY(-3px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            border-color: rgba(0,212,255,0.5);
         }
         
         .item.dragging {
             opacity: 0.5;
             cursor: grabbing;
+            transform: scale(1.05);
         }
         
         .item.matched {
-            background: #d4edda;
-            border-color: #28a745;
+            background: rgba(0,255,136,0.2);
+            border-color: #00ff88;
             cursor: default;
             pointer-events: none;
         }
@@ -192,15 +301,15 @@ $session_id = $pdo->lastInsertId();
         .item.matched::after {
             content: '✓';
             position: absolute;
-            top: 5px;
-            right: 10px;
-            font-size: 24px;
-            color: #28a745;
+            top: 8px;
+            right: 12px;
+            font-size: 20px;
+            color: #00ff88;
         }
         
         .item.incorrect {
-            background: #f8d7da;
-            border-color: #dc3545;
+            background: rgba(255,107,107,0.2);
+            border-color: #ff6b6b;
             cursor: default;
             pointer-events: none;
         }
@@ -208,40 +317,217 @@ $session_id = $pdo->lastInsertId();
         .item.incorrect::after {
             content: '✗';
             position: absolute;
-            top: 5px;
-            right: 10px;
-            font-size: 24px;
-            color: #dc3545;
+            top: 8px;
+            right: 12px;
+            font-size: 20px;
+            color: #ff6b6b;
         }
         
         .item img {
             max-width: 100%;
-            max-height: 150px;
+            max-height: 120px;
             border-radius: 8px;
         }
         
         .drop-zone {
             min-height: 80px;
-            border: 3px dashed #ccc;
-            border-radius: 10px;
+            border: 2px dashed rgba(255,255,255,0.3);
+            border-radius: 12px;
             margin-bottom: 15px;
-            padding: 20px;
+            padding: 15px;
             transition: all 0.3s;
             display: flex;
             align-items: center;
             justify-content: center;
+            background: rgba(0,0,0,0.2);
+        }
+        
+        .drop-zone .target-item {
+            text-align: center;
+            opacity: 0.9;
+        }
+        
+        .drop-zone .target-item img {
+            max-width: 100%;
+            max-height: 120px;
+            border-radius: 8px;
         }
         
         .drop-zone.drag-over {
-            border-color: #26890D;
-            background: #e8f5e9;
+            border-color: #00d4ff;
+            background: rgba(0,212,255,0.1);
+            box-shadow: 0 0 20px rgba(0,212,255,0.3);
         }
         
         .drop-zone.has-item {
             border-style: solid;
-            border-color: #007bff;
+            border-color: rgba(0,212,255,0.5);
         }
         
+        .game-controls {
+            text-align: center;
+            margin: 25px 0;
+        }
+        
+        .btn {
+            padding: 15px 40px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            color: white;
+            box-shadow: 0 4px 15px rgba(0,212,255,0.4);
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,212,255,0.5);
+        }
+        
+        .btn-primary:disabled {
+            background: rgba(255,255,255,0.2);
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        /* Results Overlay */
+        .results-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .results-modal {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(20px);
+            padding: 50px;
+            border-radius: 24px;
+            text-align: center;
+            max-width: 550px;
+            width: 90%;
+            border: 1px solid rgba(255,255,255,0.2);
+            animation: modalSlide 0.5s ease;
+        }
+        
+        @keyframes modalSlide {
+            from {
+                opacity: 0;
+                transform: translateY(-30px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        .results-title {
+            font-size: 42px;
+            margin-bottom: 30px;
+        }
+        
+        .results-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .result-stat {
+            background: rgba(0,0,0,0.3);
+            padding: 25px;
+            border-radius: 16px;
+        }
+        
+        .result-stat .value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #00d4ff;
+        }
+        
+        .result-stat .value.correct {
+            color: #00ff88;
+        }
+        
+        .result-stat .value.time {
+            color: #ffc107;
+        }
+        
+        .result-stat .value.score {
+            color: #00d4ff;
+        }
+        
+        .result-stat .label {
+            font-size: 14px;
+            opacity: 0.7;
+            margin-top: 8px;
+            text-transform: uppercase;
+        }
+        
+        .result-message {
+            font-size: 18px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(0,255,136,0.1);
+            border-radius: 12px;
+            border: 1px solid rgba(0,255,136,0.3);
+        }
+        
+        .result-message.failed {
+            background: rgba(255,107,107,0.1);
+            border-color: rgba(255,107,107,0.3);
+        }
+        
+        .results-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        /* Keyboard hints */
+        .keyboard-hint {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+            opacity: 0.6;
+        }
+        
+        .keyboard-hint kbd {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 10px;
+            border-radius: 6px;
+            margin: 0 5px;
+        }
+        
+        /* Animations */
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
             25% { transform: translateX(-10px); }
@@ -250,177 +536,327 @@ $session_id = $pdo->lastInsertId();
         
         @keyframes bounce {
             0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-20px); }
+            50% { transform: translateY(-10px); }
         }
         
-        .check-answers-btn {
-            background: #26890D;
-            color: white;
-            padding: 15px 40px;
-            border-radius: 8px;
-            border: none;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            margin: 20px auto;
-            display: block;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            transition: all 0.3s;
+        @keyframes countPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
         }
         
-        .check-answers-btn:hover {
-            background: #1e6a0a;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+        .shake {
+            animation: shake 0.5s ease-in-out;
         }
         
-        .check-answers-btn:disabled {
-            background: #6c757d;
-            cursor: not-allowed;
-            transform: none;
+        .bounce {
+            animation: bounce 0.5s ease-in-out;
         }
         
-        .completion-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.8);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
+        /* ============================================
+           RESPONSIVE DESIGN
+           ============================================ */
         
-        .completion-card {
-            background: white;
-            padding: 40px;
-            border-radius: 20px;
-            text-align: center;
-            max-width: 500px;
-            animation: bounce 0.6s;
-        }
-        
-        .completion-card h2 {
-            font-size: 36px;
-            color: #26890D;
-            margin-bottom: 20px;
-        }
-        
-        .completion-stats {
-            margin: 30px 0;
-            font-size: 18px;
-            color: #333;
-        }
-        
-        .completion-stats div {
-            margin: 10px 0;
-        }
-        
-        .btn {
-            padding: 15px 30px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 16px;
-            display: inline-block;
-            margin: 5px;
-        }
-        
-        .btn-primary {
-            background: #26890D;
-            color: white;
-        }
-        
-        .btn-primary:hover {
-            background: #1e6a0a;
-        }
-        
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-        }
-        
-        .btn-secondary:hover {
-            background: #545b62;
-        }
-        
-        .back-btn {
-            background: #666;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 6px;
-            text-decoration: none;
-            display: inline-block;
-            margin-bottom: 20px;
-        }
-        
-        .back-btn:hover {
-            background: #555;
-        }
-        
-        .progress-bar {
-            background: #e9ecef;
-            height: 30px;
-            border-radius: 15px;
-            overflow: hidden;
-            margin: 20px 0;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #26890D, #34a853);
-            transition: width 0.5s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 14px;
-        }
-        
-        @media (max-width: 768px) {
+        /* Mobile Phones (up to 575px) */
+        @media (max-width: 575px) {
+            body {
+                padding: 10px;
+            }
+            
+            .game-header {
+                padding: 15px;
+                border-radius: 12px;
+            }
+            
+            .header-top {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+            
+            .game-title {
+                font-size: 16px;
+                justify-content: center;
+            }
+            
+            .back-btn {
+                padding: 8px 16px;
+                font-size: 14px;
+            }
+            
+            .game-info {
+                flex-direction: column;
+                align-items: center;
+                gap: 8px;
+            }
+            
+            .info-item {
+                font-size: 12px;
+            }
+            
+            .stats-row {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            
+            .stat-box {
+                padding: 10px;
+            }
+            
+            .stat-value {
+                font-size: 20px;
+            }
+            
+            .stat-label {
+                font-size: 10px;
+            }
+            
+            /* Matching Board */
             .matching-board {
                 grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .column-title {
+                font-size: 14px;
+                padding: 10px;
+            }
+            
+            .definition-item,
+            .term-item {
+                padding: 12px;
+                font-size: 13px;
+                min-height: 50px;
+            }
+            
+            .drop-zone {
+                padding: 10px;
+                min-height: 45px;
+            }
+            
+            .placed-term {
+                font-size: 12px;
+                padding: 8px;
+            }
+            
+            /* Start Overlay */
+            .start-overlay h2 {
+                font-size: 22px;
+            }
+            
+            .start-overlay p {
+                font-size: 14px;
+            }
+            
+            .start-btn {
+                padding: 14px 35px;
+                font-size: 16px;
+            }
+            
+            /* Results Modal */
+            .results-modal {
+                padding: 25px 15px;
+                width: 95%;
+            }
+            
+            .results-modal h2 {
+                font-size: 24px;
+            }
+            
+            .results-stats {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .results-stat {
+                padding: 15px;
+            }
+            
+            .results-stat .value {
+                font-size: 28px;
+            }
+            
+            .results-stat .label {
+                font-size: 12px;
+            }
+            
+            .results-btn {
+                padding: 12px 25px;
+                font-size: 14px;
+                width: 100%;
+            }
+            
+            .results-buttons {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+        
+        /* Tablets Portrait (576px to 767px) */
+        @media (min-width: 576px) and (max-width: 767px) {
+            body {
+                padding: 15px;
+            }
+            
+            .game-header {
+                padding: 20px;
+            }
+            
+            .header-top {
+                flex-direction: column;
+                gap: 15px;
             }
             
             .game-title {
                 font-size: 20px;
             }
             
-            .timer {
-                font-size: 18px;
+            .stats-row {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .matching-board {
+                grid-template-columns: 1fr;
+            }
+            
+            .results-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        /* Tablets Landscape and up (768px+) */
+        @media (min-width: 768px) {
+            .matching-board {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .results-stats {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        
+        /* Touch Device Optimizations */
+        @media (hover: none) and (pointer: coarse) {
+            .term-item,
+            .definition-item,
+            .drop-zone,
+            .start-btn,
+            .results-btn,
+            .back-btn {
+                min-height: 44px;
+            }
+            
+            .term-item {
+                cursor: grab;
+            }
+            
+            /* Better touch targets */
+            .term-item:active {
+                transform: scale(1.02);
+            }
+        }
+        
+        /* Landscape Mode on Mobile */
+        @media (orientation: landscape) and (max-height: 500px) {
+            body {
+                padding: 8px;
+            }
+            
+            .game-header {
+                padding: 10px;
+                margin-bottom: 10px;
+            }
+            
+            .header-top {
+                flex-direction: row;
+            }
+            
+            .game-info {
+                display: none;
+            }
+            
+            .stats-row {
+                gap: 8px;
+            }
+            
+            .stat-box {
+                padding: 8px;
+            }
+            
+            .stat-value {
+                font-size: 16px;
+            }
+            
+            .matching-board {
+                gap: 10px;
+            }
+            
+            .definition-item,
+            .term-item {
+                padding: 8px;
+                font-size: 12px;
             }
         }
     </style>
 </head>
 <body>
     <div class="game-container">
-        <a href="available-games.php" class="back-btn">← Back to Games</a>
-        
         <div class="game-header">
-            <div class="game-title">🧩 <?php echo htmlspecialchars($game['title']); ?></div>
-            <div class="game-info">
-                <span class="info-item">📚 <?php echo htmlspecialchars($game['subject_name']); ?></span>
-                <span class="info-item">👨‍🏫 <?php echo htmlspecialchars($game['teacher_name']); ?></span>
-                <?php if (!empty($game['due_date'])): ?>
-                    <span class="info-item">📅 Due: <?php echo date('M d, Y g:i A', strtotime($game['due_date'])); ?></span>
-                <?php endif; ?>
-                <span class="timer" id="timer">Time: <span id="time-display"><?php echo $game['time_limit']; ?></span>s</span>
-                <span class="score-display">Score: <span id="score">0</span></span>
+            <div class="header-top">
+                <div class="game-title">
+                    <i class="fas fa-puzzle-piece"></i>
+                    <?php echo htmlspecialchars($game['title']); ?>
+                </div>
+                <a href="my-scores.php" class="back-btn">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
             </div>
             
-            <div class="progress-bar">
-                <div class="progress-fill" id="progress">0 / <?php echo count($pairs); ?> Placed</div>
+            <div class="game-info">
+                <span class="info-item"><i class="fas fa-book"></i> <?php echo htmlspecialchars($game['subject_name']); ?></span>
+                <span class="info-item"><i class="fas fa-user"></i> <?php echo htmlspecialchars($game['teacher_name']); ?></span>
+                <?php if (!empty($game['due_date'])): ?>
+                    <span class="info-item"><i class="fas fa-calendar"></i> Due: <?php echo date('M d, Y g:i A', strtotime($game['due_date'])); ?></span>
+                <?php endif; ?>
+            </div>
+            
+            <div class="stats-row">
+                <div class="stat-box">
+                    <div class="stat-value timer" id="timerDisplay"><?php echo $game['time_limit']; ?></div>
+                    <div class="stat-label">Seconds Left</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="placedDisplay">0</div>
+                    <div class="stat-label">Pairs Placed</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value correct" id="correctDisplay">0</div>
+                    <div class="stat-label">Correct</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value score" id="scoreDisplay">0</div>
+                    <div class="stat-label">Score</div>
+                </div>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressBar" style="width: 0%"></div>
+                </div>
+                <div class="progress-text" id="progressText">0 / <?php echo count($pairs); ?> Placed</div>
             </div>
         </div>
         
-        <button class="check-answers-btn" id="check-btn" onclick="checkAnswers()" disabled>Check My Answers</button>
+        <div class="game-controls">
+            <button class="btn btn-primary" id="checkBtn" onclick="checkAnswers()" disabled>
+                <i class="fas fa-check-circle"></i> Check My Answers
+            </button>
+        </div>
         
         <div class="matching-board">
             <div class="column">
-                <div class="column-title">Match These</div>
+                <div class="column-title">
+                    <i class="fas fa-hand-pointer"></i> Drag These Items
+                </div>
                 <div id="left-column">
                     <?php 
                     $shuffled_pairs = $pairs;
@@ -439,7 +875,9 @@ $session_id = $pdo->lastInsertId();
             </div>
             
             <div class="column">
-                <div class="column-title">With These</div>
+                <div class="column-title">
+                    <i class="fas fa-bullseye"></i> Drop to Match
+                </div>
                 <div id="right-column">
                     <?php 
                     $right_items = $pairs;
@@ -459,40 +897,98 @@ $session_id = $pdo->lastInsertId();
                 </div>
             </div>
         </div>
+        
+        <div class="keyboard-hint">
+            Press <kbd>Esc</kbd> to go back
+        </div>
     </div>
     
-    <div class="completion-overlay" id="completion-overlay">
-        <div class="completion-card">
-            <h2>🎉 Congratulations!</h2>
-            <div class="completion-stats">
-                <div>✅ Matched: <strong id="final-correct">0</strong> / <?php echo count($pairs); ?></div>
-                <div>⏱️ Time Taken: <strong id="final-time">0</strong>s</div>
-                <div>🏆 Score: <strong id="final-score">0</strong> points</div>
+    <!-- Results Overlay -->
+    <div class="results-overlay" id="resultsOverlay">
+        <div class="results-modal">
+            <h2 class="results-title" id="resultsTitle">🎉 Game Complete!</h2>
+            
+            <div class="results-stats">
+                <div class="result-stat">
+                    <div class="value correct" id="resultCorrect">0</div>
+                    <div class="label">Correct Matches</div>
+                </div>
+                <div class="result-stat">
+                    <div class="value" id="resultTotal"><?php echo count($pairs); ?></div>
+                    <div class="label">Total Pairs</div>
+                </div>
+                <div class="result-stat">
+                    <div class="value time" id="resultTime">0s</div>
+                    <div class="label">Time Taken</div>
+                </div>
+                <div class="result-stat">
+                    <div class="value score" id="resultScore">0</div>
+                    <div class="label">Total Score</div>
+                </div>
             </div>
-            <a href="available-games.php" class="btn btn-primary">Back to Games</a>
-           
+            
+            <div class="result-message" id="resultMessage">
+                Great job! Keep practicing to improve your matching skills!
+            </div>
+            
+            <div class="results-actions">
+                <a href="my-scores.php" class="btn btn-primary">
+                    <i class="fas fa-chart-bar"></i> View My Scores
+                </a>
+                <a href="../student-home.php" class="btn btn-secondary">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+            </div>
         </div>
     </div>
     
     <script>
-        const sessionId = <?php echo $session_id; ?>;
-        const totalPairs = <?php echo count($pairs); ?>;
-        const timeLimit = <?php echo $game['time_limit']; ?>;
-        const pointsPerPair = <?php echo isset($game['points_per_pair']) ? $game['points_per_pair'] : 100; ?>;
+        // Game configuration
+        const config = {
+            sessionId: <?php echo $session_id; ?>,
+            totalPairs: <?php echo count($pairs); ?>,
+            timeLimit: <?php echo $game['time_limit']; ?>,
+            pointsPerPair: <?php echo isset($game['points_per_pair']) ? $game['points_per_pair'] : 100; ?>
+        };
         
-        let timeRemaining = timeLimit;
-        let placedCount = 0;
-        let score = 0;
-        let startTime = Date.now();
-        let timerInterval;
-        let gameChecked = false;
+        // Game state
+        let gameState = {
+            timeRemaining: config.timeLimit,
+            placedCount: 0,
+            correctCount: 0,
+            score: 0,
+            startTime: Date.now(),
+            timerInterval: null,
+            gameChecked: false
+        };
+        
+        // DOM elements
+        const elements = {
+            timerDisplay: document.getElementById('timerDisplay'),
+            placedDisplay: document.getElementById('placedDisplay'),
+            correctDisplay: document.getElementById('correctDisplay'),
+            scoreDisplay: document.getElementById('scoreDisplay'),
+            progressBar: document.getElementById('progressBar'),
+            progressText: document.getElementById('progressText'),
+            checkBtn: document.getElementById('checkBtn'),
+            resultsOverlay: document.getElementById('resultsOverlay'),
+            resultsTitle: document.getElementById('resultsTitle'),
+            resultCorrect: document.getElementById('resultCorrect'),
+            resultTime: document.getElementById('resultTime'),
+            resultScore: document.getElementById('resultScore'),
+            resultMessage: document.getElementById('resultMessage')
+        };
         
         // Start timer
-        timerInterval = setInterval(() => {
-            timeRemaining--;
-            document.getElementById('time-display').textContent = timeRemaining;
+        gameState.timerInterval = setInterval(() => {
+            gameState.timeRemaining--;
+            elements.timerDisplay.textContent = gameState.timeRemaining;
             
-            if (timeRemaining <= 0) {
+            if (gameState.timeRemaining <= 10) {
+                elements.timerDisplay.style.animation = 'countPulse 0.5s ease-in-out infinite';
+            }
+            
+            if (gameState.timeRemaining <= 0) {
                 checkAnswers();
             }
         }, 1000);
@@ -504,6 +1000,11 @@ $session_id = $pdo->lastInsertId();
         items.forEach(item => {
             item.addEventListener('dragstart', dragStart);
             item.addEventListener('dragend', dragEnd);
+            
+            // Touch support
+            item.addEventListener('touchstart', touchStart, { passive: false });
+            item.addEventListener('touchmove', touchMove, { passive: false });
+            item.addEventListener('touchend', touchEnd);
         });
         
         dropZones.forEach(zone => {
@@ -512,8 +1013,12 @@ $session_id = $pdo->lastInsertId();
             zone.addEventListener('drop', drop);
         });
         
+        let draggedItem = null;
+        let touchStartX, touchStartY;
+        
         function dragStart(e) {
-            if (gameChecked) return;
+            if (gameState.gameChecked) return;
+            draggedItem = this;
             this.classList.add('dragging');
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('text/plain', this.dataset.pairId);
@@ -521,10 +1026,11 @@ $session_id = $pdo->lastInsertId();
         
         function dragEnd(e) {
             this.classList.remove('dragging');
+            draggedItem = null;
         }
         
         function dragOver(e) {
-            if (gameChecked) return;
+            if (gameState.gameChecked) return;
             e.preventDefault();
             this.classList.add('drag-over');
         }
@@ -534,44 +1040,105 @@ $session_id = $pdo->lastInsertId();
         }
         
         function drop(e) {
-            if (gameChecked) return;
+            if (gameState.gameChecked) return;
             e.preventDefault();
             this.classList.remove('drag-over');
             
             const draggedPairId = e.dataTransfer.getData('text/plain');
-            const draggedItem = document.querySelector(`.item[data-pair-id="${draggedPairId}"]`);
+            const draggedEl = document.querySelector(`.item[data-pair-id="${draggedPairId}"]`);
             
+            handleDrop(this, draggedEl);
+        }
+        
+        // Touch support functions
+        function touchStart(e) {
+            if (gameState.gameChecked) return;
+            draggedItem = this;
+            const touch = e.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+            this.classList.add('dragging');
+        }
+        
+        function touchMove(e) {
+            if (!draggedItem || gameState.gameChecked) return;
+            e.preventDefault();
+            
+            const touch = e.touches[0];
+            const x = touch.clientX;
+            const y = touch.clientY;
+            
+            draggedItem.style.position = 'fixed';
+            draggedItem.style.left = (x - 50) + 'px';
+            draggedItem.style.top = (y - 50) + 'px';
+            draggedItem.style.zIndex = '1000';
+            
+            // Highlight drop zones
+            dropZones.forEach(zone => {
+                const rect = zone.getBoundingClientRect();
+                if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+                    zone.classList.add('drag-over');
+                } else {
+                    zone.classList.remove('drag-over');
+                }
+            });
+        }
+        
+        function touchEnd(e) {
+            if (!draggedItem || gameState.gameChecked) return;
+            
+            draggedItem.style.position = '';
+            draggedItem.style.left = '';
+            draggedItem.style.top = '';
+            draggedItem.style.zIndex = '';
+            draggedItem.classList.remove('dragging');
+            
+            // Find drop zone
+            const touch = e.changedTouches[0];
+            const x = touch.clientX;
+            const y = touch.clientY;
+            
+            dropZones.forEach(zone => {
+                zone.classList.remove('drag-over');
+                const rect = zone.getBoundingClientRect();
+                if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+                    handleDrop(zone, draggedItem);
+                }
+            });
+            
+            draggedItem = null;
+        }
+        
+        function handleDrop(dropZone, draggedEl) {
             // Check if this drop zone already has an item
-            const existingItem = this.querySelector('.item');
+            const existingItem = dropZone.querySelector('.item');
             if (existingItem) {
-                // Swap items - put existing item back to left column
                 document.getElementById('left-column').appendChild(existingItem);
-                placedCount--;
+                gameState.placedCount--;
             }
             
             // Place the dragged item in this drop zone
-            this.appendChild(draggedItem);
-            this.classList.add('has-item');
-            placedCount++;
+            dropZone.appendChild(draggedEl);
+            dropZone.classList.add('has-item');
+            gameState.placedCount++;
             
             updateProgress();
         }
         
         function updateProgress() {
-            const progress = document.getElementById('progress');
-            progress.textContent = `${placedCount} / ${totalPairs} Placed`;
-            progress.style.width = `${(placedCount / totalPairs) * 100}%`;
+            elements.placedDisplay.textContent = gameState.placedCount;
+            elements.progressText.textContent = `${gameState.placedCount} / ${config.totalPairs} Placed`;
+            elements.progressBar.style.width = `${(gameState.placedCount / config.totalPairs) * 100}%`;
             
             // Enable check button when all items are placed
-            document.getElementById('check-btn').disabled = placedCount < totalPairs;
+            elements.checkBtn.disabled = gameState.placedCount < config.totalPairs;
         }
         
         function checkAnswers() {
-            if (gameChecked) return;
-            gameChecked = true;
-            clearInterval(timerInterval);
+            if (gameState.gameChecked) return;
+            gameState.gameChecked = true;
+            clearInterval(gameState.timerInterval);
             
-            let correctCount = 0;
             const responses = [];
             
             // Check each drop zone
@@ -584,16 +1151,15 @@ $session_id = $pdo->lastInsertId();
                     const isCorrect = placedPairId === correctPairId;
                     
                     if (isCorrect) {
-                        // Correct match
                         placedItem.classList.add('matched');
-                        correctCount++;
-                        score += pointsPerPair;
+                        placedItem.classList.add('bounce');
+                        gameState.correctCount++;
+                        gameState.score += config.pointsPerPair;
                     } else {
-                        // Incorrect match
                         placedItem.classList.add('incorrect');
+                        placedItem.classList.add('shake');
                     }
                     
-                    // Store the response
                     responses.push({
                         pair_id: correctPairId,
                         student_answer: placedPairId,
@@ -602,48 +1168,66 @@ $session_id = $pdo->lastInsertId();
                 }
             });
             
-            // Calculate final score
-            const timeTaken = Math.floor((Date.now() - startTime) / 1000);
-            const timeBonus = Math.max(0, (timeLimit - timeTaken) * 10);
-            score += timeBonus;
+            // Calculate final score with time bonus
+            const timeTaken = Math.floor((Date.now() - gameState.startTime) / 1000);
+            const timeBonus = Math.max(0, (config.timeLimit - timeTaken) * 5);
+            gameState.score += timeBonus;
             
-            document.getElementById('score').textContent = score;
+            // Update displays
+            elements.correctDisplay.textContent = gameState.correctCount;
+            elements.scoreDisplay.textContent = gameState.score;
             
-            // Show results after a brief delay
+            // Show results after animation
             setTimeout(() => {
-                endGame(correctCount, timeTaken, responses);
-            }, 2000);
+                showResults(timeTaken, responses);
+            }, 1500);
         }
         
-        function playSound(type) {
-            // Placeholder for sound effects
-        }
-        
-        function endGame(correctCount, timeTaken, responses) {
-            const finalScore = score;
-            
-            // Save results to database
+        function showResults(timeTaken, responses) {
+            // Save results
             fetch('save-matching-results.php', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    session_id: sessionId,
-                    total_correct: correctCount,
+                    session_id: config.sessionId,
+                    total_correct: gameState.correctCount,
                     time_taken: timeTaken,
-                    total_score: finalScore,
+                    total_score: gameState.score,
                     completed: true,
                     responses: responses
                 })
             });
             
-            // Show completion overlay
-            document.getElementById('final-correct').textContent = correctCount;
-            document.getElementById('final-time').textContent = timeTaken;
-            document.getElementById('final-score').textContent = finalScore;
-            document.getElementById('completion-overlay').style.display = 'flex';
+            // Update modal
+            const percentage = Math.round((gameState.correctCount / config.totalPairs) * 100);
+            
+            if (percentage >= 80) {
+                elements.resultsTitle.textContent = '🎉 Excellent!';
+                elements.resultMessage.textContent = 'Outstanding performance! You matched most pairs correctly!';
+                elements.resultMessage.classList.remove('failed');
+            } else if (percentage >= 50) {
+                elements.resultsTitle.textContent = '👍 Good Job!';
+                elements.resultMessage.textContent = 'Nice work! Keep practicing to improve your skills!';
+                elements.resultMessage.classList.remove('failed');
+            } else {
+                elements.resultsTitle.textContent = '💪 Keep Trying!';
+                elements.resultMessage.textContent = 'Don\'t give up! Practice makes perfect!';
+                elements.resultMessage.classList.add('failed');
+            }
+            
+            elements.resultCorrect.textContent = gameState.correctCount;
+            elements.resultTime.textContent = timeTaken + 's';
+            elements.resultScore.textContent = gameState.score;
+            
+            elements.resultsOverlay.style.display = 'flex';
         }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                window.location.href = 'my-scores.php';
+            }
+        });
     </script>
 </body>
 </html>

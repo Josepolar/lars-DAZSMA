@@ -49,10 +49,16 @@ $students_query = "SELECT DISTINCT u.user_id,
                            INNER JOIN teacher_subjects ts ON mg.subject_id = ts.subject_id
                            WHERE ms.student_id = u.user_id AND ts.teacher_id = ?
                        )
+                       OR EXISTS (
+                           SELECT 1 FROM typing_sessions ts
+                           INNER JOIN typing_games tg ON ts.typing_game_id = tg.typing_game_id
+                           INNER JOIN teacher_subjects tsubj ON tg.subject_id = tsubj.subject_id
+                           WHERE ts.student_id = u.user_id AND tsubj.teacher_id = ?
+                       )
                    )
                    ORDER BY u.last_name, u.first_name";
 $stmt = $pdo->prepare($students_query);
-$stmt->execute([$teacher_id, $teacher_id, $teacher_id]);
+$stmt->execute([$teacher_id, $teacher_id, $teacher_id, $teacher_id]);
 $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Build comprehensive query for all student scores
@@ -145,6 +151,28 @@ $regular_activities_query = "SELECT
     AND ss.submission_status IN ('submitted', 'graded')
     AND u.role_id = 4";
 
+// Query for Typing Games
+$typing_games_query = "SELECT 
+    u.user_id,
+    CONCAT(u.first_name, ' ', u.last_name) as student_name,
+    s.subject_name,
+    tg.title as activity_title,
+    'Typing Game' as activity_type,
+    ts.total_score as score,
+    100 as total_questions,
+    ts.wpm as total_correct,
+    ROUND(ts.accuracy, 1) as percentage,
+    ts.completed_at,
+    tg.typing_game_id as activity_id
+    FROM users u
+    INNER JOIN typing_sessions ts ON u.user_id = ts.student_id
+    INNER JOIN typing_games tg ON ts.typing_game_id = tg.typing_game_id
+    INNER JOIN subjects s ON tg.subject_id = s.subject_id
+    INNER JOIN teacher_subjects tsubj ON s.subject_id = tsubj.subject_id
+    WHERE tsubj.teacher_id = ?" . ($subject_filter ? " AND s.subject_id = ?" : "") . ($student_filter ? " AND u.user_id = ?" : "") . "
+    AND ts.completed_at IS NOT NULL
+    AND u.role_id = 4";
+
 // Combine queries based on filter
 $union_queries = [];
 if ($activity_type == 'all' || $activity_type == 'quiz_game') {
@@ -152,6 +180,9 @@ if ($activity_type == 'all' || $activity_type == 'quiz_game') {
 }
 if ($activity_type == 'all' || $activity_type == 'matching_game') {
     $union_queries[] = $matching_games_query;
+}
+if ($activity_type == 'all' || $activity_type == 'typing_game') {
+    $union_queries[] = $typing_games_query;
 }
 if ($activity_type == 'all' || $activity_type == 'regular') {
     $union_queries[] = $regular_activities_query;
@@ -328,6 +359,11 @@ $avg_percentage = $total_submissions > 0 ? array_sum(array_column($all_scores, '
         
         .badge-matching-game {
             background: #9b59b6;
+            color: white;
+        }
+        
+        .badge-typing-game {
+            background: #00d4ff;
             color: white;
         }
         
@@ -509,6 +545,7 @@ $avg_percentage = $total_submissions > 0 ? array_sum(array_column($all_scores, '
                             <option value="all" <?php echo $activity_type == 'all' ? 'selected' : ''; ?>>All Types</option>
                             <option value="quiz_game" <?php echo $activity_type == 'quiz_game' ? 'selected' : ''; ?>>Quiz Games</option>
                             <option value="matching_game" <?php echo $activity_type == 'matching_game' ? 'selected' : ''; ?>>Matching Games</option>
+                            <option value="typing_game" <?php echo $activity_type == 'typing_game' ? 'selected' : ''; ?>>Typing Games</option>
                             <option value="regular" <?php echo $activity_type == 'regular' ? 'selected' : ''; ?>>Regular Activities</option>
                         </select>
                     </div>
@@ -580,6 +617,9 @@ $avg_percentage = $total_submissions > 0 ? array_sum(array_column($all_scores, '
                                     } elseif ($score['activity_type'] == 'Matching Game') {
                                         $type_class = 'badge-matching-game';
                                         $type_display = '🧩 Matching';
+                                    } elseif ($score['activity_type'] == 'Typing Game') {
+                                        $type_class = 'badge-typing-game';
+                                        $type_display = '⌨️ Typing';
                                     } elseif ($score['activity_type'] == 'quiz') {
                                         $type_class = 'badge-quiz';
                                         $type_display = '📝 Quiz';

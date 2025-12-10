@@ -163,24 +163,48 @@ if ($session['show_leaderboard']) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="../../assets/tablogo.png">
     <title>Game Results</title>
-    <link rel="stylesheet" href="../student-home.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             min-height: 100vh;
             padding: 20px;
+            color: white;
         }
         
         .results-container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
         }
         
+        .alert-info {
+            background: rgba(0,212,255,0.2);
+            border: 1px solid rgba(0,212,255,0.4);
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .alert-info .icon {
+            font-size: 24px;
+        }
+        
         .results-card {
-            background: white;
-            border-radius: 20px;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
             padding: 50px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.2);
             text-align: center;
             margin-bottom: 30px;
         }
@@ -188,22 +212,22 @@ if ($session['show_leaderboard']) {
         .game-over {
             font-size: 48px;
             font-weight: bold;
-            color: #333;
             margin-bottom: 10px;
         }
         
         .game-title {
             font-size: 24px;
-            color: #666;
+            opacity: 0.8;
             margin-bottom: 40px;
         }
         
         .score-display {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
             color: white;
             padding: 40px;
-            border-radius: 15px;
+            border-radius: 20px;
             margin-bottom: 40px;
+            box-shadow: 0 8px 25px rgba(0,212,255,0.3);
         }
         
         .score-label {
@@ -225,35 +249,36 @@ if ($session['show_leaderboard']) {
         }
         
         .stat-item {
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
+            padding: 25px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 16px;
         }
         
         .stat-value {
-            font-size: 32px;
+            font-size: 36px;
             font-weight: bold;
-            color: #26890D;
+            color: #00ff88;
             margin-bottom: 5px;
         }
         
         .stat-label {
             font-size: 14px;
-            color: #666;
+            opacity: 0.7;
+            text-transform: uppercase;
         }
         
         .leaderboard-card {
-            background: white;
-            border-radius: 20px;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
             padding: 40px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.2);
             margin-bottom: 30px;
         }
         
         .leaderboard-title {
             font-size: 28px;
             font-weight: bold;
-            color: #333;
             margin-bottom: 30px;
             text-align: center;
         }
@@ -268,7 +293,7 @@ if ($session['show_leaderboard']) {
             display: flex;
             align-items: center;
             padding: 15px;
-            border-bottom: 1px solid #e9ecef;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
         }
         
         .leaderboard-item:last-child {
@@ -276,8 +301,8 @@ if ($session['show_leaderboard']) {
         }
         
         .leaderboard-item.current-user {
-            background: #fff3cd;
-            border-radius: 8px;
+            background: rgba(0,212,255,0.2);
+            border-radius: 12px;
             margin: 5px 0;
         }
         
@@ -292,10 +317,10 @@ if ($session['show_leaderboard']) {
             margin-right: 15px;
         }
         
-        .rank-1 { background: #ffd700; color: #000; }
-        .rank-2 { background: #c0c0c0; color: #000; }
-        .rank-3 { background: #cd7f32; color: #fff; }
-        .rank-other { background: #e9ecef; color: #666; }
+        .rank-1 { background: linear-gradient(135deg, #ffd700, #ff8c00); color: #000; }
+        .rank-2 { background: linear-gradient(135deg, #c0c0c0, #a0a0a0); color: #000; }
+        .rank-3 { background: linear-gradient(135deg, #cd7f32, #b8860b); color: #fff; }
+        .rank-other { background: rgba(255,255,255,0.2); }
         
         .player-name {
             flex: 1;
@@ -304,7 +329,7 @@ if ($session['show_leaderboard']) {
         
         .player-score {
             font-weight: bold;
-            color: #26890D;
+            color: #00ff88;
             font-size: 18px;
         }
         
@@ -312,42 +337,40 @@ if ($session['show_leaderboard']) {
             display: flex;
             gap: 15px;
             justify-content: center;
+            flex-wrap: wrap;
         }
         
         .btn {
             padding: 15px 30px;
-            border-radius: 10px;
+            border-radius: 12px;
             text-decoration: none;
-            font-weight: bold;
+            font-weight: 600;
             font-size: 16px;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
         }
         
         .btn-primary {
-            background: #26890D;
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
             color: white;
+            box-shadow: 0 4px 15px rgba(0,212,255,0.4);
         }
         
         .btn-primary:hover {
-            background: #1e6a0a;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,212,255,0.5);
         }
         
         .btn-secondary {
-            background: #6c757d;
+            background: rgba(255,255,255,0.1);
             color: white;
+            border: 1px solid rgba(255,255,255,0.3);
         }
         
         .btn-secondary:hover {
-            background: #545b62;
-        }
-        
-        .btn-replay {
-            background: #007bff;
-            color: white;
-        }
-        
-        .btn-replay:hover {
-            background: #0056b3;
+            background: rgba(255,255,255,0.2);
         }
         
         .celebration {
@@ -362,39 +385,40 @@ if ($session['show_leaderboard']) {
         }
         
         .review-card {
-            background: white;
-            border-radius: 20px;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
             padding: 30px;
             margin-top: 30px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255,255,255,0.2);
         }
         
         .review-title {
             font-size: 28px;
             font-weight: bold;
-            color: #333;
             margin-bottom: 25px;
             text-align: center;
             padding-bottom: 15px;
-            border-bottom: 3px solid #667eea;
+            border-bottom: 2px solid rgba(0,212,255,0.5);
         }
         
         .review-item {
             margin-bottom: 20px;
             padding: 20px;
             border-radius: 12px;
-            border: 2px solid #e9ecef;
+            border: 2px solid rgba(255,255,255,0.2);
             transition: all 0.3s ease;
+            background: rgba(0,0,0,0.2);
         }
         
         .review-item.correct {
-            background: #f0fff4;
-            border-color: #48bb78;
+            background: rgba(0,255,136,0.1);
+            border-color: #00ff88;
         }
         
         .review-item.incorrect {
-            background: #fff5f5;
-            border-color: #f56565;
+            background: rgba(255,107,107,0.1);
+            border-color: #ff6b6b;
         }
         
         .question-number {
@@ -426,51 +450,59 @@ if ($session['show_leaderboard']) {
         }
         
         .your-answer {
-            background: rgba(0, 0, 0, 0.03);
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 10px;
         }
         
         .review-item.correct .your-answer {
-            background: rgba(72, 187, 120, 0.1);
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
         }
         
         .review-item.incorrect .your-answer {
-            background: rgba(245, 101, 101, 0.1);
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid rgba(255, 107, 107, 0.3);
         }
         
         .correct-answer {
-            background: rgba(72, 187, 120, 0.1);
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 8px;
+            padding: 10px;
         }
         
         .answer-label {
             font-weight: 600;
             margin-right: 10px;
             min-width: 120px;
-            color: #666;
+            color: rgba(255, 255, 255, 0.6);
         }
         
         .answer-value {
             flex: 1;
             font-weight: 500;
+            color: rgba(255, 255, 255, 0.9);
         }
         
         .review-item.correct .your-answer .answer-value {
-            color: #48bb78;
+            color: #00ff88;
         }
         
         .review-item.incorrect .your-answer .answer-value {
-            color: #f56565;
+            color: #ff6b6b;
         }
         
         .correct-answer .answer-value {
-            color: #48bb78;
+            color: #00ff88;
         }
         
         .points-earned {
             text-align: right;
             font-weight: bold;
             font-size: 16px;
-            color: #667eea;
-            margin-top: 5px;
+            color: #00d4ff;
+            margin-top: 10px;
         }
         
         /* ============================================
@@ -677,6 +709,12 @@ if ($session['show_leaderboard']) {
     </style>
 </head>
 <body>
+    <?php if (isset($_GET['already_played'])): ?>
+        <div class="alert-info">
+            <strong>⚠️ Note:</strong> You have already completed this game. Only your first attempt counts toward the leaderboard.
+        </div>
+    <?php endif; ?>
+    
     <div class="results-container">
         <div class="results-card">
             <?php if ($accuracy >= 80): ?>
@@ -726,8 +764,8 @@ if ($session['show_leaderboard']) {
             </div>
             
             <div class="actions">
-                <a href="available-games.php" class="btn btn-primary">
-                    🎮 More Games
+                <a href="my-scores.php" class="btn btn-primary">
+                    📊 View My Scores
                 </a>
                 <a href="../student-home.php" class="btn btn-secondary">
                     🏠 Home

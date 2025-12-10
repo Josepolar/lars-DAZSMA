@@ -142,6 +142,30 @@ switch ($action) {
         delete_matching_game_from_dashboard($teacher_id);
         break;
     
+    case 'toggle_typing_game_status':
+        toggle_typing_game_status($teacher_id);
+        break;
+    
+    case 'delete_typing_game':
+        delete_typing_game($teacher_id);
+        break;
+    
+    case 'get_sections':
+        get_sections($teacher_id);
+        break;
+    
+    case 'get_teacher_games':
+        get_teacher_games($teacher_id);
+        break;
+    
+    case 'get_score_report':
+        get_score_report($teacher_id);
+        break;
+    
+    case 'reset_leaderboard':
+        reset_leaderboard($teacher_id);
+        break;
+    
     default:
         echo json_encode(['success' => false, 'message' => 'Invalid action']);
         break;
@@ -309,6 +333,34 @@ function get_activities($teacher_id) {
         $matching_stmt->execute([$teacher_id]);
         $matching_games = $matching_stmt->fetchAll(PDO::FETCH_ASSOC);
         
+        // Get typing game activities
+        $typing_sql = "SELECT 
+                        tg.typing_game_id as game_id,
+                        tg.title,
+                        tg.description,
+                        tg.subject_id,
+                        s.subject_name,
+                        s.grade_level,
+                        'game' as activity_type,
+                        tg.status,
+                        tg.created_at,
+                        tg.due_date,
+                        100 as total_points,
+                        tg.time_limit,
+                        COUNT(DISTINCT ts.student_id) as total_submissions,
+                        COUNT(DISTINCT CASE WHEN ts.completed_at IS NOT NULL THEN ts.student_id END) as graded_submissions,
+                        ROUND(AVG(CASE WHEN ts.completed_at IS NOT NULL THEN ts.accuracy END), 1) as avg_score,
+                        'typing' as game_type_flag
+                    FROM typing_games tg
+                    JOIN subjects s ON tg.subject_id = s.subject_id
+                    LEFT JOIN typing_sessions ts ON tg.typing_game_id = ts.typing_game_id
+                    WHERE tg.teacher_id = ?
+                    GROUP BY tg.typing_game_id
+                    ORDER BY tg.created_at DESC";
+        $typing_stmt = $pdo->prepare($typing_sql);
+        $typing_stmt->execute([$teacher_id]);
+        $typing_games = $typing_stmt->fetchAll(PDO::FETCH_ASSOC);
+        
         // Merge and mark games
         foreach ($games as &$game) {
             $game['is_game'] = true;
@@ -320,8 +372,13 @@ function get_activities($teacher_id) {
             $game['activity_id'] = 'matching_' . $game['game_id']; // Unique ID for frontend
         }
         
+        foreach ($typing_games as &$game) {
+            $game['is_game'] = true;
+            $game['activity_id'] = 'typing_' . $game['game_id']; // Unique ID for frontend
+        }
+        
         // Combine all arrays
-        $all_activities = array_merge($activities, $games, $matching_games);
+        $all_activities = array_merge($activities, $games, $matching_games, $typing_games);
         
         // Sort by created_at
         usort($all_activities, function($a, $b) {
@@ -433,6 +490,22 @@ function get_students_for_subject($teacher_id) {
                             WHERE ms.student_id = u.user_id
                             AND ms.completed_at IS NOT NULL
                             AND mg.subject_id = ?), 0
+                       ) +
+                       COALESCE(
+                           (SELECT SUM(gs.total_score)
+                            FROM game_sessions gs
+                            JOIN game_activities ga ON gs.game_id = ga.game_id
+                            WHERE gs.student_id = u.user_id
+                            AND gs.completed_at IS NOT NULL
+                            AND ga.subject_id = ?), 0
+                       ) +
+                       COALESCE(
+                           (SELECT SUM(ts.total_score)
+                            FROM typing_sessions ts
+                            JOIN typing_games tg ON ts.typing_game_id = tg.typing_game_id
+                            WHERE ts.student_id = u.user_id
+                            AND ts.completed_at IS NOT NULL
+                            AND tg.subject_id = ?), 0
                        ) as total_points,
                        COALESCE(
                            (SELECT AVG(ss.percentage)
@@ -446,7 +519,7 @@ function get_students_for_subject($teacher_id) {
                 WHERE u.role_id = 4 AND u.grade_level = ?
                 ORDER BY u.first_name, u.last_name";
         $stmt = $pdo->prepare($sql);
-        $stmt->execute([$subject_id, $subject_id, $subject_id, $grade_level]);
+        $stmt->execute([$subject_id, $subject_id, $subject_id, $subject_id, $subject_id, $grade_level]);
         $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         // Ensure total_points is an integer and avg_grade is rounded to 1 decimal
@@ -1397,6 +1470,385 @@ function delete_matching_game_from_dashboard($teacher_id) {
         echo json_encode(['success' => true, 'message' => 'Matching game deleted successfully']);
         
     } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    }
+}
+
+// Typing Game Functions
+function toggle_typing_game_status($teacher_id) {
+    global $pdo;
+    try {
+        $typing_game_id = (int)$_POST['typing_game_id'];
+        $new_status = sanitize_input($_POST['new_status']);
+        
+        // Verify game ownership
+        $verify = $pdo->prepare("SELECT typing_game_id FROM typing_games WHERE typing_game_id = ? AND teacher_id = ?");
+        $verify->execute([$typing_game_id, $teacher_id]);
+        if (!$verify->fetch()) {
+            echo json_encode(['success' => false, 'message' => 'Game not found or unauthorized']);
+            return;
+        }
+        
+        // If activating, check minimum texts
+        if ($new_status === 'active') {
+            $count_stmt = $pdo->prepare("SELECT COUNT(*) FROM typing_texts WHERE typing_game_id = ?");
+            $count_stmt->execute([$typing_game_id]);
+            $text_count = $count_stmt->fetchColumn();
+            
+            if ($text_count < 1) {
+                echo json_encode(['success' => false, 'message' => 'Game needs at least 1 typing text to be activated']);
+                return;
+            }
+        }
+        
+        // Update status
+        $stmt = $pdo->prepare("UPDATE typing_games SET status = ? WHERE typing_game_id = ?");
+        $stmt->execute([$new_status, $typing_game_id]);
+        
+        echo json_encode(['success' => true, 'message' => 'Typing game status updated successfully']);
+        
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    }
+}
+
+function delete_typing_game($teacher_id) {
+    global $pdo;
+    try {
+        $typing_game_id = (int)$_POST['typing_game_id'];
+        
+        // Verify game ownership
+        $verify = $pdo->prepare("SELECT typing_game_id FROM typing_games WHERE typing_game_id = ? AND teacher_id = ?");
+        $verify->execute([$typing_game_id, $teacher_id]);
+        if (!$verify->fetch()) {
+            echo json_encode(['success' => false, 'message' => 'Game not found or unauthorized']);
+            return;
+        }
+        
+        // Delete the game (CASCADE will delete texts and sessions)
+        $stmt = $pdo->prepare("DELETE FROM typing_games WHERE typing_game_id = ? AND teacher_id = ?");
+        $stmt->execute([$typing_game_id, $teacher_id]);
+        
+        echo json_encode(['success' => true, 'message' => 'Typing game deleted successfully']);
+        
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    }
+}
+
+// Get all sections for the teacher's students
+function get_sections($teacher_id) {
+    global $pdo;
+    try {
+        // Get sections from students in teacher's subjects
+        $query = "SELECT DISTINCT u.section 
+                  FROM users u
+                  INNER JOIN subjects s ON u.grade_level = s.grade_level
+                  INNER JOIN teacher_subjects ts ON s.subject_id = ts.subject_id
+                  WHERE ts.teacher_id = ? AND u.role_id = 4 AND u.section IS NOT NULL AND u.section != ''
+                  ORDER BY u.section";
+        $stmt = $pdo->prepare($query);
+        $stmt->execute([$teacher_id]);
+        
+        $sections = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $sections[] = $row['section'];
+        }
+        
+        echo json_encode(['success' => true, 'sections' => $sections]);
+        
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    }
+}
+
+// Get teacher's games for dropdowns
+function get_teacher_games($teacher_id) {
+    global $pdo;
+    try {
+        $game_type = $_GET['game_type'] ?? 'all';
+        $games = [];
+        
+        // Quiz games
+        if ($game_type === 'all' || $game_type === 'quiz') {
+            $stmt = $pdo->prepare("SELECT game_id as id, title, 'quiz' as type FROM game_activities WHERE teacher_id = ? ORDER BY title");
+            $stmt->execute([$teacher_id]);
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $games[] = $row;
+            }
+        }
+        
+        // Matching games
+        if ($game_type === 'all' || $game_type === 'matching') {
+            $stmt = $pdo->prepare("SELECT matching_game_id as id, title, 'matching' as type FROM matching_games WHERE teacher_id = ? ORDER BY title");
+            $stmt->execute([$teacher_id]);
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $games[] = $row;
+            }
+        }
+        
+        // Typing games
+        if ($game_type === 'all' || $game_type === 'typing') {
+            $stmt = $pdo->prepare("SELECT typing_game_id as id, title, 'typing' as type FROM typing_games WHERE teacher_id = ? ORDER BY title");
+            $stmt->execute([$teacher_id]);
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $games[] = $row;
+            }
+        }
+        
+        echo json_encode(['success' => true, 'games' => $games]);
+        
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    }
+}
+
+// Get comprehensive score report
+function get_score_report($teacher_id) {
+    global $pdo;
+    try {
+        $game_type = $_GET['game_type'] ?? 'all';
+        $grade = $_GET['grade'] ?? 'all';
+        $section = $_GET['section'] ?? 'all';
+        $game = $_GET['game'] ?? 'all';
+        
+        $report = [
+            'section_summary' => [],
+            'top_10_all' => [],
+            'top_by_section' => []
+        ];
+        
+        // Build WHERE conditions
+        $grade_condition = $grade !== 'all' ? "AND u.grade_level = '$grade'" : '';
+        $section_condition = $section !== 'all' ? "AND u.section = '$section'" : '';
+        
+        // Section Summary
+        $summary_query = "
+            SELECT u.grade_level, u.section, 
+                   COUNT(DISTINCT u.user_id) as student_count,
+                   COUNT(*) as total_attempts,
+                   ROUND(AVG(scores.percentage), 1) as avg_score,
+                   MAX(scores.total_score) as highest_score
+            FROM (
+                SELECT gs.student_id, gs.total_score, 
+                       CASE WHEN gs.total_questions > 0 THEN ROUND((gs.total_correct / gs.total_questions) * 100, 1) ELSE 0 END as percentage, 
+                       'quiz' as game_type
+                FROM game_sessions gs
+                INNER JOIN game_activities ga ON gs.game_id = ga.game_id
+                WHERE ga.teacher_id = ? AND gs.completed_at IS NOT NULL
+                " . ($game_type === 'all' || $game_type === 'quiz' ? '' : 'AND 1=0') . "
+                UNION ALL
+                SELECT ms.student_id, ms.total_score, 
+                       CASE WHEN ms.total_pairs > 0 THEN ROUND((ms.total_correct / ms.total_pairs) * 100, 1) ELSE 0 END as percentage, 
+                       'matching' as game_type
+                FROM matching_sessions ms
+                INNER JOIN matching_games mg ON ms.matching_game_id = mg.matching_game_id
+                WHERE mg.teacher_id = ? AND ms.completed_at IS NOT NULL
+                " . ($game_type === 'all' || $game_type === 'matching' ? '' : 'AND 1=0') . "
+                UNION ALL
+                SELECT ts.student_id, ts.total_score, 
+                       ts.accuracy as percentage, 'typing' as game_type
+                FROM typing_sessions ts
+                INNER JOIN typing_games tg ON ts.typing_game_id = tg.typing_game_id
+                WHERE tg.teacher_id = ? AND ts.completed_at IS NOT NULL
+                " . ($game_type === 'all' || $game_type === 'typing' ? '' : 'AND 1=0') . "
+            ) as scores
+            INNER JOIN users u ON scores.student_id = u.user_id
+            WHERE u.role_id = 4 $grade_condition $section_condition
+            GROUP BY u.grade_level, u.section
+            ORDER BY u.grade_level, u.section
+        ";
+        
+        $stmt = $pdo->prepare($summary_query);
+        $stmt->execute([$teacher_id, $teacher_id, $teacher_id]);
+        $report['section_summary'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Top 10 Overall
+        $top_query = "
+            SELECT u.user_id, CONCAT(u.first_name, ' ', u.last_name) as student_name,
+                   u.grade_level, u.section,
+                   scores.game_title, scores.game_type, scores.total_score, scores.percentage, scores.completed_at
+            FROM (
+                SELECT gs.student_id, ga.title as game_title, 'Quiz' as game_type, 
+                       gs.total_score, 
+                       CASE WHEN gs.total_questions > 0 THEN ROUND((gs.total_correct / gs.total_questions) * 100, 1) ELSE 0 END as percentage,
+                       gs.completed_at
+                FROM game_sessions gs
+                INNER JOIN game_activities ga ON gs.game_id = ga.game_id
+                WHERE ga.teacher_id = ? AND gs.completed_at IS NOT NULL
+                " . ($game_type === 'all' || $game_type === 'quiz' ? '' : 'AND 1=0') . "
+                UNION ALL
+                SELECT ms.student_id, mg.title as game_title, 'Matching' as game_type,
+                       ms.total_score, 
+                       CASE WHEN ms.total_pairs > 0 THEN ROUND((ms.total_correct / ms.total_pairs) * 100, 1) ELSE 0 END as percentage,
+                       ms.completed_at
+                FROM matching_sessions ms
+                INNER JOIN matching_games mg ON ms.matching_game_id = mg.matching_game_id
+                WHERE mg.teacher_id = ? AND ms.completed_at IS NOT NULL
+                " . ($game_type === 'all' || $game_type === 'matching' ? '' : 'AND 1=0') . "
+                UNION ALL
+                SELECT ts.student_id, tg.title as game_title, 'Typing' as game_type,
+                       ts.total_score, ts.accuracy as percentage,
+                       ts.completed_at
+                FROM typing_sessions ts
+                INNER JOIN typing_games tg ON ts.typing_game_id = tg.typing_game_id
+                WHERE tg.teacher_id = ? AND ts.completed_at IS NOT NULL
+                " . ($game_type === 'all' || $game_type === 'typing' ? '' : 'AND 1=0') . "
+            ) as scores
+            INNER JOIN users u ON scores.student_id = u.user_id
+            WHERE u.role_id = 4 $grade_condition $section_condition
+            ORDER BY scores.total_score DESC
+            LIMIT 10
+        ";
+        
+        $stmt = $pdo->prepare($top_query);
+        $stmt->execute([$teacher_id, $teacher_id, $teacher_id]);
+        $report['top_10_all'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Top 10 Per Section
+        $sections_query = "
+            SELECT DISTINCT CONCAT('Grade ', u.grade_level, COALESCE(CONCAT(' - ', u.section), '')) as section_key,
+                   u.grade_level, u.section
+            FROM users u
+            INNER JOIN subjects s ON u.grade_level = s.grade_level
+            INNER JOIN teacher_subjects ts ON s.subject_id = ts.subject_id
+            WHERE ts.teacher_id = ? AND u.role_id = 4
+            $grade_condition $section_condition
+            ORDER BY u.grade_level, u.section
+        ";
+        
+        $stmt = $pdo->prepare($sections_query);
+        $stmt->execute([$teacher_id]);
+        $sections = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        foreach ($sections as $sec) {
+            $sec_grade_cond = "AND u.grade_level = '{$sec['grade_level']}'";
+            $sec_section_cond = $sec['section'] ? "AND u.section = '{$sec['section']}'" : "AND (u.section IS NULL OR u.section = '')";
+            
+            $section_top_query = "
+                SELECT u.user_id, CONCAT(u.first_name, ' ', u.last_name) as student_name,
+                       scores.game_title, scores.game_type, scores.total_score, scores.completed_at
+                FROM (
+                    SELECT gs.student_id, ga.title as game_title, 'Quiz' as game_type, 
+                           gs.total_score, gs.completed_at
+                    FROM game_sessions gs
+                    INNER JOIN game_activities ga ON gs.game_id = ga.game_id
+                    WHERE ga.teacher_id = ? AND gs.completed_at IS NOT NULL
+                    " . ($game_type === 'all' || $game_type === 'quiz' ? '' : 'AND 1=0') . "
+                    UNION ALL
+                    SELECT ms.student_id, mg.title as game_title, 'Matching' as game_type,
+                           ms.total_score, ms.completed_at
+                    FROM matching_sessions ms
+                    INNER JOIN matching_games mg ON ms.matching_game_id = mg.matching_game_id
+                    WHERE mg.teacher_id = ? AND ms.completed_at IS NOT NULL
+                    " . ($game_type === 'all' || $game_type === 'matching' ? '' : 'AND 1=0') . "
+                    UNION ALL
+                    SELECT ts.student_id, tg.title as game_title, 'Typing' as game_type,
+                           ts.total_score, ts.completed_at
+                    FROM typing_sessions ts
+                    INNER JOIN typing_games tg ON ts.typing_game_id = tg.typing_game_id
+                    WHERE tg.teacher_id = ? AND ts.completed_at IS NOT NULL
+                    " . ($game_type === 'all' || $game_type === 'typing' ? '' : 'AND 1=0') . "
+                ) as scores
+                INNER JOIN users u ON scores.student_id = u.user_id
+                WHERE u.role_id = 4 $sec_grade_cond $sec_section_cond
+                ORDER BY scores.total_score DESC
+                LIMIT 10
+            ";
+            
+            $stmt = $pdo->prepare($section_top_query);
+            $stmt->execute([$teacher_id, $teacher_id, $teacher_id]);
+            $report['top_by_section'][$sec['section_key']] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+        
+        echo json_encode(['success' => true] + $report);
+        
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    }
+}
+
+// Reset leaderboard (delete game sessions)
+function reset_leaderboard($teacher_id) {
+    global $pdo;
+    try {
+        $game_type = $_POST['game_type'] ?? '';
+        $specific_game = $_POST['specific_game'] ?? 'all';
+        $deleted_count = 0;
+        
+        $pdo->beginTransaction();
+        
+        if ($game_type === 'all' || $game_type === 'quiz') {
+            if ($specific_game !== 'all' && $game_type === 'quiz') {
+                // Delete specific quiz game sessions
+                $stmt = $pdo->prepare("
+                    DELETE gs FROM game_sessions gs
+                    INNER JOIN game_activities ga ON gs.game_id = ga.game_id
+                    WHERE ga.teacher_id = ? AND gs.game_id = ?
+                ");
+                $stmt->execute([$teacher_id, $specific_game]);
+            } else if ($game_type === 'all' || $game_type === 'quiz') {
+                // Delete all quiz sessions for teacher's games
+                $stmt = $pdo->prepare("
+                    DELETE gs FROM game_sessions gs
+                    INNER JOIN game_activities ga ON gs.game_id = ga.game_id
+                    WHERE ga.teacher_id = ?
+                ");
+                $stmt->execute([$teacher_id]);
+            }
+            $deleted_count += $stmt->rowCount();
+        }
+        
+        if ($game_type === 'all' || $game_type === 'matching') {
+            if ($specific_game !== 'all' && $game_type === 'matching') {
+                // Delete specific matching game sessions
+                $stmt = $pdo->prepare("
+                    DELETE ms FROM matching_sessions ms
+                    INNER JOIN matching_games mg ON ms.matching_game_id = mg.matching_game_id
+                    WHERE mg.teacher_id = ? AND ms.matching_game_id = ?
+                ");
+                $stmt->execute([$teacher_id, $specific_game]);
+            } else if ($game_type === 'all' || $game_type === 'matching') {
+                // Delete all matching sessions for teacher's games
+                $stmt = $pdo->prepare("
+                    DELETE ms FROM matching_sessions ms
+                    INNER JOIN matching_games mg ON ms.matching_game_id = mg.matching_game_id
+                    WHERE mg.teacher_id = ?
+                ");
+                $stmt->execute([$teacher_id]);
+            }
+            $deleted_count += $stmt->rowCount();
+        }
+        
+        if ($game_type === 'all' || $game_type === 'typing') {
+            if ($specific_game !== 'all' && $game_type === 'typing') {
+                // Delete specific typing game sessions
+                $stmt = $pdo->prepare("
+                    DELETE ts FROM typing_sessions ts
+                    INNER JOIN typing_games tg ON ts.typing_game_id = tg.typing_game_id
+                    WHERE tg.teacher_id = ? AND ts.typing_game_id = ?
+                ");
+                $stmt->execute([$teacher_id, $specific_game]);
+            } else if ($game_type === 'all' || $game_type === 'typing') {
+                // Delete all typing sessions for teacher's games
+                $stmt = $pdo->prepare("
+                    DELETE ts FROM typing_sessions ts
+                    INNER JOIN typing_games tg ON ts.typing_game_id = tg.typing_game_id
+                    WHERE tg.teacher_id = ?
+                ");
+                $stmt->execute([$teacher_id]);
+            }
+            $deleted_count += $stmt->rowCount();
+        }
+        
+        $pdo->commit();
+        
+        log_activity_local($teacher_id, "Reset leaderboard - Type: $game_type, Deleted: $deleted_count sessions");
+        
+        echo json_encode(['success' => true, 'message' => 'Leaderboard reset successfully', 'deleted_count' => $deleted_count]);
+        
+    } catch (Exception $e) {
+        $pdo->rollBack();
         echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
     }
 }

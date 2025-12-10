@@ -44,15 +44,21 @@ foreach ($students as $row) {
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="icon" type="image/png" href="../assets/tablogo.png">
     <link rel="stylesheet" href="admin-dashboard.css">
-    <link rel="stylesheet" href="admin-dashboard.css">
     <link rel="stylesheet" href="../assets/css/responsive.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <title>Admin Dashboard</title>
 </head>
 <body>
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-menu-toggle" onclick="toggleMobileSidebar()" style="display:none;">
+        <i class="fas fa-bars"></i>
+    </button>
+    <div class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
+    
     <nav class="sidebar">
         <header>
             <div class="image-text">
@@ -193,6 +199,28 @@ foreach ($students as $row) {
     </section>
 
     <script src="admin-dashboard.js"></script>
+    <script>
+        // Mobile Menu Toggle
+        function toggleMobileSidebar() {
+            document.querySelector('.sidebar').classList.toggle('show-mobile');
+            document.querySelector('.sidebar-overlay').classList.toggle('show');
+        }
+        
+        // Show mobile menu button on small screens
+        function checkMobileMenu() {
+            const toggle = document.querySelector('.mobile-menu-toggle');
+            if (window.innerWidth <= 576) {
+                toggle.style.display = 'flex';
+            } else {
+                toggle.style.display = 'none';
+                document.querySelector('.sidebar').classList.remove('show-mobile');
+                document.querySelector('.sidebar-overlay').classList.remove('show');
+            }
+        }
+        
+        window.addEventListener('resize', checkMobileMenu);
+        window.addEventListener('load', checkMobileMenu);
+    </script>
 
 </body>
 </html>

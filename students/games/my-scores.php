@@ -10,12 +10,13 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role_id'] != 4) {
 
 $student_id = $_SESSION['user_id'];
 
-// Get all completed game sessions for this student (including both quiz games and matching games)
-$query = "SELECT gs.session_id, gs.game_id, NULL as matching_game_id, ga.title, s.subject_name, 
+// Get all completed game sessions for this student (including quiz games, matching games, and typing games)
+$query = "SELECT gs.session_id, gs.game_id, NULL as matching_game_id, NULL as typing_game_id, ga.title, s.subject_name, 
           gs.total_score, gs.total_correct, gs.total_questions, gs.completed_at,
           ROUND((gs.total_correct / gs.total_questions * 100), 1) as accuracy,
           (SELECT SUM(points) FROM game_questions WHERE game_id = ga.game_id) as max_score,
-          'quiz' as game_type
+          'quiz' as game_type,
+          NULL as wpm
           FROM game_sessions gs
           INNER JOIN game_activities ga ON gs.game_id = ga.game_id
           INNER JOIN subjects s ON ga.subject_id = s.subject_id
@@ -23,33 +24,51 @@ $query = "SELECT gs.session_id, gs.game_id, NULL as matching_game_id, ga.title, 
           
           UNION ALL
           
-          SELECT ms.session_id, NULL as game_id, ms.matching_game_id, mg.title, s.subject_name,
+          SELECT ms.session_id, NULL as game_id, ms.matching_game_id, NULL as typing_game_id, mg.title, s.subject_name,
           ms.total_score, ms.total_correct, ms.total_pairs as total_questions, ms.completed_at,
           ROUND((ms.total_correct / ms.total_pairs * 100), 1) as accuracy,
           (ms.total_pairs * mg.points_per_pair) as max_score,
-          'matching' as game_type
+          'matching' as game_type,
+          NULL as wpm
           FROM matching_sessions ms
           INNER JOIN matching_games mg ON ms.matching_game_id = mg.matching_game_id
           INNER JOIN subjects s ON mg.subject_id = s.subject_id
           WHERE ms.student_id = ? AND ms.completed_at IS NOT NULL
           
+          UNION ALL
+          
+          SELECT ts.session_id, NULL as game_id, NULL as matching_game_id, ts.typing_game_id, tg.title, s.subject_name,
+          ts.total_score, ts.wpm as total_correct, 100 as total_questions, ts.completed_at,
+          ROUND(ts.accuracy, 1) as accuracy,
+          100 as max_score,
+          'typing' as game_type,
+          ts.wpm
+          FROM typing_sessions ts
+          INNER JOIN typing_games tg ON ts.typing_game_id = tg.typing_game_id
+          INNER JOIN subjects s ON tg.subject_id = s.subject_id
+          WHERE ts.student_id = ? AND ts.completed_at IS NOT NULL
+          
           ORDER BY completed_at DESC";
 $stmt = $pdo->prepare($query);
-$stmt->execute([$student_id, $student_id]);
+$stmt->execute([$student_id, $student_id, $student_id]);
 $sessions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Get overall stats (including both quiz games and matching games)
+// Get overall stats (including quiz games, matching games, and typing games)
 $stats_query = "SELECT 
                 (SELECT COUNT(*) FROM game_sessions WHERE student_id = ? AND completed_at IS NOT NULL) +
-                (SELECT COUNT(*) FROM matching_sessions WHERE student_id = ? AND completed_at IS NOT NULL) as total_games,
+                (SELECT COUNT(*) FROM matching_sessions WHERE student_id = ? AND completed_at IS NOT NULL) +
+                (SELECT COUNT(*) FROM typing_sessions WHERE student_id = ? AND completed_at IS NOT NULL) as total_games,
                 
                 (SELECT COALESCE(SUM(total_score), 0) FROM game_sessions WHERE student_id = ? AND completed_at IS NOT NULL) +
-                (SELECT COALESCE(SUM(total_score), 0) FROM matching_sessions WHERE student_id = ? AND completed_at IS NOT NULL) as total_points,
+                (SELECT COALESCE(SUM(total_score), 0) FROM matching_sessions WHERE student_id = ? AND completed_at IS NOT NULL) +
+                (SELECT COALESCE(SUM(total_score), 0) FROM typing_sessions WHERE student_id = ? AND completed_at IS NOT NULL) as total_points,
                 
                 ((SELECT COALESCE(SUM(total_score), 0) FROM game_sessions WHERE student_id = ? AND completed_at IS NOT NULL) +
-                (SELECT COALESCE(SUM(total_score), 0) FROM matching_sessions WHERE student_id = ? AND completed_at IS NOT NULL)) / 
+                (SELECT COALESCE(SUM(total_score), 0) FROM matching_sessions WHERE student_id = ? AND completed_at IS NOT NULL) +
+                (SELECT COALESCE(SUM(total_score), 0) FROM typing_sessions WHERE student_id = ? AND completed_at IS NOT NULL)) / 
                 NULLIF((SELECT COUNT(*) FROM game_sessions WHERE student_id = ? AND completed_at IS NOT NULL) +
-                (SELECT COUNT(*) FROM matching_sessions WHERE student_id = ? AND completed_at IS NOT NULL), 0) as avg_score,
+                (SELECT COUNT(*) FROM matching_sessions WHERE student_id = ? AND completed_at IS NOT NULL) +
+                (SELECT COUNT(*) FROM typing_sessions WHERE student_id = ? AND completed_at IS NOT NULL), 0) as avg_score,
                 
                 (SELECT COALESCE(SUM(total_correct), 0) FROM game_sessions WHERE student_id = ? AND completed_at IS NOT NULL) +
                 (SELECT COALESCE(SUM(total_correct), 0) FROM matching_sessions WHERE student_id = ? AND completed_at IS NOT NULL) as total_correct,
@@ -58,9 +77,9 @@ $stats_query = "SELECT
                 (SELECT COALESCE(SUM(total_pairs), 0) FROM matching_sessions WHERE student_id = ? AND completed_at IS NOT NULL) as total_questions";
 $stmt = $pdo->prepare($stats_query);
 $stmt->execute([
-    $student_id, $student_id,  // total_games
-    $student_id, $student_id,  // total_points
-    $student_id, $student_id, $student_id, $student_id,  // avg_score
+    $student_id, $student_id, $student_id,  // total_games
+    $student_id, $student_id, $student_id,  // total_points
+    $student_id, $student_id, $student_id, $student_id, $student_id, $student_id,  // avg_score
     $student_id, $student_id,  // total_correct
     $student_id, $student_id   // total_questions
 ]);
@@ -206,6 +225,38 @@ $overall_accuracy = $stats['total_questions'] > 0 ? round(($stats['total_correct
             color: #721c24;
         }
         
+        .type-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .type-quiz {
+            background: #ff6b6b;
+            color: white;
+        }
+        
+        .type-matching {
+            background: #9b59b6;
+            color: white;
+        }
+        
+        .type-typing {
+            background: #00d4ff;
+            color: white;
+        }
+        
+        .wpm-badge {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        
         .no-scores {
             text-align: center;
             padding: 60px 20px;
@@ -278,9 +329,10 @@ $overall_accuracy = $stats['total_questions'] > 0 ? round(($stats['total_correct
                         <tr>
                             <th>Date</th>
                             <th>Game</th>
+                            <th>Type</th>
                             <th>Subject</th>
                             <th>Score</th>
-                            <th>Correct</th>
+                            <th>Result</th>
                             <th>Accuracy</th>
                         </tr>
                     </thead>
@@ -288,17 +340,42 @@ $overall_accuracy = $stats['total_questions'] > 0 ? round(($stats['total_correct
                         <?php foreach ($sessions as $session): 
                             $accuracy_class = $session['accuracy'] >= 80 ? 'accuracy-high' : 
                                             ($session['accuracy'] >= 50 ? 'accuracy-medium' : 'accuracy-low');
+                            
+                            // Game type badge
+                            $type_icon = '🎯';
+                            $type_label = 'Quiz';
+                            $type_class = 'type-quiz';
+                            if ($session['game_type'] == 'matching') {
+                                $type_icon = '🧩';
+                                $type_label = 'Matching';
+                                $type_class = 'type-matching';
+                            } elseif ($session['game_type'] == 'typing') {
+                                $type_icon = '⌨️';
+                                $type_label = 'Typing';
+                                $type_class = 'type-typing';
+                            }
                         ?>
                             <tr>
                                 <td data-label="Date"><?php echo date('M d, Y H:i', strtotime($session['completed_at'])); ?></td>
                                 <td data-label="Game"><strong><?php echo htmlspecialchars($session['title']); ?></strong></td>
+                                <td data-label="Type">
+                                    <span class="type-badge <?php echo $type_class; ?>">
+                                        <?php echo $type_icon; ?> <?php echo $type_label; ?>
+                                    </span>
+                                </td>
                                 <td data-label="Subject"><?php echo htmlspecialchars($session['subject_name']); ?></td>
                                 <td data-label="Score">
                                     <span class="score-badge">
-                                        <?php echo $session['total_score']; ?> / <?php echo $session['max_score'] ?? 'N/A'; ?>
+                                        <?php echo $session['total_score']; ?> pts
                                     </span>
                                 </td>
-                                <td data-label="Correct"><?php echo $session['total_correct']; ?> / <?php echo $session['total_questions']; ?></td>
+                                <td data-label="Result">
+                                    <?php if ($session['game_type'] == 'typing'): ?>
+                                        <span class="wpm-badge"><?php echo $session['wpm']; ?> WPM</span>
+                                    <?php else: ?>
+                                        <?php echo $session['total_correct']; ?> / <?php echo $session['total_questions']; ?>
+                                    <?php endif; ?>
+                                </td>
                                 <td data-label="Accuracy">
                                     <span class="accuracy-badge <?php echo $accuracy_class; ?>">
                                         <?php echo $session['accuracy']; ?>%

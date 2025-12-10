@@ -12,7 +12,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="icon" type="image/png" href="../assets/tablogo.png">
     <link rel="stylesheet" href="staff-userman.css?v=<?php echo time(); ?>">>
     <link rel="stylesheet" href="../assets/css/responsive.css?v=<?php echo time(); ?>">
@@ -43,6 +43,11 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
     <title>Staff Dashboard</title>
 </head>
 <body>
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-menu-toggle" onclick="toggleMobileSidebar()" style="display:none;">
+        <i class="fas fa-bars"></i>
+    </button>
+    <div class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
     <nav class="sidebar">
         <header>
             <div class="image-text">
@@ -99,6 +104,33 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
         }
     } catch (PDOException $e) {
         // Column might already exist or other error, continue
+    }
+
+    // AJAX handler to get user data for editing
+    if (isset($_GET['get_user'])) {
+        $user_id = $_GET['get_user'];
+        $stmt = $pdo->prepare("SELECT user_id, first_name, last_name, username, email, grade_level, section, role_id FROM users WHERE user_id = ?");
+        $stmt->execute([$user_id]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($user) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'first_name' => $user['first_name'],
+                'last_name' => $user['last_name'],
+                'username' => $user['username'],
+                'email' => $user['email'],
+                'grade_level' => $user['grade_level'],
+                'section' => $user['section'],
+                'role_id' => $user['role_id']
+            ]);
+            exit;
+        } else {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'User not found']);
+            exit;
+        }
     }
 
     // Handle Add Teacher
@@ -199,6 +231,11 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
             if ($is_student) {
                 $sql .= ", grade_level = ?";
                 $params[] = $grade;
+                
+                $section = isset($_POST['edit_section']) ? $_POST['edit_section'] : null;
+                $section = !empty($section) ? $section : null;
+                $sql .= ", section = ?";
+                $params[] = $section;
             }
             
             $sql .= " WHERE user_id = ?";
@@ -243,6 +280,8 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
                         $email = $data[3];
                         $password = $data[4];  // Store password as plain text
                         $grade = $data[5];
+                        $section = isset($data[6]) ? trim($data[6]) : null; // Section is optional
+                        $section = !empty($section) ? $section : null;
                         $role_id = 4;
                         
                         // Validate grade level
@@ -261,9 +300,9 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
                             continue;
                         }
                         
-                        $stmt = $pdo->prepare("INSERT INTO users (first_name, last_name, username, email, password, role_id, grade_level) 
-                                VALUES (?, ?, ?, ?, ?, ?, ?)");
-                        if ($stmt->execute([$fname, $lname, $username, $email, $password, $role_id, $grade])) {
+                        $stmt = $pdo->prepare("INSERT INTO users (first_name, last_name, username, email, password, role_id, grade_level, section) 
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                        if ($stmt->execute([$fname, $lname, $username, $email, $password, $role_id, $grade, $section])) {
                             $success_count++;
                         } else {
                             $errors[] = "Error adding student $fname $lname";
@@ -303,6 +342,8 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
         $email = $username . "@lars.edu.ph";
         $password = $_POST['student_password'] ?? '';  // Store password as plain text
         $grade = $_POST['student_grade'] ?? '';
+        $section = $_POST['student_section'] ?? null;
+        $section = !empty($section) ? $section : null;
         $role_id = 4; // Student
         
         // Check if username already exists
@@ -311,9 +352,9 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
         if ($stmt->rowCount() > 0) {
             echo "<script>alert('Username already exists. Please choose another.');</script>";
         } else {
-            $stmt = $pdo->prepare("INSERT INTO users (first_name, last_name, username, email, password, role_id, grade_level) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?)");
-            if ($stmt->execute([$fname, $lname, $username, $email, $password, $role_id, $grade])) {
+            $stmt = $pdo->prepare("INSERT INTO users (first_name, last_name, username, email, password, role_id, grade_level, section) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            if ($stmt->execute([$fname, $lname, $username, $email, $password, $role_id, $grade, $section])) {
                 log_activity('Added Student', $pdo->lastInsertId());
                 echo "<script>alert('Student added successfully!'); window.location.href=window.location.pathname;</script>";
                 exit;
@@ -416,6 +457,12 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
                 </div>
 
                 <div class="input-group">
+                    <label for="student_section">Section</label>
+                    <input type="text" id="student_section" name="student_section" placeholder="e.g., A, B, C, or Section Name" maxlength="10">
+                    <small class="input-help">Optional - Enter student's section (e.g., A, B, Rizal, etc.)</small>
+                </div>
+
+                <div class="input-group">
                     <label for="student_username">Username</label>
                     <input type="text" id="student_username" name="student_username" placeholder="Enter username" required>
                     <small class="input-help">Email will be automatically generated as username@lars.edu.ph</small>
@@ -452,7 +499,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
                         <li>Fill in the student details in the CSV format</li>
                         <li>Upload the completed CSV file below</li>
                     </ol>
-                    <p class="format-note">Required CSV Format: First Name, Last Name, Username, Email, Password, Grade Level (7-10)</p>
+                    <p class="format-note">Required CSV Format: First Name, Last Name, Username, Email, Password, Grade Level (7-10), Section (optional)</p>
                 </div>
                 
                 <div class="input-group file-upload">
@@ -543,7 +590,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
             <thead>
                 <tr>
                     <th>Name</th>
-                    <th>Grade</th>
+                    <th>Grade & Section</th>
                     <th>Username</th>
                     <th>Email</th>
                     <th>Password</th>
@@ -553,15 +600,16 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
             <tbody class="student-list">
                 <?php
                 // Fetch students
-                $studentQuery = "SELECT user_id, first_name, last_name, username, grade_level, password FROM users WHERE role_id = 4 ORDER BY grade_level, last_name";
+                $studentQuery = "SELECT user_id, first_name, last_name, username, grade_level, section, password FROM users WHERE role_id = 4 ORDER BY grade_level, section, last_name";
                 $studentResult = $pdo->query($studentQuery);
                 if ($studentResult && $studentResult->rowCount() > 0) {
                     while ($row = $studentResult->fetch(PDO::FETCH_ASSOC)) {
                         // Generate email from username
                         $email = $row['username'] . "@lars.edu.ph";
+                        $sectionDisplay = !empty($row['section']) ? ' - ' . $row['section'] : '';
                         echo "<tr>";
                         echo "<td data-label='Name'>" . htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) . "</td>";
-                        echo "<td data-label='Grade'>Grade " . htmlspecialchars($row['grade_level']) . "</td>";
+                        echo "<td data-label='Grade & Section'>Grade " . htmlspecialchars($row['grade_level']) . htmlspecialchars($sectionDisplay) . "</td>";
                         echo "<td data-label='Username'><span class='user-credential'>" . htmlspecialchars($row['username']) . "</span></td>";
                         echo "<td data-label='Email'><span class='user-credential'>" . htmlspecialchars($email) . "</span></td>";
                         echo "<td data-label='Password'><div class='password-field'>
@@ -631,6 +679,10 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
                             <option value="9">Grade 9</option>
                             <option value="10">Grade 10</option>
                         </select>
+                    </div>
+                    <div class="input-group student-section-field" style="display: none;">
+                        <label for="edit_section">Section:</label>
+                        <input type="text" id="edit_section" name="edit_section" placeholder="e.g., A, B, C" maxlength="10">
                     </div>
                     <div class="button-group">
                         <button type="submit" name="edit_user">Update User</button>
@@ -932,6 +984,28 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
             </div>
         </div>
     </div>
+    
+    <script>
+        // Mobile Menu Toggle
+        function toggleMobileSidebar() {
+            document.querySelector('.sidebar').classList.toggle('show-mobile');
+            document.querySelector('.sidebar-overlay').classList.toggle('show');
+        }
+        
+        // Show mobile menu button on small screens
+        function checkMobileMenu() {
+            const toggle = document.querySelector('.mobile-menu-toggle');
+            if (window.innerWidth <= 576) {
+                toggle.style.display = 'flex';
+            } else {
+                toggle.style.display = 'none';
+                document.querySelector('.sidebar').classList.remove('show-mobile');
+                document.querySelector('.sidebar-overlay').classList.remove('show');
+            }
+        }
+        
+        window.addEventListener('resize', checkMobileMenu);
+        window.addEventListener('load', checkMobileMenu);
+    </script>
 </body>
 </html>
- 
