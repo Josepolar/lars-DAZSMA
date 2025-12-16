@@ -807,7 +807,8 @@ $best_scores = $stmt->fetch(PDO::FETCH_ASSOC);
         <div class="typing-area">
             <div class="text-display" id="textDisplay">
                 <?php 
-                $chars = str_split($typing_text['text_content']);
+                $text = isset($typing_text['text_content']) && trim($typing_text['text_content']) !== '' ? $typing_text['text_content'] : '';
+                $chars = str_split($text);
                 foreach ($chars as $index => $char) {
                     $class = $index === 0 ? 'current' : 'remaining';
                     $charDisplay = htmlspecialchars($char);

@@ -1132,15 +1132,19 @@ $session_id = $pdo->lastInsertId();
                         </div>
                         <div class="question-text">${question.question_text}</div>
                         <div class="options-grid" id="optionsGrid">
-                            ${question.options.map((opt, i) => `
-                                <button class="option-btn ${optionClasses[i]}" 
-                                        data-option-id="${opt.option_id}"
-                                        data-is-correct="${opt.is_correct}"
-                                        onclick="gamePlayer.selectAnswer(${opt.option_id}, ${opt.is_correct}, ${question.question_id})">
-                                    <span class="option-letter">${optionLetters[i]}</span>
-                                    <span class="option-text">${opt.option_text}</span>
-                                </button>
-                            `).join('')}
+                            ${question.options.map((opt, i) => {
+                                // Fallback for undefined/null/empty option_text
+                                const safeText = (typeof opt.option_text === 'string' && opt.option_text.trim() !== '') ? opt.option_text : '';
+                                return `
+                                    <button class="option-btn ${optionClasses[i]}" 
+                                            data-option-id="${opt.option_id}"
+                                            data-is-correct="${opt.is_correct}"
+                                            onclick="gamePlayer.selectAnswer(${opt.option_id}, ${opt.is_correct}, ${question.question_id})">
+                                        <span class="option-letter">${optionLetters[i]}</span>
+                                        <span class="option-text">${safeText}</span>
+                                    </button>
+                                `;
+                            }).join('')}
                         </div>
                     </div>
                 `;

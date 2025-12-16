@@ -867,7 +867,7 @@ $session_id = $pdo->lastInsertId();
                             <?php if ($pair['left_item_image']): ?>
                                 <img src="../../<?php echo htmlspecialchars($pair['left_item_image']); ?>" alt="Item">
                             <?php else: ?>
-                                <?php echo htmlspecialchars($pair['left_item_text']); ?>
+                                <?php echo htmlspecialchars(isset($pair['left_item_text']) && trim($pair['left_item_text']) !== '' ? $pair['left_item_text'] : ''); ?>
                             <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
@@ -889,7 +889,7 @@ $session_id = $pdo->lastInsertId();
                                 <?php if ($pair['right_item_image']): ?>
                                     <img src="../../<?php echo htmlspecialchars($pair['right_item_image']); ?>" alt="Target">
                                 <?php else: ?>
-                                    <?php echo htmlspecialchars($pair['right_item_text']); ?>
+                                    <?php echo htmlspecialchars(isset($pair['right_item_text']) && trim($pair['right_item_text']) !== '' ? $pair['right_item_text'] : ''); ?>
                                 <?php endif; ?>
                             </div>
                         </div>
