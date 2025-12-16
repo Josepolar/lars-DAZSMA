@@ -867,7 +867,11 @@ $session_id = $pdo->lastInsertId();
                             <?php if ($pair['left_item_image']): ?>
                                 <img src="../../<?php echo htmlspecialchars($pair['left_item_image']); ?>" alt="Item">
                             <?php else: ?>
-                                <?php echo htmlspecialchars(isset($pair['left_item_text']) && trim($pair['left_item_text']) !== '' ? $pair['left_item_text'] : ''); ?>
+                                <?php
+                                    $leftText = isset($pair['left_item_text']) ? trim($pair['left_item_text']) : '';
+                                    if ($leftText === 'undefined') $leftText = '';
+                                    echo htmlspecialchars($leftText);
+                                ?>
                             <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
@@ -889,7 +893,11 @@ $session_id = $pdo->lastInsertId();
                                 <?php if ($pair['right_item_image']): ?>
                                     <img src="../../<?php echo htmlspecialchars($pair['right_item_image']); ?>" alt="Target">
                                 <?php else: ?>
-                                    <?php echo htmlspecialchars(isset($pair['right_item_text']) && trim($pair['right_item_text']) !== '' ? $pair['right_item_text'] : ''); ?>
+                                    <?php
+                                        $rightText = isset($pair['right_item_text']) ? trim($pair['right_item_text']) : '';
+                                        if ($rightText === 'undefined') $rightText = '';
+                                        echo htmlspecialchars($rightText);
+                                    ?>
                                 <?php endif; ?>
                             </div>
                         </div>
