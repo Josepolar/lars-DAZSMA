@@ -1117,12 +1117,12 @@ $session_id = $pdo->lastInsertId();
                 const question = this.questions[index];
                 const optionLetters = ['A', 'B', 'C', 'D'];
                 const optionClasses = ['option-a', 'option-b', 'option-c', 'option-d'];
-                
+
                 // Update progress
                 document.getElementById('questionNum').textContent = index + 1;
                 document.getElementById('progressText').textContent = `${index} / ${this.totalQuestions} Completed`;
                 document.getElementById('progressBar').style.width = `${(index / this.totalQuestions) * 100}%`;
-                
+
                 const container = document.getElementById('questionsContainer');
                 container.innerHTML = `
                     <div class="question-card active">
@@ -1130,16 +1130,16 @@ $session_id = $pdo->lastInsertId();
                             <div class="question-number">Question ${index + 1} of ${this.totalQuestions}</div>
                             <div class="question-timer" id="timer">${this.timeLimit}</div>
                         </div>
-                        <div class="question-text">${question.question_text}</div>
+                        <div class="question-text">${(typeof question.question_text === 'string' && question.question_text.trim() !== '') ? question.question_text : ''}</div>
                         <div class="options-grid" id="optionsGrid">
                             ${question.options.map((opt, i) => {
                                 // Fallback for undefined/null/empty option_text
                                 const safeText = (typeof opt.option_text === 'string' && opt.option_text.trim() !== '') ? opt.option_text : '';
                                 return `
                                     <button class="option-btn ${optionClasses[i]}" 
-                                            data-option-id="${opt.option_id}"
-                                            data-is-correct="${opt.is_correct}"
-                                            onclick="gamePlayer.selectAnswer(${opt.option_id}, ${opt.is_correct}, ${question.question_id})">
+                                            data-option-id="${typeof opt.option_id !== 'undefined' ? opt.option_id : ''}"
+                                            data-is-correct="${typeof opt.is_correct !== 'undefined' ? opt.is_correct : 0}"
+                                            onclick="gamePlayer.selectAnswer(${typeof opt.option_id !== 'undefined' ? opt.option_id : 'null'}, ${typeof opt.is_correct !== 'undefined' ? opt.is_correct : 0}, ${typeof question.question_id !== 'undefined' ? question.question_id : 'null'})">
                                         <span class="option-letter">${optionLetters[i]}</span>
                                         <span class="option-text">${safeText}</span>
                                     </button>
@@ -1148,7 +1148,7 @@ $session_id = $pdo->lastInsertId();
                         </div>
                     </div>
                 `;
-                
+
                 this.startTimer();
             },
             
