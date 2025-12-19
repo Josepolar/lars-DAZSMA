@@ -19,6 +19,8 @@ if ($action === 'export') {
     handleArchive($pdo);
 } elseif ($action === 'get_details') {
     handleGetDetails($pdo);
+} elseif ($action === 'get_students') {
+    handleGetStudents($pdo);
 } else {
     header('Content-Type: application/json');
     echo json_encode(['success' => false, 'message' => 'Invalid action']);
@@ -401,6 +403,57 @@ function handleGetDetails($pdo) {
         echo json_encode([
             'success' => false,
             'message' => 'Error fetching details: ' . $e->getMessage()
+        ]);
+    }
+}
+
+function handleGetStudents($pdo) {
+    $archiveId = $_POST['archive_id'] ?? 0;
+    $gradeLevel = $_POST['grade_level'] ?? null;
+
+    header('Content-Type: application/json');
+
+    try {
+        // Verify archive exists
+        $stmt = $pdo->prepare("SELECT archive_id FROM student_archives WHERE archive_id = ?");
+        $stmt->execute([$archiveId]);
+        $archive = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$archive) {
+            echo json_encode(['success' => false, 'message' => 'Archive not found']);
+            exit();
+        }
+
+        // Get students for this archive
+        if ($gradeLevel) {
+            $stmt = $pdo->prepare("
+                SELECT first_name, last_name, username, email, grade_level, section, action
+                FROM student_archive_records 
+                WHERE archive_id = ? AND grade_level = ?
+                ORDER BY grade_level, last_name, first_name
+            ");
+            $stmt->execute([$archiveId, $gradeLevel]);
+        } else {
+            $stmt = $pdo->prepare("
+                SELECT first_name, last_name, username, email, grade_level, section, action
+                FROM student_archive_records 
+                WHERE archive_id = ?
+                ORDER BY grade_level, last_name, first_name
+            ");
+            $stmt->execute([$archiveId]);
+        }
+        
+        $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        echo json_encode([
+            'success' => true,
+            'students' => $students
+        ]);
+
+    } catch (Exception $e) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Error fetching students: ' . $e->getMessage()
         ]);
     }
 }

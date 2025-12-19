@@ -777,6 +777,17 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
         </div>
     </div>
 
+    <!-- Students List Modal -->
+    <div id="studentsListModal" class="modal">
+        <div class="modal-content" style="max-width: 900px; max-height: 80vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h2 id="studentsListTitle">Students List</h2>
+                <span class="close" onclick="closeModal('studentsListModal')">&times;</span>
+            </div>
+            <div id="studentsListContent"></div>
+        </div>
+    </div>
+
     <!-- Loading Spinner Modal -->
     <div id="loadingModal" class="modal">
         <div class="modal-content" style="text-align: center; border: none; box-shadow: none;">
@@ -1066,14 +1077,22 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
                         <table style="width: 100%; border-collapse: collapse;">
                             ${data.grade_distribution.map(item => `
                                 <tr style="border-bottom: 1px solid #dee2e6;">
-                                    <td style="padding: 8px;">Grade ${item.grade}</td>
+                                    <td style="padding: 8px;">Grade ${item.grade_level || item.grade || 'N/A'}</td>
                                     <td style="padding: 8px; text-align: right;">${item.count} students</td>
+                                    <td style="padding: 8px; text-align: right;">
+                                        <button class="btn btn-primary" onclick="viewStudentsByGrade(${data.archive_id}, '${item.grade_level || item.grade || ''}')" style="padding: 5px 10px; font-size: 12px;">
+                                            <i class="fas fa-eye"></i> View
+                                        </button>
+                                    </td>
                                 </tr>
                             `).join('')}
                         </table>
                     </div>
 
                     <div style="text-align: right; margin-top: 20px;">
+                        <button class="btn btn-primary" onclick="viewAllStudents(${data.archive_id})" style="margin-right: 10px;">
+                            <i class="fas fa-users"></i> View All Students
+                        </button>
                         <button class="btn btn-secondary" onclick="closeModal('archiveDetailsModal')">Close</button>
                     </div>
                 </div>
@@ -1112,6 +1131,117 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
                 document.querySelector('.sidebar').classList.remove('show-mobile');
                 document.querySelector('.sidebar-overlay').classList.remove('show');
             }
+        }
+
+        function viewAllStudents(archiveId) {
+            showLoading('Loading students...');
+            
+            const formData = new FormData();
+            formData.append('action', 'get_students');
+            formData.append('archive_id', archiveId);
+
+            fetch('staff-archive-api.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    displayStudentsList(data.students, 'All Students');
+                    closeModal('archiveDetailsModal');
+                    openModal('studentsListModal');
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                alert('Error loading students: ' + error.message);
+            });
+        }
+
+        function viewStudentsByGrade(archiveId, gradeLevel) {
+            showLoading('Loading students...');
+            
+            const formData = new FormData();
+            formData.append('action', 'get_students');
+            formData.append('archive_id', archiveId);
+            formData.append('grade_level', gradeLevel);
+
+            fetch('staff-archive-api.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    displayStudentsList(data.students, `Grade ${gradeLevel} Students`);
+                    closeModal('archiveDetailsModal');
+                    openModal('studentsListModal');
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                alert('Error loading students: ' + error.message);
+            });
+        }
+
+        function displayStudentsList(students, title) {
+            const content = document.getElementById('studentsListContent');
+            const titleElement = document.getElementById('studentsListTitle');
+            titleElement.textContent = title;
+            
+            if (!students || students.length === 0) {
+                content.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">No students found</div>';
+                return;
+            }
+
+            content.innerHTML = `
+                <div style="padding: 20px;">
+                    <div style="margin-bottom: 15px; color: #666;">
+                        <strong>Total: ${students.length} student(s)</strong>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="archive-table" style="width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Name</th>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                    <th>Grade</th>
+                                    <th>Section</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${students.map((student, index) => `
+                                    <tr>
+                                        <td>${index + 1}</td>
+                                        <td>${student.first_name} ${student.last_name}</td>
+                                        <td>${student.username}</td>
+                                        <td>${student.email || 'N/A'}</td>
+                                        <td>${student.grade_level || 'N/A'}</td>
+                                        <td>${student.section || 'N/A'}</td>
+                                        <td>
+                                            <span class="status-badge ${student.action === 'promoted' ? 'status-archived' : 'status-pending'}">
+                                                ${student.action === 'promoted' ? 'Promoted' : 'Graduated'}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="text-align: right; margin-top: 20px;">
+                        <button class="btn btn-secondary" onclick="closeModal('studentsListModal')">Close</button>
+                    </div>
+                </div>
+            `;
         }
 
         window.addEventListener('resize', checkMobileMenu);
