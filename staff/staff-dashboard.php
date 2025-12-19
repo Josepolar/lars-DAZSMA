@@ -65,7 +65,11 @@ if ($result && $row = $result->fetch(PDO::FETCH_ASSOC)) {
 
                      <li class="nav-link">
                         <button class="tablinks"><a href="staff-subjman.php" class="tablinks">Subject Management</a></button>
-                    </li> 
+                    </li>
+                    
+                    <li class="nav-link">
+                        <button class="tablinks"><a href="staff-archive.php" class="tablinks">Student Archive</a></button>
+                    </li>
                     
                 </ul>
             </div>

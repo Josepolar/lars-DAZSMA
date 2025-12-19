@@ -76,7 +76,11 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
 
                      <li class="nav-link">
                         <button class="tablinks"><a href="staff-subjman.php" class="tablinks">Subject Management</a></button>
-                    </li> 
+                    </li>
+                    
+                    <li class="nav-link">
+                        <button class="tablinks"><a href="staff-archive.php" class="tablinks">Student Archive</a></button>
+                    </li>
                     
                 </ul>
             </div>
