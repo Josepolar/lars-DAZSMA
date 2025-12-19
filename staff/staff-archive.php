@@ -842,12 +842,29 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
             formData.append('format', selectedExportFormat);
             formData.append('grades', grades);
 
-            fetch('/larss/staff/staff-archive-api.php', {
+            fetch('staff-archive-api.php', {
                 method: 'POST',
                 body: formData
             })
             .then(response => {
-                if (response.ok && response.headers.get('content-type').includes('application/')) {
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        hideLoading();
+                        try {
+                            const error = JSON.parse(text);
+                            alert('Error: ' + error.message);
+                        } catch (e) {
+                            alert('Error exporting students: ' + text);
+                        }
+                        throw new Error('Export failed');
+                    });
+                }
+                
+                const contentType = response.headers.get('content-type') || '';
+                // Check if it's a file download (CSV, Excel, PDF, JSON)
+                if (contentType.includes('text/csv') || 
+                    contentType.includes('application/') || 
+                    contentType.includes('application/pdf')) {
                     return response.blob().then(blob => {
                         hideLoading();
                         const url = window.URL.createObjectURL(blob);
@@ -897,12 +914,30 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
             data.append('grades', grades);
             data.append('fields', JSON.stringify(fields));
 
-            fetch('/larss/staff/staff-archive-api.php', {
+            fetch('staff-archive-api.php', {
                 method: 'POST',
                 body: data
             })
             .then(response => {
-                if (response.ok && response.headers.get('content-type').includes('application/')) {
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        hideLoading();
+                        closeModal('advancedExportModal');
+                        try {
+                            const error = JSON.parse(text);
+                            alert('Error: ' + error.message);
+                        } catch (e) {
+                            alert('Error exporting students: ' + text);
+                        }
+                        throw new Error('Export failed');
+                    });
+                }
+                
+                const contentType = response.headers.get('content-type') || '';
+                // Check if it's a file download (CSV, Excel, PDF, JSON)
+                if (contentType.includes('text/csv') || 
+                    contentType.includes('application/') || 
+                    contentType.includes('application/pdf')) {
                     return response.blob().then(blob => {
                         hideLoading();
                         closeModal('advancedExportModal');
@@ -965,7 +1000,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
             formData.append('promote_grades', JSON.stringify(promoteGrades));
             formData.append('notes', notes);
 
-            fetch('/larss/staff/staff-archive-api.php', {
+            fetch('staff-archive-api.php', {
                 method: 'POST',
                 body: formData
             })
@@ -993,7 +1028,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
             formData.append('action', 'get_details');
             formData.append('archive_id', archiveId);
 
-            fetch('/larss/staff/staff-archive-api.php', {
+            fetch('staff-archive-api.php', {
                 method: 'POST',
                 body: formData
             })
