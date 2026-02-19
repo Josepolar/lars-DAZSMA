@@ -50,32 +50,32 @@ if (isset($_GET['change_status']) && isset($_GET['game_id']) && isset($_GET['gam
 }
 
 // Get all games created by this teacher (quiz, matching, and typing games)
-$query = "SELECT ga.game_id, ga.title, ga.description, ga.time_limit, ga.show_leaderboard, 
+$query = "SELECT ga.game_id, CAST(ga.title AS CHAR CHARACTER SET utf8mb4) as title, CAST(ga.description AS CHAR CHARACTER SET utf8mb4) as description, ga.time_limit, ga.show_leaderboard,
        ga.status, ga.created_at, ga.updated_at, ga.teacher_id, ga.subject_id,
        ga.due_date,
-       s.subject_name, 'quiz' as game_type_flag,
+       CAST(s.subject_name AS CHAR CHARACTER SET utf8mb4) as subject_name, 'quiz' as game_type_flag,
           (SELECT COUNT(*) FROM game_questions WHERE game_id = ga.game_id) as question_count,
           (SELECT COUNT(DISTINCT student_id) FROM game_sessions WHERE game_id = ga.game_id) as player_count
           FROM game_activities ga
           INNER JOIN subjects s ON ga.subject_id = s.subject_id
           WHERE ga.teacher_id = ?
           UNION ALL
-          SELECT mg.matching_game_id as game_id, mg.title, mg.description, 
-           mg.time_limit, mg.show_leaderboard, mg.status, mg.created_at, 
+          SELECT mg.matching_game_id as game_id, CAST(mg.title AS CHAR CHARACTER SET utf8mb4) as title, CAST(mg.description AS CHAR CHARACTER SET utf8mb4) as description,
+           mg.time_limit, mg.show_leaderboard, mg.status, mg.created_at,
            mg.updated_at, mg.teacher_id, mg.subject_id,
            mg.due_date,
-                 s.subject_name, 'matching' as game_type_flag,
+                 CAST(s.subject_name AS CHAR CHARACTER SET utf8mb4) as subject_name, 'matching' as game_type_flag,
           (SELECT COUNT(*) FROM matching_pairs WHERE matching_game_id = mg.matching_game_id) as question_count,
           (SELECT COUNT(DISTINCT student_id) FROM matching_sessions WHERE matching_game_id = mg.matching_game_id) as player_count
           FROM matching_games mg
           INNER JOIN subjects s ON mg.subject_id = s.subject_id
           WHERE mg.teacher_id = ?
           UNION ALL
-          SELECT tg.typing_game_id as game_id, tg.title, tg.description, 
-           tg.time_limit, tg.show_leaderboard, tg.status, tg.created_at, 
+          SELECT tg.typing_game_id as game_id, CAST(tg.title AS CHAR CHARACTER SET utf8mb4) as title, CAST(tg.description AS CHAR CHARACTER SET utf8mb4) as description,
+           tg.time_limit, tg.show_leaderboard, tg.status, tg.created_at,
            tg.updated_at, tg.teacher_id, tg.subject_id,
            tg.due_date,
-                 s.subject_name, 'typing' as game_type_flag,
+                 CAST(s.subject_name AS CHAR CHARACTER SET utf8mb4) as subject_name, 'typing' as game_type_flag,
           (SELECT COUNT(*) FROM typing_texts WHERE typing_game_id = tg.typing_game_id) as question_count,
           (SELECT COUNT(DISTINCT student_id) FROM typing_sessions WHERE typing_game_id = tg.typing_game_id) as player_count
           FROM typing_games tg
