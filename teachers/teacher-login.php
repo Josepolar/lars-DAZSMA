@@ -7,16 +7,17 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role_id']) && $_SESSION['rol
 }
 
 // Use shared PDO connection
-require_once __DIR__ . '/../Database/database.php';
+$supabase_url = getenv('SUPABASE_URL');
+$supabase_key = getenv('SUPABASE_KEY');
+require_once __DIR__ . '/../supabase.php';
 require_once __DIR__ . '/../log_activity.php';
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $email = $_POST['email'] ?? '';
     $password = $_POST['password'] ?? '';
     try {
-        $stmt = $pdo->prepare("SELECT user_id, password, first_name, last_name FROM users WHERE email = ? AND role_id = 3");
-        $stmt->execute([$email]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        $supabase = new SupabaseClient($supabase_url, $supabase_key);
+        $user = $supabase->getTeacherByEmail($email);
         if ($user) {
             if ($password === $user['password'] || password_verify($password, $user['password'])) {
                 $_SESSION['user_id'] = $user['user_id'];
