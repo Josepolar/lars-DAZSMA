@@ -435,7 +435,7 @@ function generate_xlsx_export($students, $grade_level) {
             'color' => ['rgb' => 'FFFFFF']
         ],
         'fill' => [
-            'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+            'type' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
             'startColor' => ['rgb' => '004b9c']
         ]
     ];

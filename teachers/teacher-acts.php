@@ -22,7 +22,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id']) || $_SESSION['r
     <title>Teacher Activities</title>
 </head>
 <body>
-    <!-- Mobile Menu Toggle -->
+
     <button class="mobile-menu-toggle" onclick="toggleMobileSidebar()" style="display:none;">
         <i class="fas fa-bars"></i>
     </button>

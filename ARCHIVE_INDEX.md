@@ -4,6 +4,7 @@
 
 This is the central hub for all Student Archive Feature documentation. Use this index to find what you need.
 
+sample
 ---
 
 ## 🚀 Getting Started (Start Here!)
