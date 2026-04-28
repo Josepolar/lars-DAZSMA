@@ -1,39 +1,29 @@
 <?php
-// Database connection for both local XAMPP and cloud/serverless deployments.
-// Priority:
-// 1) Environment variables (Vercel/production)
-// 2) Local XAMPP defaults
+// Database connection - supports both Hostinger live server and local XAMPP
 
-$env_host = getenv('DB_HOST') ?: '';
-$env_port = getenv('DB_PORT') ?: '3306';
-$env_name = getenv('DB_NAME') ?: '';
-$env_user = getenv('DB_USER') ?: '';
-$env_pass = getenv('DB_PASS') ?: '';
+// Live server credentials
+$live_servername = "localhost";
+$live_username = "u456758764_lars";
+$live_password = "Lars@DB00123";
+$live_dbname = "u456758764_lars";
 
-$local_host = 'localhost';
-$local_port = '3306';
-$local_name = 'lars';
-$local_user = 'root';
-$local_pass = '';
-
-function connect_pdo($host, $port, $db, $user, $pass) {
-    $dsn = "mysql:host={$host};port={$port};dbname={$db};charset=utf8mb4";
-    $pdo = new PDO($dsn, $user, $pass, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
-    ]);
-    return $pdo;
-}
+// Local XAMPP credentials
+$local_servername = "localhost";
+$local_username = "root";
+$local_password = "";
+$local_dbname = "lars";
 
 try {
-    if ($env_host !== '' && $env_name !== '' && $env_user !== '') {
-        $pdo = connect_pdo($env_host, $env_port, $env_name, $env_user, $env_pass);
-    } else {
-        $pdo = connect_pdo($local_host, $local_port, $local_name, $local_user, $local_pass);
+    // Try live server first
+    $pdo = new PDO("mysql:host=$live_servername;dbname=$live_dbname", $live_username, $live_password);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch(PDOException $e) {
+    // If live fails, try local
+    try {
+        $pdo = new PDO("mysql:host=$local_servername;dbname=$local_dbname", $local_username, $local_password);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    } catch(PDOException $e2) {
+        die("Database connection failed for both live and local servers: " . $e2->getMessage());
     }
-} catch (PDOException $e) {
-    http_response_code(500);
-    error_log('Database connection failed: ' . $e->getMessage());
-    die('Database connection failed. Please check database settings.');
 }
 ?>

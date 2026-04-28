@@ -2,27 +2,17 @@
   "version": 2,
   "cleanUrls": false,
   "trailingSlash": false,
-  "functions": {
-    "**/*.php": {
-      "runtime": "vercel-php@0.9.0",
-      "maxDuration": 60
-    }
-  },
   "redirects": [
     {
       "source": "/",
-      "destination": "/index.php",
+      "destination": "/index.html",
       "permanent": false
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "^/$",
-      "dest": "/index.php"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
+      "source": "/",
+      "destination": "/index.html"
     }
   ]
 }
