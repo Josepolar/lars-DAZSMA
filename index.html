@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="assets/tablogo.png">
+    <title>LARS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
+    <style>
+        /* Fallback for fade-out if JS is not loaded */
+        .fade-out {
+            opacity: 0;
+            transition: opacity 0.8s;
+        }
+    </style>
+</head>
+<body>
+<div class="content">
+    <a href="#" id="signin-link">
+        <img src="assets/signinbtn.png" alt="Sign In" class="signin-img">
+    </a>
+    <img src="assets/rightarr.png" alt="Right Arrow" class="rightarr-img">
+    <img src="assets/leftarr.png" alt="Left Arrow" class="leftarr-img">
+</div>
+<script>
+    const signinLink = document.getElementById("signin-link");
+    const signinImg = document.querySelector(".signin-img");
+    const rightArrow = document.querySelector(".rightarr-img");
+    const leftArrow = document.querySelector(".leftarr-img");
+
+    signinLink.addEventListener("click", function(e) {
+        e.preventDefault();
+        signinImg.classList.add("fade-out");
+        rightArrow.classList.add("fade-out");
+        leftArrow.classList.add("fade-out");
+        setTimeout(() => {
+            // On GitHub Pages, PHP won't work, so just reload or show a message
+            window.location.href = "#";
+        }, 800);
+    });
+</script>
+</body>
+</html>
