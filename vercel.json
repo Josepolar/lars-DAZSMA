@@ -2,17 +2,10 @@
   "version": 2,
   "cleanUrls": false,
   "trailingSlash": false,
-  "redirects": [
+  "routes": [
     {
-      "source": "/",
-      "destination": "/index.html",
-      "permanent": false
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/",
-      "destination": "/index.html"
+      "src": "^/$",
+      "dest": "/index.html"
     }
   ]
 }
